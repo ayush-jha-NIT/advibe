@@ -1,9 +1,9 @@
-# AdVibe approved assets
+# AdVibe approved logo
 
-The sole approved platform logo is the user-uploaded **AdVibe Megaphone Brand Logo.png**, featuring a blue/violet megaphone, AdVibe wordmark and the tagline **Your Brand. Everywhere.**
+The sole approved platform logo is the user-provided **AdVibe Megaphone Brand Logo.png**, depicting a blue-purple megaphone, white/orange AdVibe lettering and the tagline **Your Brand. Everywhere.**
 
-Do not redraw, substitute or generate an unrelated AdVibe logo. Reuse the exact supplied asset for headers, authentication, portal navigation and derived favicon variants. Favor dark navy backgrounds for legibility of the supplied white wordmark.
+Part 1 commits the original user-supplied artwork as \`public/brand/advibe-logo.png\` (pixel-preserving PNG transfer) and a derived favicon as \`public/icon.png\` (crop of the same megaphone symbol). Neither is an alternative logo. The original source is 2048 × 682 px.
 
-The original binary logo is not committed in Part 0. Add a suitably optimized *derived from the original* asset in Part 1, retaining the source artwork.
+Use \`BrandLogo\` for public pages and all portal headers/sidebars. Favor dark navy backgrounds for sufficient contrast with the approved white wordmark. Do not substitute the older "Your Brand on the Move" tagline shown in some screenshots.
 
-Client-approved reference screenshots govern layouts; temporary scaffold styling is not a final design system.
+Source-specific brand refinements must never redraw or substitute the client's artwork.

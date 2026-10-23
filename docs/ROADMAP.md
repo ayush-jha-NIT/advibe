@@ -11,12 +11,12 @@ Client-approved visual reference set: 59 screenshots across four portals.
 | 18–21 | Admin | Dashboard, approvals, operations, inventory, pricing, finance, analytics, users |
 | 22–23 | QA and delivery | Cross-portal tests, mobile accessibility/performance, CI, Vercel and API handoff |
 
-## Current execution status
+## Status
 
 - [x] Part 0: Repository initialization and minimal runnable App Router page
-- [ ] Part 1: Design tokens, approved logo asset and UI primitives
+- [x] Part 1: Approved asset derivatives, design tokens and interactive UI component foundation
 - [ ] Part 2: Responsive portal shells and navigation
 - [ ] Part 3: Shared demo repositories and business rules
 - [ ] Parts 4–23: Screen implementation, integrations and verification
 
-Part completion requires actual checks, with failures stated honestly. The current Part 0 commit does not imply a deployed product or a completed visual implementation.
+Part 1's homepage is a component demonstration, NOT the final public website. Production payments, authentication, location telemetry and sensitive data require secure backend APIs.

@@ -1,17 +1,86 @@
 @import "tailwindcss";
 
-/* Brand tokens and typography will be finalized against the approved images in Part 1. */
+/* Approved screenshot palette, intentionally centralized for all four portals.
+   Part 2 adds the actual layouts; each layout sets data-portal on its root. */
 :root {
   color-scheme: light;
+  --brand-navy: #041b3d;
+  --brand-navy-deep: #031221;
+  --brand-blue: #0866ff;
+  --brand-orange: #ff6a00;
+  --brand-purple: #5415ff;
+  --background: #f8fbff;
+  --surface: #ffffff;
+  --surface-alt: #eff6ff;
+  --foreground: #0b1b40;
+  --muted-foreground: #5c7095;
+  --border: #dce6f4;
+  --ring: #0866ff;
+  --portal-accent: #0866ff;
+  --portal-accent-hover: #0051dc;
+  --radius-card: 1rem;
+  --shadow-card: 0 7px 24px rgba(13, 50, 97, .045);
 }
 
-html {
-  min-width: 320px;
+[data-portal="public"] {
+  --portal-accent: #ff6a00;
+  --portal-accent-hover: #e95d00;
+  --ring: #0866ff;
 }
 
+[data-portal="admin"] {
+  --portal-accent: #5415ff;
+  --portal-accent-hover: #440bdb;
+  --ring: #5415ff;
+}
+
+[data-portal="advertiser"],
+[data-portal="driver"] {
+  --portal-accent: #0866ff;
+  --portal-accent-hover: #0051dc;
+  --ring: #0866ff;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-alt: var(--surface-alt);
+  --color-foreground: var(--foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-line: var(--border);
+  --color-brand-navy: var(--brand-navy);
+  --color-brand-navy-deep: var(--brand-navy-deep);
+  --color-brand-blue: var(--brand-blue);
+  --color-brand-orange: var(--brand-orange);
+  --color-brand-purple: var(--brand-purple);
+  --color-portal: var(--portal-accent);
+  --font-sans: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --radius-xl: var(--radius-card);
+}
+
+* { box-sizing: border-box; }
+html { min-width: 320px; scroll-behavior: smooth; }
 body {
   margin: 0;
-  background: #f8fbff;
-  color: #071d40;
-  font-family: Arial, Helvetica, sans-serif;
+  min-width: 320px;
+  min-height: 100vh;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+button, input, select, textarea { font: inherit; }
+button:not(:disabled) { cursor: pointer; }
+::selection { background: #d8e9ff; color: #041b3d; }
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
