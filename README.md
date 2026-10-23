@@ -1,28 +1,46 @@
 # AdVibe Frontend
 
-Mobile-first, four-portal AdVibe frontend built with Next.js App Router, React, TypeScript, and Tailwind CSS.
+Mobile-first frontend for AdVibe's Public Website, Advertiser Portal, Driver Partner Portal and Admin Portal.
 
-> Part 0 repository initialization. See the development roadmap and architecture documents in `docs/` after scaffolding.
+**Current status:** Part 0 foundation only. Portal pages, login flows, shared demo data and Cashfree integration have **not** been implemented yet.
 
-## Quick start
+## Tech foundation
 
-```bash
+- Next.js 16 App Router, React 19, strict TypeScript
+- Tailwind CSS 4 and ESLint flat config
+- shadcn/ui-compatible project aliases (components are added in Part 1)
+- Planned: React Hook Form + Zod, Zustand, Recharts, Motion, Lucide, interactive maps
+
+## Local setup
+
+Requires Node.js 20.9+ (Node 22 recommended) and npm.
+
+~~~bash
+git clone https://github.com/ayush-jha-NIT/advibe.git
+cd advibe
 npm install
+cp .env.example .env.local
 npm run dev
-```
+~~~
 
 Open http://localhost:3000.
 
-## Checks
+## Validation
 
-```bash
+~~~bash
 npm run lint
 npm run typecheck
 npm run build
-```
+~~~
 
-## Scope
+The GitHub Actions workflow runs these checks on pushes and pull requests.
 
-Public Website, Advertiser Portal, Driver Partner Portal, and Admin Portal. The frontend begins with local demo data; Cashfree payments, authentication, device telemetry, and banking integrations require secure production backend services.
+## Design and implementation plan
 
-The attached AdVibe megaphone artwork is the **only** approved logo; brand assets are introduced in Part 1.
+See [Roadmap](docs/ROADMAP.md), [Architecture](docs/ARCHITECTURE.md) and [Brand rules](docs/BRAND.md).
+
+## Important boundaries
+
+This is a **frontend project**. Browser demo storage does not provide real authentication, cross-device synchronization, financial settlement, identity verification or device telemetry. Cashfree will be used for payments after a secure backend integration exists; no Cashfree secret must be exposed in frontend code.
+
+**Branding:** Use only the supplied "AdVibe Megaphone Brand Logo.png" for logo assets. The actual logo is introduced in Part 1; the Part 0 starter view intentionally shows no substitute logo.
