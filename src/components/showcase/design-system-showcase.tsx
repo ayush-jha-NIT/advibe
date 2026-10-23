@@ -3,7 +3,7 @@
 import * as React from "react";
 import {
   ArrowRight, Bell, CheckCircle2, ChevronRight, CircleAlert, CreditCard,
-  LayoutDashboard, MapPin, Megaphone, MonitorPlay, Plus, Settings2,
+  LayoutDashboard, MapPin, Megaphone, MonitorPlay, Settings2,
   ShieldCheck, Sparkles, Users, Wallet, XCircle,
 } from "lucide-react";
 import { z } from "zod";
