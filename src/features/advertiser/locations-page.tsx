@@ -49,7 +49,7 @@ export function AdvertiserLocations(){
   const c=db.locations.find(l=>l.id===screen.locationId)?.city??"";
   return sampleRate(db,screen.placement,c,periodStart);
  });
- const indicative=rates.length&&!rates.some(rate=>rate===null)?rates.reduce((sum,rate)=>sum+(rate??0),0):null;
+ const indicative=rates.length&&!rates.some(rate=>rate===null)?rates.reduce<number>((sum,rate)=>sum+(rate??0),0):null;
  function choosePlacement(p:Placement){setPlacement(p);setSelected([]);setFeedback("");}
  function toggle(s:Screen){if(!validIds.has(s.id))return;setSelected(prev=>prev.includes(s.id)?prev.filter(x=>x!==s.id):[...prev,s.id]);setFeedback("");}
  function selectVisible(){setSelected(prev=>[...new Set([...prev,...visible.filter(v=>v.status==="eligible").map(v=>v.screen.id)])]);}
