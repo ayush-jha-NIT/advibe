@@ -57,7 +57,7 @@ try{
      await page.goto(base+"/");
      const trigger=page.getByRole("button",{name:"Open public navigation"});
      await trigger.click();
-     const panel=page.getByRole("dialog",{name:"Mobile navigation"});
+     const panel=page.getByRole("dialog",{name:"Public navigation menu"});
      await panel.waitFor({state:"visible"});
      await page.keyboard.press("Escape");
      await panel.waitFor({state:"hidden"});
@@ -126,7 +126,7 @@ try{
    const gate=page.getByRole("button",{name:"Continue as demo driver"});
    if(await gate.count())await gate.click();
    await page.getByRole("heading",{name:"My Vehicle & Screens"}).waitFor({timeout:15000});
-   assert.ok((await page.locator("main").innerText()).includes("maintenance"),"driver inventory not showing changed sample status");
+   assert.ok((await page.locator("#portal-main").innerText()).includes("maintenance"),"driver inventory not showing changed sample status");
    passed++;
   }catch(e){await screenshot(page,"cross-portal");throw e;}finally{await ctx.close();}
  });
