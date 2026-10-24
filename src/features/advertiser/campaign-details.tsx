@@ -1,7 +1,7 @@
 "use client";
 import * as React from "react";
 import Link from "next/link";
-import {ArrowLeft,ArrowRight,Bell,CalendarDays,CheckCircle2,Clock3,ExternalLink,FileImage,FileText,MapPin,MonitorPlay,Pause,Play,Receipt,ShieldAlert,Target,Wallet,XCircle} from "lucide-react";
+import {ArrowLeft,ArrowRight,CalendarDays,CheckCircle2,Clock3,FileImage,FileText,MapPin,MonitorPlay,Pause,Play,Receipt,ShieldAlert,Target,XCircle} from "lucide-react";
 import {Badge,Button,Card,CardContent,CardHeader,CardTitle,Dialog} from "@/components/ui";
 import {moneyINR,countScheduledDays} from "@/lib/demo-rules";
 import {useDemoStore} from "@/services/demo-store";
