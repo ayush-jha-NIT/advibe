@@ -8,6 +8,7 @@ import type {Actor,Campaign,CampaignStatus,DemoDatabase,Screen,Creative} from ".
 import {validateWizardAll,wizardQuote,localToday,type WizardDraft} from "../features/advertiser/wizard-model";
 import {assertAdvertiserManagement,type CampaignManagementAction} from "../features/advertiser/campaign-detail-model";
 import {assertCreativeEdit,validateCreativeDraft,type CreativeDraft} from "../features/advertiser/library-model";
+import {validateAccountProfile,validateTicketDraft,type AccountProfileDraft,type TicketDraft} from "../features/advertiser/account-model";
 
 export type DemoStore={
  db:DemoDatabase;
@@ -25,6 +26,9 @@ export type DemoStore={
  reviewDriver:(actor:Actor,applicationId:string)=>void;
  setScreenStatus:(actor:Actor,id:string,status:Screen["status"])=>void;
  markNoticeRead:(actor:Actor,id:string)=>void;
+ markAllNoticesRead:(actor:Actor)=>void;
+ updateAdvertiserProfile:(actor:Actor,input:AccountProfileDraft)=>void;
+ createAdvertiserTicket:(actor:Actor,input:TicketDraft)=>string;
  reset:(actor:Actor)=>void;
 };
 type Persisted={db:DemoDatabase};
@@ -225,6 +229,33 @@ export const useDemoStore=create<DemoStore>()(persist<DemoStore,[],[],Persisted>
   requireAction(actor,"markNotice",record.recipientId);
   return {db:{...s.db,notices:s.db.notices.map(n=>n.id===id?{...n,read:true}:n)}};
  }),
+ markAllNoticesRead:(actor)=>set(s=>{
+  if(actor.role!=="advertiser"||!s.db.accounts.some(a=>a.id===actor.accountId&&a.role==="advertiser"))
+   throw Error("Advertiser account not available");
+  return {db:{...s.db,notices:s.db.notices.map(n=>n.recipientId===actor.accountId?{...n,read:true}:n)}};
+ }),
+ updateAdvertiserProfile:(actor,input)=>set(s=>{
+  if(actor.role!=="advertiser"||!s.db.accounts.some(a=>a.id===actor.accountId&&a.role==="advertiser"))
+   throw Error("Advertiser account not available");
+  const valid=validateAccountProfile(input);
+  const updated={...s.db,accounts:s.db.accounts.map(a=>a.id===actor.accountId
+   ?{...a,name:valid.name,business:valid.business,city:valid.city}:a)};
+  return {db:audit(updated,actor,"account",actor.accountId,"demo_profile_updated")};
+ }),
+ createAdvertiserTicket:(actor,input)=>{
+  const valid=validateTicketDraft(get().db,actor,input);
+  const id=makeId("tkt"),date=stamp().slice(0,10);
+  set(s=>{
+   const updated={...s.db,tickets:[...s.db.tickets,{
+    id,accountId:actor.accountId,subject:valid.subject,description:valid.description,
+    category:valid.category,campaignId:valid.campaignId||undefined,status:"open" as const,createdAt:date
+   }]};
+   let next=audit(updated,actor,"ticket",id,"demo_support_created");
+   next=notice(next,DEMO_ACTORS.admin.accountId,"support","Demo support ticket submitted",valid.subject+" (demo, no helpdesk connected).");
+   return {db:next};
+  });
+  return id;
+ },
  reset:(actor)=>{
   requireAction(actor,"resetDemo");
   set({db:createDemoSeed()});

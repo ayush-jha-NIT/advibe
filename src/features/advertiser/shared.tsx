@@ -22,7 +22,7 @@ export function useAdvertiserData(){
  // The only seeded advertiser account is the preset identity. Accounts created
  // in the demo signup have no production backend record and see an empty view.
  const id=session?.role==="advertiser"&&session.email===DEMO_USERS.find(x=>x.role==="advertiser")?.email?"adv-1":"not-provisioned";
- return {db,accountId:id,hydrated,displayName:session?.displayName??"Advertiser"};
+ return {db,accountId:id,hydrated,displayName:db.accounts.find(a=>a.id===id)?.name??session?.displayName??"Advertiser"};
 }
 export function statusTone(status:CampaignStatus):"success"|"info"|"neutral"|"warning"|"danger"|"purple"{
  if(status==="live"||status==="completed")return "success";

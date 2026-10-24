@@ -58,11 +58,11 @@ Root: /advertiser. Paths:
 - /advertiser/ad-formats (Part 11 interactive format catalogue)
 - /advertiser/locations (Part 11 sample inventory and wizard prefill)
 - /advertiser/creatives (Part 11 creative metadata library)
-- /advertiser/billing
-- /advertiser/reports
-- /advertiser/notifications
-- /advertiser/support
-- /advertiser/settings
+- /advertiser/billing (Part 12 demo ledger, checkout boundary, sample statement)
+- /advertiser/reports (Part 12 fictional campaign aggregates and CSV)
+- /advertiser/notifications (Part 12 account-owned read-state controls)
+- /advertiser/support (Part 12 local support ticket form and FAQs)
+- /advertiser/settings (Part 12 demo profile and local UI preferences)
 
 Campaign detail route /advertiser/campaigns/[id] is implemented in Part 10 with owner-scoped demo record details, local audit history, billing metadata and permitted status actions. No real device or payment operations are issued.
 
@@ -116,3 +116,7 @@ The /advertiser homepage and /advertiser/campaigns use selectors scoped to the p
 ## Part 11 advertiser submodules
 
 The ad-format comparison, screen/location planner and creative library are implemented. Display numbers come from shared seeded demo data and browser-local changes. Users can explicitly copy provisional format, date and eligible screen IDs into their wizard draft after confirming replacement. Media files are inspected locally and previews are not stored or uploaded. Admin review, real creative delivery, GPS, payment and booking are not connected.
+
+## Part 12 advertiser account modules
+
+The billing, reports, notifications, support and settings pages are implemented. They use sample browser-local records, and none should be confused with a real payment, official tax invoice, device telemetry, authenticated account update, or external support ticket. The Cashfree checkout button is deliberately unavailable pending trusted backend integration. See docs/ADVERTISER_PART_12.md.

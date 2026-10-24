@@ -25,7 +25,8 @@ Client-approved visual reference set: 59 screenshots across Public, Admin, Adver
 - [x] Part 9: Wizard creative-file inspection, zone targeting, schedule warnings, mobile step controls and regression tests
 - [x] Part 10: Advertiser-owned campaign detail pages, metadata tabs, audit timeline, demo pause/resume/cancel and linked billing records
 - [x] Part 11: Creative metadata library, ad-format comparison and sample-screen location explorer linked to the wizard
-- [ ] Parts 12–23: Advertiser billing/support, driver/admin workflows, integration and final QA
+- [x] Part 12: Advertiser billing ledger, non-tax statement previews, reports, notification center, demo profile/preferences and support tickets
+- [ ] Parts 13–23: Driver and Admin modules, backend boundaries, integrated QA and delivery
 
 **Part 3 delivers a frontend demo engine, not a backend.** Role switching is public, data is fictional and browser-local, device controls are simulated and no Cashfree checkout occurs. See [DEMO_ENGINE.md](DEMO_ENGINE.md) and [ROUTES.md](ROUTES.md).
 
@@ -38,3 +39,5 @@ Client-approved visual reference set: 59 screenshots across Public, Admin, Adver
 **Part 10:** Details show only stored campaign metrics, creative metadata, demo screen assignments, real recorded audit entries in the local dataset, and demo payment records. Cancellation does not refund Cashfree; pause/resume do not send hardware commands. Owner check is a local demo UI rule, not server authorization.
 
 **Part 11:** The library saves only creative metadata, never file contents. Format pricing and location availability use fictional demo records; adding targets to the wizard is only a provisional planning action. Backend asset storage, moderation, live device inventory, reliable location maps and real booking are still required.
+
+**Part 12:** Billing and statements come only from fictional existing payments, with no Cashfree gateway activation, charge, refund or valid tax invoice. Profile and notifications remain browser-local; tickets do not reach customer service. Reports contain only stored demo totals, not actual delivery metrics.

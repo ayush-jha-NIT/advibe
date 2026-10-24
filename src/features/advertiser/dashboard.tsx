@@ -5,6 +5,7 @@ import {ArrowRight,Bell,CheckCircle2,Clock3,Eye,IndianRupee,Layers3,Megaphone,Mo
 import {Bar,BarChart,CartesianGrid,Cell,Legend,Pie,PieChart,ResponsiveContainer,Tooltip,XAxis,YAxis} from "recharts";
 import {Card,CardContent,CardHeader,CardTitle} from "@/components/ui";
 import {moneyINR} from "@/lib/demo-rules";
+import {useAdvertiserPrefs} from "@/services/advertiser-preferences";
 import {campaignSummary,filterCampaigns,impressionsChart,selectAdvertiserCampaigns,statusChart} from "./analytics";
 import {CampaignStatusBadge,DemoDataNotice,EmptyAdvertiser,PartSevenHeader,useAdvertiserData} from "./shared";
 const COLORS=["#0eaa7b","#7955ea","#ef9314","#1276e8","#a9b4c7"];
@@ -17,6 +18,7 @@ function CompactStat({title,value,foot,icon:Icon}:{title:string;value:string;foo
 }
 export function AdvertiserDashboard(){
  const {db,accountId,hydrated,displayName}=useAdvertiserData();
+ const prefs=useAdvertiserPrefs(accountId);
  const campaigns=React.useMemo(()=>selectAdvertiserCampaigns(db,accountId),[db,accountId]);
  const summary=React.useMemo(()=>campaignSummary(campaigns,db,accountId),[campaigns,db,accountId]);
  const latest=React.useMemo(()=>filterCampaigns(campaigns,{sort:"newest"}).slice(0,4),[campaigns]);
@@ -69,7 +71,7 @@ export function AdvertiserDashboard(){
      <Link href="/advertiser/campaigns?status=in_review" className="rounded-xl bg-[#fff6e7] p-3 text-sm hover:bg-[#fff0d9]"><Clock3 className="size-5 text-[#cf7a05]"/><p className="mt-2 text-xl font-bold text-brand-navy">{summary.review}</p><p className="text-xs text-[#7a5e3d]">In review</p></Link>
      <Link href="/advertiser/campaigns?status=draft" className="rounded-xl bg-[#edf4ff] p-3 text-sm hover:bg-[#e3efff]"><Layers3 className="size-5 text-brand-blue"/><p className="mt-2 text-xl font-bold text-brand-navy">{summary.drafts}</p><p className="text-xs text-[#42658d]">Drafts</p></Link>
     </div>
-    <div className="space-y-2">{alerts.length?alerts.map(n=><div key={n.id} className="flex gap-2 rounded-lg border border-[#e1eafb] p-3 text-sm"><Bell className={"mt-0.5 size-4 shrink-0 "+(n.read?"text-[#a5afbc]":"text-brand-blue")}/><div><p className="font-semibold text-brand-navy">{n.title}</p><p className="mt-1 text-xs leading-5 text-muted-foreground">{n.message}</p></div></div>):<p className="rounded-lg bg-[#f4f7fc] px-3 py-4 text-sm text-muted-foreground">No notifications for this account.</p>}</div>
+    <div className="space-y-2">{!prefs.showDashboardNotices?<p className="rounded-lg bg-[#f4f7fc] px-3 py-4 text-sm text-muted-foreground">Dashboard notice previews are hidden in Profile & Settings.</p>:alerts.length?alerts.map(n=><div key={n.id} className="flex gap-2 rounded-lg border border-[#e1eafb] p-3 text-sm"><Bell className={"mt-0.5 size-4 shrink-0 "+(n.read?"text-[#a5afbc]":"text-brand-blue")}/><div><p className="font-semibold text-brand-navy">{n.title}</p><p className="mt-1 text-xs leading-5 text-muted-foreground">{n.message}</p></div></div>):<p className="rounded-lg bg-[#f4f7fc] px-3 py-4 text-sm text-muted-foreground">No notifications for this account.</p>}</div>
     <Link href="/advertiser/notifications" className="inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-brand-blue">Notification center <ArrowRight className="size-4"/></Link>
    </CardContent></Card>
   </div>

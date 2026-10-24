@@ -5,6 +5,7 @@ import {useSearchParams} from "next/navigation";
 import {ArrowDownToLine,ArrowLeft,CalendarDays,ChevronLeft,ChevronRight,Eye,Search,Send,SlidersHorizontal,X} from "lucide-react";
 import {Button,Card,CardContent,CardHeader,CardTitle} from "@/components/ui";
 import {useDemoStore} from "@/services/demo-store";
+import {useAdvertiserPrefs} from "@/services/advertiser-preferences";
 import {campaignsCSV,campaignBucket,filterCampaigns,paginateCampaigns,selectAdvertiserCampaigns,type CampaignBucket,type CampaignSort} from "./analytics";
 import {CampaignStatusBadge,DemoDataNotice,EmptyAdvertiser,PartSevenHeader,useAdvertiserData} from "./shared";
 import type {Campaign} from "@/types/domain";
@@ -19,17 +20,19 @@ const field="min-h-11 w-full min-w-0 rounded-xl border border-[#cadcf1] bg-white
 
 export function AdvertiserCampaignList(){
  const {db,accountId,hydrated}=useAdvertiserData();
+ const prefs=useAdvertiserPrefs(accountId);
  const params=useSearchParams();
  const initial=params.get("status");
  const [status,setStatus]=React.useState<CampaignBucket>(()=>statuses.some(s=>s.value===initial)?initial as CampaignBucket:"all");
  const [search,setSearch]=React.useState(()=>params.get("search")??"");
  const [sort,setSort]=React.useState<CampaignSort>("newest");
  const [from,setFrom]=React.useState(""),[to,setTo]=React.useState("");
- const [page,setPage]=React.useState(1),[perPage,setPerPage]=React.useState(5);
+ const [page,setPage]=React.useState(1),[perPage,setPerPage]=React.useState<5|10|20|null>(null);
  const [feedback,setFeedback]=React.useState("");
  const campaigns=React.useMemo(()=>selectAdvertiserCampaigns(db,accountId),[db,accountId]);
  const filtered=React.useMemo(()=>filterCampaigns(campaigns,{search,bucket:status,sort,from,to}),[campaigns,search,status,sort,from,to]);
- const paging=React.useMemo(()=>paginateCampaigns(filtered,page,perPage),[filtered,page,perPage]);
+ const effectivePageSize=perPage??prefs.campaignPageSize;
+ const paging=React.useMemo(()=>paginateCampaigns(filtered,page,effectivePageSize),[filtered,page,effectivePageSize]);
  const counts=React.useMemo(()=>Object.fromEntries(statuses.map(s=>[s.value,s.value==="all"?campaigns.length:campaigns.filter(c=>campaignBucket(c.status)===s.value).length])) as Record<CampaignBucket,number>,[campaigns]);
  function submitDraft(c:Campaign){
   setFeedback("");
@@ -82,7 +85,7 @@ export function AdvertiserCampaignList(){
       </tr>)}</tbody></table>
     </div></>:<EmptyAdvertiser filtered={campaigns.length>0}/>}
     <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-[#e5edf8] pt-4">
-     <label className="flex min-h-11 items-center gap-2 text-xs font-semibold text-[#466086]">Rows per page <select className="min-h-10 rounded-lg border border-[#cadcf1] bg-white px-2" value={perPage} onChange={e=>{setPerPage(Number(e.target.value));setPage(1);}}><option value={5}>5</option><option value={10}>10</option><option value={20}>20</option></select></label>
+     <label className="flex min-h-11 items-center gap-2 text-xs font-semibold text-[#466086]">Rows per page <select className="min-h-10 rounded-lg border border-[#cadcf1] bg-white px-2" value={effectivePageSize} onChange={e=>{setPerPage(Number(e.target.value) as 5|10|20);setPage(1);}}><option value={5}>5</option><option value={10}>10</option><option value={20}>20</option></select></label>
      <nav aria-label="Campaign page navigation" className="flex items-center gap-2"><Button size="sm" variant="outline" disabled={paging.page<=1} onClick={()=>setPage(p=>Math.max(1,p-1))}><ChevronLeft className="size-4"/>Previous</Button><span className="text-xs font-semibold text-[#466086]">{paging.page} / {paging.pages}</span><Button size="sm" variant="outline" disabled={paging.page>=paging.pages} onClick={()=>setPage(p=>Math.min(paging.pages,p+1))}>Next <ChevronRight className="size-4"/></Button></nav>
     </div>
    </CardContent>
