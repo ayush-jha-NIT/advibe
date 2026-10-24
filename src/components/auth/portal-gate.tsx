@@ -10,7 +10,7 @@ import {DEMO_PASSWORD,DEMO_USERS,type AuthRole} from "@/lib/demo-auth";
 export function PortalGate({role,children}:{role:AuthRole;children:React.ReactNode}){
  const pathname=usePathname(),session=useDemoAuth(s=>s.session),login=useDemoAuth(s=>s.demoLogin);
  const [ready,setReady]=React.useState(false);
- React.useEffect(()=>{let mounted=true;void useDemoAuth.persist.rehydrate().then(()=>{if(mounted)setReady(true);});return ()=>{mounted=false;};},[]);
+ React.useEffect(()=>{let mounted=true;void Promise.resolve(useDemoAuth.persist.rehydrate()).then(()=>{if(mounted)setReady(true);});return ()=>{mounted=false;};},[]);
  if(!ready)return <div className="flex min-h-dvh items-center justify-center bg-[#f2f7ff] p-5" role="status"><p className="text-sm font-semibold text-[#516e97]">Loading demo account…</p></div>;
  if(session?.role===role)return <>{children}</>;
  const preset=DEMO_USERS.find(u=>u.role===role)!;

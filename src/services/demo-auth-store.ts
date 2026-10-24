@@ -24,7 +24,6 @@ export const useDemoAuth=create<AuthDemoState>()(persist<AuthDemoState,[],[],Sav
   set({session:user,pending:null,recoveryVerified:false});
  },
  beginVerification:(input)=>{
-  if(input.role==="admin")throw Error("Admin accounts cannot be registered publicly.");
   const pending=makePending(input,Date.now());
   set({pending,recoveryVerified:false});
  },
