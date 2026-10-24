@@ -29,7 +29,9 @@ Client-approved visual reference set: 59 screenshots across Public, Admin, Adver
 - [x] Part 13: Driver onboarding steps 1–3, sample profile and vehicle details, mock KYC readiness, session persistence and validation
 - [x] Part 14: Driver onboarding steps 4–5 (mock screen installation, payout-readiness, agreement), guarded demo submission and verification preview
 - [x] Part 15: Driver dashboard, vehicle and screen inventory, confirmed assigned campaigns, and IST daily scheduling
-- [ ] Parts 16–23: Driver earnings/maintenance, Admin modules, integration and final QA
+- [x] Part 16: Driver sample earnings, status-filtered payout ledger, monthly breakdown and CSV
+- [x] Part 17: Driver maintenance reports, support, notifications, read-only profile, activity/trips boundaries
+- [ ] Parts 18–23: Admin modules, integrated accessibility/responsive QA and deployment handoff
 
 **Part 3 delivers a frontend demo engine, not a backend.** Role switching is public, data is fictional and browser-local, device controls are simulated and no Cashfree checkout occurs. See [DEMO_ENGINE.md](DEMO_ENGINE.md) and [ROUTES.md](ROUTES.md).
 
@@ -50,3 +52,7 @@ Client-approved visual reference set: 59 screenshots across Public, Admin, Adver
 **Part 14:** The five-step wizard now validates sample placement and payout/consent readiness. A final submission creates a separate driverPreviewApplications record and Admin notice, not a KYC approval. Real banking credentials and document uploads are never collected, and seeded approved driver/vehicle/screen records remain intact.
 
 **Part 15:** The dashboard, vehicle/screens, assigned ads and campaign pages derive sample data from driver-owned screens and confirmed bookings. The calendar uses Asia/Kolkata civil dates and stored campaign weekday/time preferences. No GPS, actual ad playback, driver trips, physical screen controls or telemetry are claimed. Existing driver and advertiser state mutations remain unchanged.
+
+**Part 16:** Settlement analytics use only the driver-owned fictional ledger and integer-paise amounts. There are no bank transactions, payout timestamps, verified earnings or tax documentation.
+
+**Part 17:** Driver issue reports must reference driver-owned screens. Both maintenance and support create browser-local tickets and Admin notices, not repairs/helpdesk dispatch. Notifications are owner-scoped; profile documents are read-only. Trips/activity show explicit missing telemetry rather than fabricated playback/GPS.

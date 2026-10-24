@@ -75,14 +75,14 @@ Root: /driver. Paths:
 - /driver/vehicle (Part 15 vehicle & sample device inventory)
 - /driver/assigned-ads (Part 15 date-based confirmed assignment planner)
 - /driver/campaigns (Part 15 owned, confirmed-booking campaign listing)
-- /driver/earnings
-- /driver/payouts
-- /driver/delivery
-- /driver/trips
-- /driver/maintenance
-- /driver/notifications
-- /driver/support
-- /driver/profile
+- /driver/earnings (Part 16 owner-scoped settlement analytics)
+- /driver/payouts (Part 16 payout-status ledger and sample statement)
+- /driver/delivery (Part 17 sample booking overview; verified plays unavailable)
+- /driver/trips (Part 17 route/exposure unavailability interface)
+- /driver/maintenance (Part 17 owned-screen issue reporting)
+- /driver/notifications (Part 17 driver notice center)
+- /driver/support (Part 17 demo help requests and FAQ)
+- /driver/profile (Part 17 read-only driver profile and sample document states)
 
 ## Shared layout behavior
 
@@ -132,3 +132,7 @@ All five onboarding steps are interactive. Step 4 chooses a display type appropr
 ## Part 15 driver operations
 
 The dashboard and three operational pages replace the Part 2 placeholders, with samples sourced from the shared Part 3 browser-local database. Only a screen owned by this driver and referenced by a **confirmed booking** and campaign screen assignment can appear in assigned campaigns. Tentative targeting does not count. Paused and cancelled campaigns never show as scheduled daily playback. An Asia/Kolkata local-date picker and weekday-aware schedule work without fabricated routes or delivery timestamps. The vehicle/screen display is read-only; no real pairing, maintenance controls or GPS. See docs/DRIVER_PART_15.md.
+
+## Parts 16–17 driver finance and support
+
+All remaining Driver Portal menu routes now have intentional screens. Finance displays only fictional settlements with derived gross, deductions and net. A processed demo status is never bank proof. Maintenance creates screen-linked browser-local tickets with ownership validation and notifications for the demo Admin and driver; general support is separate. Profile and document states remain read-only. Trips and playback pages show missing telemetry explicitly. Read docs/DRIVER_PARTS_16_17.md.

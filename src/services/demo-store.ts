@@ -10,6 +10,7 @@ import {assertAdvertiserManagement,type CampaignManagementAction} from "../featu
 import {assertCreativeEdit,validateCreativeDraft,type CreativeDraft} from "../features/advertiser/library-model";
 import {validateAccountProfile,validateTicketDraft,type AccountProfileDraft,type TicketDraft} from "../features/advertiser/account-model";
 import {validateDriverSubmission,type DriverDraft} from "../features/driver/onboarding-model";
+import {assertProvisionedDriver,validateDriverIssue,validateDriverSupport,type DriverIssueDraft,type DriverSupportDraft} from "../features/driver/service-model";
 
 export type DemoStore={
  db:DemoDatabase;
@@ -31,6 +32,9 @@ export type DemoStore={
  markAllNoticesRead:(actor:Actor)=>void;
  updateAdvertiserProfile:(actor:Actor,input:AccountProfileDraft)=>void;
  createAdvertiserTicket:(actor:Actor,input:TicketDraft)=>string;
+ createDriverMaintenance:(actor:Actor,input:DriverIssueDraft)=>string;
+ createDriverSupport:(actor:Actor,input:DriverSupportDraft)=>string;
+ markDriverNoticesRead:(actor:Actor)=>void;
  reset:(actor:Actor)=>void;
 };
 type Persisted={db:DemoDatabase};
@@ -281,6 +285,43 @@ export const useDemoStore=create<DemoStore>()(persist<DemoStore,[],[],Persisted>
   });
   return id;
  },
+ createDriverMaintenance:(actor,input)=>{
+  const valid=validateDriverIssue(get().db,actor,input);
+  const id=makeId("maint"),today=stamp().slice(0,10);
+  set(s=>{
+   // Validate again against the current database before mutation.
+   validateDriverIssue(s.db,actor,valid);
+   let next:DemoDatabase={...s.db,tickets:[...s.db.tickets,{
+    id,accountId:actor.accountId,subject:valid.subject,
+    description:valid.description,category:"technical" as const,
+    screenId:valid.screenId,maintenanceCategory:valid.category,
+    status:"open" as const,createdAt:today
+   }]};
+   next=audit(next,actor,"ticket",id,"demo_maintenance_reported");
+   next=notice(next,DEMO_ACTORS.admin.accountId,"device","Driver demo maintenance report",valid.screenId+": "+valid.subject+" (fictional report).");
+   return {db:notice(next,actor.accountId,"support","Demo issue report saved","Your fictional issue report "+id+" was saved locally. No technician was dispatched.")};
+  });
+  return id;
+ },
+ createDriverSupport:(actor,input)=>{
+  const valid=validateDriverSupport(get().db,actor,input);
+  const id=makeId("tkt"),today=stamp().slice(0,10);
+  set(s=>{
+   validateDriverSupport(s.db,actor,valid);
+   let next:DemoDatabase={...s.db,tickets:[...s.db.tickets,{
+    id,accountId:actor.accountId,subject:valid.subject,description:valid.description,
+    category:valid.category,status:"open" as const,createdAt:today
+   }]};
+   next=audit(next,actor,"ticket",id,"demo_driver_support");
+   next=notice(next,DEMO_ACTORS.admin.accountId,"support","Driver demo support request",valid.subject+" (fictional helpdesk entry).");
+   return {db:notice(next,actor.accountId,"support","Demo support request saved","Your fictional support request "+id+" was saved locally. No external helpdesk was contacted.")};
+  });
+  return id;
+ },
+ markDriverNoticesRead:(actor)=>set(s=>{
+  assertProvisionedDriver(s.db,actor);
+  return {db:{...s.db,notices:s.db.notices.map(n=>n.recipientId===actor.accountId?{...n,read:true}:n)}};
+ }),
  reset:(actor)=>{
   requireAction(actor,"resetDemo");
   set({db:createDemoSeed()});
