@@ -4,7 +4,7 @@ Responsive four-portal frontend for AdVibe: Public Website, Advertiser Portal, D
 
 ## Status
 
-**Parts 0–21 complete:** Official approved logo; role-aware UI component library; responsive public navbar/footer; admin, advertiser and driver navigation shells; live route switching, mobile drawer and navigation search.
+**Parts 0–22 implemented:** Official approved logo; role-aware UI component library; responsive public navbar/footer; admin, advertiser and driver navigation shells; live route switching, mobile drawer and navigation search.
 
 **Part 3 adds:** typed fictional data for accounts, campaigns, creatives, screens, vehicles, locations, bookings, payments and settlements; owner-aware selectors; persisted Zustand store; pricing and availability validations; and cross-portal interactive dashboard previews.
 
@@ -43,6 +43,8 @@ Responsive four-portal frontend for AdVibe: Public Website, Advertiser Portal, D
 **Part 20 adds:** Validated fictional rate-card editor, guarded Admin booking scheduler, sample payments ledger and driver settlement status controls. No actual payment, refund or payout is initiated.
 
 **Part 21 adds:** Admin reports and CSV export, advertiser and user directories, protected sample account status toggles, support-ticket workflow, notifications, local audit history and double-confirmed demo reset.
+
+**Part 22 adds:** Shared accessible mobile-drawer keyboard focus trapping, Escape/focus restoration, search results with unique IDs, client-route main-landmark focus, auth skip link, truthful account-scoped demo notices, accurate selector semantics, stronger mobile reflow, reduced motion/high contrast support, and navy-on-orange action contrast. Includes regression tests and an explicit remaining manual QA matrix.
 
 **Not implemented:** Real backend login/authorization, live OTP, production creative uploads and moderation, Cashfree payments, actual payouts, KYC or device telemetry. The Admin operational routes remain frontend placeholders. Demo role switching is not security; no real personal or payment data should be stored here.
 
@@ -129,3 +131,5 @@ The supplied megaphone artwork is the sole approved AdVibe logo. Cashfree requir
 - [Admin Part 19: driver and inventory](docs/ADMIN_PART_19.md)
 - [Admin Part 20: commercial operations](docs/ADMIN_PART_20.md)
 - [Admin Part 21: analytics, accounts and governance](docs/ADMIN_PART_21.md)
+
+- [Part 22 responsive, accessible navigation and QA matrix](docs/PART_22_QA.md)

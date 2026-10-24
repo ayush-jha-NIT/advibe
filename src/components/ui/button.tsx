@@ -9,7 +9,7 @@ export const buttonVariants = cva(
     variants: {
       variant: {
         primary: "bg-[var(--portal-accent)] text-white hover:bg-[var(--portal-accent-hover)]",
-        brand: "bg-brand-orange text-white hover:bg-[#e95d00]",
+        brand: "bg-brand-orange text-brand-navy hover:bg-[#ff8527]",
         secondary: "bg-surface-alt text-brand-navy hover:bg-[#e0ecff]",
         outline: "border border-[#b9cdf1] bg-white text-brand-blue hover:bg-[#f0f6ff]",
         ghost: "bg-transparent text-foreground hover:bg-surface-alt",

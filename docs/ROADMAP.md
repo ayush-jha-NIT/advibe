@@ -35,7 +35,8 @@ Client-approved visual reference set: 59 screenshots across Public, Admin, Adver
 - [x] Part 19: Admin driver verification and screen/location inventory
 - [x] Part 20: Admin sample pricing, bookings, payments and driver settlements
 - [x] Part 21: Admin reports, accounts, tickets, notifications, settings and audit
-- [ ] Parts 22–23: Cross-portal responsive/accessibility QA and deployment handoff
+- [x] Part 22: Cross-portal navigation, mobile focus/accessibility fixes, contrast, route regression checks and QA checklist
+- [ ] Part 23: Final real-device/browser QA, deployment checks and handoff
 
 **Part 3 delivers a frontend demo engine, not a backend.** Role switching is public, data is fictional and browser-local, device controls are simulated and no Cashfree checkout occurs. See [DEMO_ENGINE.md](DEMO_ENGINE.md) and [ROUTES.md](ROUTES.md).
 
@@ -62,3 +63,5 @@ Client-approved visual reference set: 59 screenshots across Public, Admin, Adver
 **Part 17:** Driver issue reports must reference driver-owned screens. Both maintenance and support create browser-local tickets and Admin notices, not repairs/helpdesk dispatch. Notifications are owner-scoped; profile documents are read-only. Trips/activity show explicit missing telemetry rather than fabricated playback/GPS.
 
 **Parts 18–21:** All Admin navigation routes now lead to dedicated views and operations. Actions are protected by seeded demo role/transition guards, create local audit records and notices, and never claim real money movement, KYC, hardware telemetry or production user access control. See docs/ADMIN_PART_18.md through docs/ADMIN_PART_21.md.
+
+**Part 22:** Shared public and portal drawers trap keyboard focus and restore it, portal search ID collisions are removed, route main landmarks and skip links are improved, misleading preview copy is corrected, orange CTAs have more legible navy labels, and accessibility/route tests are added. See docs/PART_22_QA.md. Real browser/device accessibility testing remains Part 23.

@@ -35,7 +35,7 @@ const heroAdvantages=[
  {label:"Clear planning",sub:"Transparent estimates",icon:ShieldCheck},
 ];
 const visualPill="inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-6 text-sm font-bold transition-[transform,background-color,border-color] hover:-translate-y-0.5";
-const orangeCTA=visualPill+" bg-brand-orange text-white shadow-[0_9px_22px_#ff6a0033] hover:bg-[#e95d00]";
+const orangeCTA=visualPill+" bg-brand-orange text-brand-navy shadow-[0_9px_22px_#ff6a0033] hover:bg-[#e95d00]";
 
 export default function HomePage(){
  return <>

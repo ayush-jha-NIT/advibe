@@ -24,15 +24,13 @@ export function Tabs({ tabs, value, onValueChange, label, className }: TabsProps
   };
 
   return (
-    <div role="tablist" aria-label={label} className={cn("flex max-w-full gap-1 overflow-x-auto border-b border-line", className)}>
+    <div role="group" aria-label={label} className={cn("flex max-w-full gap-1 overflow-x-auto border-b border-line", className)}>
       {tabs.map((tab, index) => (
         <button
           key={tab.value}
           ref={(element) => { refs.current[index] = element; }}
-          role="tab"
           type="button"
-          aria-selected={value === tab.value}
-          tabIndex={value === tab.value ? 0 : -1}
+          aria-pressed={value === tab.value}
           onClick={() => onValueChange(tab.value)}
           onKeyDown={(event) => {
             if (event.key === "ArrowRight") { event.preventDefault(); select((index + 1) % tabs.length); }

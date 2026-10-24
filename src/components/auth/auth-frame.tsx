@@ -4,6 +4,7 @@ import {BrandLogo} from "@/components/brand/brand-logo";
 import {HeroScene} from "@/components/landing/hero-scene";
 export function AuthFrame({children}:{children:React.ReactNode}){
  return <div data-portal="public" className="min-h-dvh bg-[#f2f7ff]">
+  <a href="#auth-main" className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[100] focus:rounded-lg focus:bg-white focus:px-4 focus:py-3 focus:text-brand-blue">Skip to authentication form</a>
   <div className="grid min-h-dvh lg:grid-cols-[minmax(300px,.92fr)_minmax(0,1.08fr)]">
    <aside className="relative hidden overflow-hidden bg-[#031a3a] text-white lg:flex lg:flex-col lg:justify-between">
     <HeroScene className="pointer-events-none absolute inset-0 size-full opacity-65" aria-hidden="true"/>
@@ -14,7 +15,7 @@ export function AuthFrame({children}:{children:React.ReactNode}){
      <ul className="mt-7 space-y-3 text-sm text-[#dce9fb]"><li className="flex items-center gap-2"><CheckCircle2 className="size-5 text-[#40c8f9]"/>Responsive account workflows</li><li className="flex items-center gap-2"><Smartphone className="size-5 text-[#40c8f9]"/>Mobile-friendly forms and verification</li><li className="flex items-center gap-2"><ShieldCheck className="size-5 text-[#40c8f9]"/>Production security planned separately</li></ul>
     </div>
    </aside>
-   <main className="min-w-0">
+   <main id="auth-main" tabIndex={-1} className="min-w-0 outline-none">
     <div className="mx-auto flex min-h-dvh w-full max-w-[750px] flex-col px-4 py-5 sm:px-8 sm:py-8 lg:px-12">
      <div className="mb-5 flex items-center justify-between lg:hidden"><div className="rounded-xl bg-brand-navy px-3 py-2"><BrandLogo width={152} priority/></div><Link href="/" className="inline-flex min-h-11 items-center gap-1 text-xs font-semibold text-brand-blue"><ArrowLeft className="size-4"/>Home</Link></div>
      <div className="flex flex-1 items-center justify-center"><div className="w-full max-w-[490px]">{children}</div></div>

@@ -8,6 +8,9 @@ import { ArrowRight, Bell, ChevronDown, ChevronRight, CircleHelp,
   LogOut, Menu, PanelLeftClose, PanelLeftOpen, Search, Settings, X } from "lucide-react";
 import { BrandLogo } from "@/components/brand/brand-logo";
 import {useDemoAuth} from "@/services/demo-auth-store";
+import {useDemoStore} from "@/services/demo-store";
+import {DEMO_USERS} from "@/lib/demo-auth";
+import {trapOverlayTab} from "@/lib/overlay-focus";
 import { cn } from "@/lib/utils";
 import { activePortalItem, portalNavigation, portalNames, portalPeople,
   type PortalRole, type NavItem } from "@/config/navigation";
@@ -92,6 +95,7 @@ function Sidebar({role, collapsed, onToggle, onNavigate, mobile=false}:{
 
 function NavSearch({role}:{role:PortalRole}) {
   const router = useRouter();
+  const resultsId=React.useId();
   const [query,setQuery] = React.useState("");
   const [open,setOpen] = React.useState(false);
   const [focusedIndex,setFocusedIndex] = React.useState(-1);
@@ -119,8 +123,8 @@ function NavSearch({role}:{role:PortalRole}) {
         <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#4373b8]" aria-hidden/>
         <input ref={inputRef} type="search" value={query}
           aria-label={"Search "+portalNames[role]+" pages"}
-          aria-controls="portal-search-results" aria-expanded={open && query.trim().length>0}
-          aria-autocomplete="list" aria-activedescendant={focusedIndex>=0&&results[focusedIndex]?"portal-result-"+focusedIndex:undefined}
+          aria-controls={open&&query.trim()?resultsId:undefined} aria-expanded={Boolean(open&&query.trim())}
+          aria-autocomplete="list" aria-activedescendant={open&&focusedIndex>=0&&results[focusedIndex]?resultsId+"-item-"+focusedIndex:undefined}
           role="combobox" autoComplete="off" placeholder="Search pages, tools and settings..."
           className="min-h-11 w-full rounded-xl border border-line bg-[#f7faff] py-2.5 pl-10 pr-4 text-sm text-foreground outline-none placeholder:text-[#7b8dac] focus-visible:border-[var(--ring)]"
           onChange={e=>{setQuery(e.target.value);setOpen(true);setFocusedIndex(-1);}}
@@ -133,13 +137,13 @@ function NavSearch({role}:{role:PortalRole}) {
         />
       </form>
       {open && query.trim() && (
-        <div id="portal-search-results" role="listbox" aria-label="Navigation search results"
+        <div id={resultsId} role="listbox" aria-label="Navigation search results"
           className="absolute left-0 right-0 top-[calc(100%+5px)] z-[70] overflow-hidden rounded-xl border border-line bg-white p-1.5 shadow-[0_20px_60px_#041b3d30]">
           {results.length===0
             ? <p className="px-3 py-4 text-sm text-muted-foreground">No matching pages. Try a module name.</p>
             : results.map((item,i)=>{
               const Icon=item.icon;
-              return <button id={"portal-result-"+i} type="button" role="option" aria-selected={i===focusedIndex}
+              return <button id={resultsId+"-item-"+i} type="button" role="option" aria-selected={i===focusedIndex}
                 key={item.href} onClick={()=>go(item)}
                 onMouseEnter={()=>setFocusedIndex(i)}
                 className={cn("flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm",
@@ -161,12 +165,24 @@ export function PortalShell({role,children}:{role:PortalRole;children:React.Reac
   const router=useRouter();
   const session=useDemoAuth(s=>s.session);
   const logout=useDemoAuth(s=>s.logout);
+  const notices=useDemoStore(s=>s.db.notices);
   const [mobileOpen,setMobileOpen] = React.useState(false);
   const [collapsed,setCollapsed] = React.useState(false);
   const [showNotifications,setShowNotifications] = React.useState(false);
   const [showAccount,setShowAccount] = React.useState(false);
   const drawerCloseRef=React.useRef<HTMLButtonElement>(null);
+  const drawerRef=React.useRef<HTMLDivElement>(null);
   const menuButtonRef=React.useRef<HTMLButtonElement>(null);
+  const notificationRef=React.useRef<HTMLDivElement>(null);
+  const accountRef=React.useRef<HTMLDivElement>(null);
+  const notificationButtonRef=React.useRef<HTMLButtonElement>(null);
+  const accountButtonRef=React.useRef<HTMLButtonElement>(null);
+  const previousPath=React.useRef(pathname);
+  const demoIdentity=DEMO_USERS.find(u=>u.role===role);
+  const accountId=session?.role===role&&session.email===demoIdentity?.email?
+    {admin:"adm-1",advertiser:"adv-1",driver:"drv-1"}[role]:null;
+  const myNotices=notices.filter(n=>n.recipientId===accountId).sort((a,b)=>b.createdAt.localeCompare(a.createdAt));
+  const unreadNotices=myNotices.filter(n=>!n.read).length;
   const active=activePortalItem(role,pathname);
   const person=session?.role===role?{name:session.displayName,subtitle:portalPeople[role].subtitle,initials:session.displayName.trim().split(/\s+/).slice(0,2).map(part=>part[0]??"").join("").toUpperCase()}:portalPeople[role];
   function signOut(){logout();setShowAccount(false);router.replace("/login?role="+role);}
@@ -178,11 +194,41 @@ export function PortalShell({role,children}:{role:PortalRole;children:React.Reac
     });
     return () => window.cancelAnimationFrame(frame);
   },[role]);
-  React.useEffect(()=>{ if(!mobileOpen)return; const old=document.body.style.overflow;document.body.style.overflow="hidden";drawerCloseRef.current?.focus();
-    function onKey(e:KeyboardEvent){if(e.key==="Escape")setMobileOpen(false);}
+  React.useEffect(()=>{
+    void Promise.resolve(useDemoStore.persist.rehydrate());
+  },[]);
+  React.useEffect(()=>{
+    if(previousPath.current===pathname)return;
+    previousPath.current=pathname;
+    const frame=window.requestAnimationFrame(()=>document.getElementById("portal-main")?.focus());
+    return ()=>window.cancelAnimationFrame(frame);
+  },[pathname]);
+  React.useEffect(()=>{
+    if(!mobileOpen)return;
+    const previous=document.body.style.overflow;
+    document.body.style.overflow="hidden";
+    drawerCloseRef.current?.focus();
+    function onKey(e:KeyboardEvent){
+      if(e.key==="Escape"){e.preventDefault();setMobileOpen(false);window.requestAnimationFrame(()=>menuButtonRef.current?.focus());return;}
+      trapOverlayTab(drawerRef.current,e);
+    }
     document.addEventListener("keydown",onKey);
-    return ()=>{document.body.style.overflow=old;document.removeEventListener("keydown",onKey);};
+    return ()=>{document.body.style.overflow=previous;document.removeEventListener("keydown",onKey);};
   },[mobileOpen]);
+  React.useEffect(()=>{
+    function onPointer(e:PointerEvent){
+      if(notificationRef.current&&!notificationRef.current.contains(e.target as Node))setShowNotifications(false);
+      if(accountRef.current&&!accountRef.current.contains(e.target as Node))setShowAccount(false);
+    }
+    function onKey(e:KeyboardEvent){
+      if(e.key!=="Escape")return;
+      if(showNotifications){e.preventDefault();setShowNotifications(false);notificationButtonRef.current?.focus();}
+      if(showAccount){e.preventDefault();setShowAccount(false);accountButtonRef.current?.focus();}
+    }
+    document.addEventListener("pointerdown",onPointer);
+    document.addEventListener("keydown",onKey);
+    return ()=>{document.removeEventListener("pointerdown",onPointer);document.removeEventListener("keydown",onKey);};
+  },[showNotifications,showAccount]);
 
   function toggleCollapsed() {
     setCollapsed(v=>{const next=!v;try{window.localStorage.setItem("advibe:sidebar:"+role,next?"collapsed":"expanded");}catch{}return next;});
@@ -193,7 +239,7 @@ export function PortalShell({role,children}:{role:PortalRole;children:React.Reac
   return (
     <div data-portal={role} className="min-h-screen bg-background">
       <a href="#portal-main" className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[100] focus:rounded-lg focus:bg-white focus:px-4 focus:py-3 focus:text-brand-blue">Skip to main content</a>
-      <div className="flex min-h-screen">
+      <div className="flex min-h-screen" inert={mobileOpen} aria-hidden={mobileOpen?true:undefined}>
         <aside className={cn("sticky top-0 hidden h-dvh shrink-0 transition-[width] duration-200 lg:block",collapsed?"w-[76px]":"w-[246px]")} aria-label="Desktop navigation">
           <Sidebar role={role} collapsed={collapsed} onToggle={toggleCollapsed}/>
         </aside>
@@ -210,31 +256,33 @@ export function PortalShell({role,children}:{role:PortalRole;children:React.Reac
                 <p className="truncate text-sm font-semibold md:hidden">{active.label}</p>
               </div>
               <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
-                <div className="relative">
-                  <button type="button" className="relative inline-flex size-11 items-center justify-center rounded-xl hover:bg-surface-alt" aria-label="Notifications" aria-expanded={showNotifications}
+                <div ref={notificationRef} className="relative">
+                  <button ref={notificationButtonRef} type="button" className="relative inline-flex size-11 items-center justify-center rounded-xl hover:bg-surface-alt" aria-label={unreadNotices?"Notifications: "+unreadNotices+" unread":"Notifications"} aria-expanded={showNotifications} aria-controls="portal-notice-preview"
                     onClick={()=>{setShowNotifications(v=>!v);setShowAccount(false);}}>
                     <Bell className="size-5" aria-hidden />
                   </button>
-                  {showNotifications && <div className="absolute right-0 top-[calc(100%+10px)] z-[65] w-[min(85vw,310px)] rounded-xl border border-line bg-white p-4 shadow-xl" role="region" aria-label="Notification preview">
-                    <p className="font-semibold">Notifications</p>
-                    <p className="mt-2 text-xs leading-5 text-muted-foreground">Notification events and real-time updates are scheduled for future parts. No live unread count is shown.</p>
+                  {showNotifications && <div id="portal-notice-preview" className="absolute right-0 top-[calc(100%+10px)] z-[65] w-[min(85vw,310px)] rounded-xl border border-line bg-white p-4 shadow-xl" role="region" aria-label="Notification preview">
+                    <p className="font-semibold">Demo notifications{unreadNotices?" · "+unreadNotices+" unread":""}</p>
+                    {myNotices.length?<ul className="mt-2 space-y-2">{myNotices.slice(0,3).map(n=><li key={n.id} className="rounded-lg bg-[#f4f8ff] p-2 text-xs"><strong className="block text-brand-navy">{n.title}</strong><span className="mt-1 block text-muted-foreground">{n.message}</span></li>)}</ul>
+                      :<p className="mt-2 text-xs leading-5 text-muted-foreground">No demo notifications for this account.</p>}
+                    <p className="mt-2 text-xs text-muted-foreground">Browser-local records only; no push or external messages.</p>
                     <Link href={notificationHref} onClick={()=>setShowNotifications(false)} className="mt-3 flex min-h-11 items-center gap-2 text-sm font-semibold text-brand-blue">Open notifications <ArrowRight className="size-4" aria-hidden/></Link>
                   </div>}
                 </div>
-                <div className="relative border-l border-line pl-2 sm:pl-3">
-                  <button type="button" aria-label="Open demo account menu" aria-expanded={showAccount}
+                <div ref={accountRef} className="relative border-l border-line pl-2 sm:pl-3">
+                  <button ref={accountButtonRef} type="button" aria-label="Open demo account menu" aria-controls="portal-account-panel" aria-expanded={showAccount}
                     onClick={()=>{setShowAccount(v=>!v);setShowNotifications(false);}}
                     className="flex min-h-11 items-center gap-2 rounded-xl px-1.5 hover:bg-surface-alt sm:gap-3">
                     <span className={cn("inline-flex size-9 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white",role==="admin"?"bg-brand-purple":"bg-brand-blue")}>{person.initials}</span>
                     <span className="hidden text-left sm:block"><span className="block text-xs font-semibold">{person.name}</span><span className="block text-[11px] text-muted-foreground">{person.subtitle}</span></span>
                     <ChevronDown className="size-4 text-muted-foreground" aria-hidden />
                   </button>
-                  {showAccount && <div className="absolute right-0 top-[calc(100%+10px)] z-[65] w-[min(84vw,250px)] rounded-xl border border-line bg-white p-2 shadow-xl" role="menu" aria-label="Demo account">
+                  {showAccount && <div id="portal-account-panel" className="absolute right-0 top-[calc(100%+10px)] z-[65] w-[min(84vw,250px)] rounded-xl border border-line bg-white p-2 shadow-xl" role="region" aria-label="Demo account options">
                     <p className="px-3 py-2 text-xs font-semibold text-muted-foreground">Demo portal selection</p>
-                    {(["admin","advertiser","driver"] as const).map(r=><Link key={r} role="menuitem" href={"/"+r} onClick={()=>setShowAccount(false)} className="flex min-h-10 items-center rounded-lg px-3 text-sm hover:bg-surface-alt">{portalNames[r]}{r===role?" ✓":""}</Link>)}
+                    {(["admin","advertiser","driver"] as const).map(r=><Link key={r} href={"/"+r} onClick={()=>setShowAccount(false)} className="flex min-h-10 items-center rounded-lg px-3 text-sm hover:bg-surface-alt">{portalNames[r]}{r===role?" ✓":""}</Link>)}
                     <div className="my-1 border-t border-line"/>
-                    <Link role="menuitem" href={accountHref} onClick={()=>setShowAccount(false)} className="flex min-h-10 items-center gap-2 rounded-lg px-3 text-sm hover:bg-surface-alt"><Settings className="size-4"/>Account settings</Link>
-                    <button type="button" role="menuitem" onClick={signOut} className="flex min-h-10 w-full items-center gap-2 rounded-lg px-3 text-left text-sm hover:bg-surface-alt"><LogOut className="size-4"/>Sign out of demo</button>
+                    <Link href={accountHref} onClick={()=>setShowAccount(false)} className="flex min-h-10 items-center gap-2 rounded-lg px-3 text-sm hover:bg-surface-alt"><Settings className="size-4"/>Account settings</Link>
+                    <button type="button" onClick={signOut} className="flex min-h-10 w-full items-center gap-2 rounded-lg px-3 text-left text-sm hover:bg-surface-alt"><LogOut className="size-4"/>Sign out of demo</button>
                   </div>}
                 </div>
               </div>
@@ -259,10 +307,10 @@ export function PortalShell({role,children}:{role:PortalRole;children:React.Reac
 
       {mobileOpen && (
         <div className="fixed inset-0 z-[90] lg:hidden">
-          <button type="button" className="absolute inset-0 h-full w-full bg-[#02152bc9]" aria-label="Close navigation overlay" onClick={()=>{setMobileOpen(false);menuButtonRef.current?.focus();}}/>
-          <div className="absolute inset-y-0 left-0 w-[min(84vw,300px)] shadow-2xl" role="dialog" aria-modal="true" aria-label="Mobile navigation">
+          <button type="button" className="absolute inset-0 h-full w-full bg-[#02152bc9]" aria-label="Close navigation overlay" onClick={()=>{setMobileOpen(false);window.requestAnimationFrame(()=>menuButtonRef.current?.focus());}}/>
+          <div ref={drawerRef} tabIndex={-1} className="absolute inset-y-0 left-0 w-[min(84vw,300px)] shadow-2xl" role="dialog" aria-modal="true" aria-label="Mobile navigation">
             <Sidebar role={role} collapsed={false} mobile onNavigate={()=>setMobileOpen(false)}/>
-            <button ref={drawerCloseRef} type="button" aria-label="Close menu" onClick={()=>{setMobileOpen(false);menuButtonRef.current?.focus();}}
+            <button ref={drawerCloseRef} type="button" aria-label="Close menu" onClick={()=>{setMobileOpen(false);window.requestAnimationFrame(()=>menuButtonRef.current?.focus());}}
               className="absolute right-3 top-4 flex size-10 items-center justify-center rounded-lg bg-white/10 text-white"><X className="size-5" aria-hidden/></button>
           </div>
         </div>

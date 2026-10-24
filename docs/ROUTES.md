@@ -141,3 +141,7 @@ All remaining Driver Portal menu routes now have intentional screens. Finance di
 ## Parts 18–21 Admin implementation
 
 Part 18 introduces sample KPI dashboard, advertiser campaign transitions and creative metadata reviews. Part 19 provides seeded driver checklist review, vehicle and simulated screen statuses plus location inventory. Part 20 adds validated fictional rate editing, guarded booking creation, payment ledger and explicitly non-financial settlement state changes. Part 21 completes advertiser/users reports, owner-linked ticket workflow, admin notifications, audit logs and settings reset. Every route uses fictional browser-local data; role guards are not production RBAC, audit logs are not immutable, and no Cashfree, document verification, device telemetry, helpdesk or payout rails are connected.
+
+## Part 22 integrated navigation accessibility
+
+The shared public, auth and three portal layouts include improved skip navigation, in-dialog mobile keyboard focus, unique search listbox IDs and route focus management. All sidebar destinations are checked against explicit pages by automated tests. Browser-based WCAG verification remains pending in Part 23; these are static and unit checks rather than real-device results. See docs/PART_22_QA.md.

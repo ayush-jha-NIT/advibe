@@ -191,3 +191,21 @@ button:not(:disabled) { cursor: pointer; }
     opacity: 1 !important;
   }
 }
+
+
+/* Part 22: predictable reflow and discernible controls at high zoom. */
+:where(main, section, article, form, fieldset, dialog) { min-width: 0; }
+:where(p, h1, h2, h3, h4, dd, dt) { overflow-wrap: break-word; }
+:where(input, select, textarea) { max-width: 100%; }
+@media (prefers-contrast: more) {
+  :root { --muted-foreground: #3b5074; --border: #99b0d0; }
+  :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline-width: 3px;
+    outline-offset: 3px;
+  }
+}
+@media (forced-colors: active) {
+  :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 2px solid Highlight;
+  }
+}

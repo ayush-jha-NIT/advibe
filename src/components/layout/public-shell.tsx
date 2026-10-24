@@ -14,7 +14,14 @@ export function PublicShell({children}:{children:React.ReactNode}) {
   const mobileClose=React.useRef<HTMLButtonElement>(null);
   const mobilePanel=React.useRef<HTMLDivElement>(null);
   const openButton=React.useRef<HTMLButtonElement>(null);
+  const previousPath=React.useRef(pathname);
 
+  React.useEffect(()=>{
+    if(previousPath.current===pathname)return;
+    previousPath.current=pathname;
+    const frame=window.requestAnimationFrame(()=>document.getElementById("public-main")?.focus());
+    return ()=>window.cancelAnimationFrame(frame);
+  },[pathname]);
   React.useEffect(()=>{
     if(!mobileOpen)return;
     const before=document.body.style.overflow;
@@ -24,7 +31,7 @@ export function PublicShell({children}:{children:React.ReactNode}) {
       if(e.key==="Escape"){
         e.preventDefault();
         setMobileOpen(false);
-        openButton.current?.focus();
+        window.requestAnimationFrame(()=>openButton.current?.focus());
         return;
       }
       if(e.key!=="Tab"||!mobilePanel.current)return;
@@ -73,7 +80,7 @@ export function PublicShell({children}:{children:React.ReactNode}) {
           <nav aria-label="Public website" className="hidden flex-1 items-center justify-center gap-0.5 xl:flex">{nav}</nav>
           <div className="hidden shrink-0 items-center gap-2 sm:flex">
             <Link href="/login" className="inline-flex min-h-11 items-center justify-center rounded-xl border border-[#9baccf] px-4 text-sm font-semibold text-white transition-colors hover:bg-white/10">Login</Link>
-            <Link href="/signup" className="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand-orange px-5 text-sm font-semibold text-white transition-colors hover:bg-[#e95d00]">Sign Up</Link>
+            <Link href="/signup" className="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand-orange px-5 text-sm font-semibold text-brand-navy transition-colors hover:bg-[#e95d00]">Sign Up</Link>
           </div>
           <button ref={openButton} type="button" aria-expanded={mobileOpen} aria-controls="advibe-public-navigation" aria-label="Open public navigation" onClick={()=>setMobileOpen(true)}
             className="inline-flex size-11 items-center justify-center rounded-xl border border-white/15 hover:bg-white/10 xl:hidden"><Menu className="size-6" aria-hidden/></button>
@@ -105,11 +112,11 @@ export function PublicShell({children}:{children:React.ReactNode}) {
       </footer>
 
       {mobileOpen&&<div className="fixed inset-0 z-[90] xl:hidden">
-        <button type="button" onClick={()=>{setMobileOpen(false);openButton.current?.focus();}} aria-label="Close navigation overlay" className="absolute inset-0 w-full bg-[#02152bcb]"/>
+        <button type="button" onClick={()=>{setMobileOpen(false);window.requestAnimationFrame(()=>openButton.current?.focus());}} aria-label="Close navigation overlay" className="absolute inset-0 w-full bg-[#02152bcb]"/>
         <div id="advibe-public-navigation" ref={mobilePanel} role="dialog" aria-modal="true" aria-label="Public navigation menu" className="absolute inset-y-0 right-0 flex w-[min(90vw,360px)] flex-col overflow-hidden bg-brand-navy text-white shadow-2xl">
           <div className="flex shrink-0 items-center justify-between border-b border-white/10 p-4">
             <BrandLogo className="w-[156px]" width={174}/>
-            <button ref={mobileClose} type="button" onClick={()=>{setMobileOpen(false);openButton.current?.focus();}} aria-label="Close menu"
+            <button ref={mobileClose} type="button" onClick={()=>{setMobileOpen(false);window.requestAnimationFrame(()=>openButton.current?.focus());}} aria-label="Close menu"
               className="flex size-11 items-center justify-center rounded-xl border border-white/15"><X className="size-6" aria-hidden/></button>
           </div>
           <nav aria-label="Mobile public pages" className="flex-1 overflow-y-auto px-3 py-4">
@@ -127,7 +134,7 @@ export function PublicShell({children}:{children:React.ReactNode}) {
           </nav>
           <div className="grid shrink-0 grid-cols-2 gap-3 border-t border-white/10 p-4">
             <Link href="/login" onClick={()=>setMobileOpen(false)} className="flex min-h-11 items-center justify-center rounded-xl border border-white/30 text-sm font-semibold">Login</Link>
-            <Link href="/signup" onClick={()=>setMobileOpen(false)} className="flex min-h-11 items-center justify-center rounded-xl bg-brand-orange text-sm font-semibold">Sign Up</Link>
+            <Link href="/signup" onClick={()=>setMobileOpen(false)} className="flex min-h-11 items-center justify-center rounded-xl bg-brand-orange text-sm font-semibold text-brand-navy">Sign Up</Link>
           </div>
         </div>
       </div>}

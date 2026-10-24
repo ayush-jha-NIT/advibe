@@ -5,7 +5,7 @@ import {HeroScene} from "@/components/landing/hero-scene";
 import {FormatPreviewArt} from "@/components/landing/format-preview-art";
 import type {Placement} from "@/types/domain";
 
-export const primaryButton="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[#ff6a00] px-6 py-3 text-sm font-bold text-white shadow-[0_8px_22px_#ff6a0033] transition hover:bg-[#e95e00] focus-visible:outline-offset-4";
+export const primaryButton="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[#ff6a00] px-6 py-3 text-sm font-bold text-[#041b3d] shadow-[0_8px_22px_#ff6a0033] transition hover:bg-[#e95e00] focus-visible:outline-offset-4";
 export const secondaryButton="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-[#aac7f2] bg-white/90 px-6 py-3 text-sm font-bold text-[#075bea] transition hover:bg-[#e8f1ff]";
 export const formatCards:{title:string;type:Placement;description:string;spec:string;best:string;icon:LucideIcon}[]=[
  {title:"Bike Mounted LED Screens",type:"bike_rear",description:"Compact digital placements built for mobile visibility.",spec:"10–12 inch design example",best:"Local offers and awareness",icon:Megaphone},
