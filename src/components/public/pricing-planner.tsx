@@ -5,7 +5,8 @@ import {ArrowRight, Calculator, CheckCircle2, IndianRupee, Info, Monitor, Shield
 import {FormatPreviewArt} from "@/components/landing/format-preview-art";
 import {formatCards,InfoNote,primaryButton} from "./marketing-blocks";
 
-const base:Record<"bike_rear"|"auto_rear"|"car_interior"|"helmet",number>={bike_rear:150,auto_rear:200,car_interior:300,helmet:100};
+const base:Record<"bike_rear"|"auto_rear"|"auto_side"|"car_rear"|"car_interior"|"helmet",number>={bike_rear:150,auto_rear:200,auto_side:220,car_rear:300,car_interior:300,helmet:100};
+const pricingOptions=[...formatCards,{...formatCards[1],type:"auto_side" as const,title:"Auto Side Screen"},{...formatCards[2],type:"car_rear" as const,title:"Car Rear Screen"}];
 type Choice=keyof typeof base;
 const INR=(n:number)=>new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:0}).format(n);
 export function PricingPlanner(){
@@ -23,7 +24,7 @@ export function PricingPlanner(){
   });
   return ()=>window.cancelAnimationFrame(frame);
  },[]);
- const format=formatCards.find(x=>x.type===choice)??formatCards[0];
+ const format=pricingOptions.find(x=>x.type===choice)??formatCards[0];
  const daily=Math.round(base[choice]*(seconds/10)*(plays/100));
  const subtotal=daily*screens*days;
  const tax=Math.round(subtotal*.18);
@@ -49,7 +50,7 @@ export function PricingPlanner(){
     <div className="flex items-center gap-2"><Calculator className="size-6 text-brand-blue" aria-hidden/><h2 className="text-xl font-extrabold text-brand-navy">Campaign Cost Calculator</h2></div>
     <p className="mt-2 text-sm text-muted-foreground">Change quantities and frequency to explore sample cost scenarios.</p>
     <div className="mt-5 grid gap-4 sm:grid-cols-2">
-     <label className="grid gap-2 text-sm font-semibold text-brand-navy">Advertising format<select value={choice} onChange={e=>setChoice(e.target.value as Choice)} className="min-h-11 rounded-lg border border-[#cbdaf2] bg-white px-3">{formatCards.map(f=><option key={f.type} value={f.type}>{f.title}</option>)}</select></label>
+     <label className="grid gap-2 text-sm font-semibold text-brand-navy">Advertising format<select value={choice} onChange={e=>setChoice(e.target.value as Choice)} className="min-h-11 rounded-lg border border-[#cbdaf2] bg-white px-3">{pricingOptions.map(f=><option key={f.type} value={f.type}>{f.title}</option>)}</select></label>
      <label className="grid gap-2 text-sm font-semibold text-brand-navy">City<select value={city} onChange={e=>setCity(e.target.value)} className="min-h-11 rounded-lg border border-[#cbdaf2] bg-white px-3"><option>Prayagraj</option><option>Lucknow</option><option>Delhi</option><option>Mumbai</option><option>Bengaluru</option></select></label>
      <label className="grid gap-2 text-sm font-semibold text-brand-navy">Number of screens <output className="font-bold text-brand-blue">{screens}</output><input type="range" min="1" max="50" step="1" value={screens} onChange={e=>setScreens(Number(e.target.value))} className="w-full accent-[#0866ff]"/></label>
      <label className="grid gap-2 text-sm font-semibold text-brand-navy">Campaign duration <output className="font-bold text-brand-blue">{days} days</output><input type="range" min="1" max="90" value={days} onChange={e=>setDays(Number(e.target.value))} className="w-full accent-[#0866ff]"/></label>
