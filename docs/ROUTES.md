@@ -53,7 +53,7 @@ Review and monitoring detail URLs will be introduced with the respective admin m
 
 Root: /advertiser. Paths:
 - /advertiser (Part 7 interactive dashboard)
-- /advertiser/create-campaign (Part 8 six-step responsive demo wizard)
+- /advertiser/create-campaign (Part 8 wizard, refined in Part 9 for media, targeting, scheduling and phones)
 - /advertiser/campaigns (Part 7 responsive filterable listing)
 - /advertiser/ad-formats
 - /advertiser/locations

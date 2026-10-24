@@ -4,7 +4,7 @@ Responsive four-portal frontend for AdVibe: Public Website, Advertiser Portal, D
 
 ## Status
 
-**Parts 0–8 complete:** Official approved logo; role-aware UI component library; responsive public navbar/footer; admin, advertiser and driver navigation shells; live route switching, mobile drawer and navigation search.
+**Parts 0–9 complete:** Official approved logo; role-aware UI component library; responsive public navbar/footer; admin, advertiser and driver navigation shells; live route switching, mobile drawer and navigation search.
 
 **Part 3 adds:** typed fictional data for accounts, campaigns, creatives, screens, vehicles, locations, bookings, payments and settlements; owner-aware selectors; persisted Zustand store; pricing and availability validations; and cross-portal interactive dashboard previews.
 
@@ -18,7 +18,9 @@ Responsive four-portal frontend for AdVibe: Public Website, Advertiser Portal, D
 
 **Part 8 adds:** Six-step advertiser campaign wizard, local creative preview, provisional location/screen selection, date and weekday schedule checks, integer-paise price and 18% illustrative GST, persistent local draft/resume, and submit-for-Admin-review only. No Cashfree checkout, file transfer or screen reservation occurs.
 
-**Not implemented:** Real login/authorization, OTP, campaign wizard, Cashfree payments, actual payouts, KYC or device telemetry. Module routes remain labeled placeholders. Demo role switching is not security; no real personal or payment data should be stored here.
+**Part 9 adds:** Browser-only image/video file header and metadata checks, city/zone/ID targeting filters, bulk screen selection with stale inventory warnings, weekday presets and delivery-day feedback, future-date safeguards, and compact mobile wizard step controls.
+
+**Not implemented:** Real backend login/authorization, live OTP, production creative uploads and moderation, Cashfree payments, actual payouts, KYC or device telemetry. Many operational module routes remain placeholders. Demo role switching is not security; no real personal or payment data should be stored here.
 
 ## Stack
 
@@ -44,6 +46,7 @@ Open http://localhost:3000.
 - /for-advertisers, /for-drivers, /ad-formats, /locations, /pricing, /about, /contact, /help-center : Part 5 public pages
 - /design-system : Part 1 component showcase
 - /advertiser/campaigns : Part 7 campaign directory
+- /advertiser/create-campaign : Part 8 six-step wizard refined in Part 9
 - /admin : Admin shell
 - /advertiser : Advertiser shell
 - /driver : Driver Partner shell
@@ -78,3 +81,5 @@ The supplied megaphone artwork is the sole approved AdVibe logo. Cashfree requir
 - [Part 7 advertiser UI and data boundaries](docs/ADVERTISER_PART_7.md)
 
 - [Part 8 six-step advertiser wizard and data safety](docs/ADVERTISER_PART_8.md)
+
+- [Part 9 wizard reliability and mobile UX](docs/ADVERTISER_PART_9.md)

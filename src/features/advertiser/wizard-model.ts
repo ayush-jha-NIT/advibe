@@ -30,6 +30,11 @@ const basics=z.object({
  objective:z.enum(["awareness","offer","visits","event"]),
 });
 const hhmm=/^(?:[01]\d|2[0-3]):[0-5]\d$/;
+/** YYYY-MM-DD in the device's local time zone, avoiding UTC midnight date rollover. */
+export function localToday(date:Date):string{
+ const pad=(n:number)=>String(n).padStart(2,"0");
+ return date.getFullYear()+"-"+pad(date.getMonth()+1)+"-"+pad(date.getDate());
+}
 export function wizardQuote(d:WizardDraft,db:DemoDatabase):Quote{
  if(!d.selectedScreenIds.length)throw Error("Choose at least one screen");
  if(!d.startDate||!d.endDate)throw Error("Choose campaign dates");
@@ -57,7 +62,7 @@ export function suggestedScreens(db:DemoDatabase,d:WizardDraft){
  }
  return candidates.filter(s=>s.placement===d.placement);
 }
-export function validateWizardStep(step:number,d:WizardDraft,db:DemoDatabase,owner:string):void{
+export function validateWizardStep(step:number,d:WizardDraft,db:DemoDatabase,owner:string,today?:string):void{
  if(step===1){
   const result=basics.safeParse(d);
   if(!result.success)throw Error(result.error.issues[0]?.message??"Check campaign details");
@@ -68,21 +73,25 @@ export function validateWizardStep(step:number,d:WizardDraft,db:DemoDatabase,own
   if(d.creativeMode==="existing"){
    const creative=db.creatives.find(c=>c.id===d.creativeId&&c.advertiserId===owner&&c.placement===d.placement);
    if(!creative)throw Error("Choose your own compatible creative");
-  }else if(!d.creativeTitle.trim()||d.creativeTitle.trim().length>100){
-   throw Error("Enter a preview creative title up to 100 characters");
+  }else{
+   if(!d.creativeTitle.trim()||d.creativeTitle.trim().length>100)
+    throw Error("Enter a preview creative title up to 100 characters");
+   if(!["image","video","gif"].includes(d.creativeFormat))
+    throw Error("Select a supported preview creative type");
   }
  }
  if(step===4){
   if(!d.selectedScreenIds.length)throw Error("Choose at least one eligible demo screen");
   if(new Set(d.selectedScreenIds).size!==d.selectedScreenIds.length)throw Error("Duplicate screen selection");
+  const eligible=new Set(suggestedScreens(db,d).map(s=>s.id));
   for(const id of d.selectedScreenIds){
-   const screen=db.screens.find(s=>s.id===id);
-   if(!screen||screen.placement!==d.placement)throw Error("Selected screen does not match the placement");
+   if(!eligible.has(id))throw Error("One or more planned screens are offline, unverified, booked, or incompatible. Update Locations.");
   }
  }
  if(step===5){
   if(!d.startDate||!d.endDate)throw Error("Select start and end dates");
   inclusiveDays(d.startDate,d.endDate);
+  if(today&&d.startDate<today)throw Error("Start date cannot be earlier than today");
   countScheduledDays(d.startDate,d.endDate,d.weekdays);
   if(!hhmm.test(d.startTime)||!hhmm.test(d.endTime)||d.startTime>=d.endTime)
    throw Error("Choose a valid daily time range with end after start");
@@ -102,7 +111,7 @@ export function validateWizardStep(step:number,d:WizardDraft,db:DemoDatabase,own
   if(!d.agreed)throw Error("Confirm that this is a demo estimate and submission");
  }
 }
-export function validateWizardAll(d:WizardDraft,db:DemoDatabase,owner:string){
- for(let step=1;step<=6;step++)validateWizardStep(step,d,db,owner);
+export function validateWizardAll(d:WizardDraft,db:DemoDatabase,owner:string,today?:string){
+ for(let step=1;step<=6;step++)validateWizardStep(step,d,db,owner,today);
  return wizardQuote(d,db);
 }

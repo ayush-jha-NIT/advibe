@@ -7,7 +7,7 @@ import {Button,Card,CardContent,CardHeader,CardTitle} from "@/components/ui";
 import {useDemoStore} from "@/services/demo-store";
 import {useWizardStore} from "@/services/wizard-store";
 import {useAdvertiserData} from "./shared";
-import {defaultWizardDraft,validateWizardStep,type WizardDraft} from "./wizard-model";
+import {defaultWizardDraft,localToday,validateWizardStep,type WizardDraft} from "./wizard-model";
 import {StepBasics,StepCreative,StepFormats,StepLocations,StepReview,StepSchedule} from "./wizard-steps";
 const headings=[
  {title:"Campaign Details",description:"Tell us about your business, objective and campaign."},
@@ -23,6 +23,12 @@ export function CampaignWizard(){
  const {db,accountId,hydrated}=useAdvertiserData();
  const [wizardReady,setWizardReady]=React.useState(false);
  const [feedback,setFeedback]=React.useState(""),[error,setError]=React.useState("");
+ const errorRef=React.useRef<HTMLParagraphElement>(null);
+ React.useEffect(()=>{
+  if(!error)return;
+  const frame=window.requestAnimationFrame(()=>errorRef.current?.focus());
+  return ()=>window.cancelAnimationFrame(frame);
+ },[error]);
  const [upload,setUpload]=React.useState<File|null>(null);
  const [saving,setSaving]=React.useState(false);
  const draft=useWizardStore(s=>s.drafts[accountId]??defaultWizardDraft);
@@ -68,10 +74,10 @@ export function CampaignWizard(){
  function go(number:number){
   setError("");setFeedback("");
   router.replace("/advertiser/create-campaign?step="+number,{scroll:false});
-  window.scrollTo({top:0,behavior:"smooth"});
+  window.scrollTo({top:0,behavior:window.matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});
  }
  function next(){
-  try{validateWizardStep(step,draft,db,accountId);go(Math.min(6,step+1));}
+  try{validateWizardStep(step,draft,db,accountId,localToday(new Date()));go(Math.min(6,step+1));}
   catch(e){setError(e instanceof Error?e.message:"Please complete this step");}
  }
  function save(){
@@ -106,7 +112,14 @@ export function CampaignWizard(){
   </div>
   {accountId==="not-provisioned"&&<div className="rounded-xl border border-[#f3ddaf] bg-[#fff8e9] px-4 py-3 text-sm text-[#855627]" role="note">This newly registered frontend identity is not a provisioned database account. You can explore the wizard, but saving and submission require the preset Advertiser demo login.</div>}
   <div className="rounded-xl border border-[#d5e4f7] bg-[#eff6ff] px-4 py-3 text-xs leading-6 text-[#476488]"><ShieldAlert className="mr-1 inline size-4 align-text-bottom text-brand-blue"/>Fictional inventory and illustrative rupee rates. Creative files stay on your device. Cashfree orders, real bookings and approvals require backend integrations.</div>
-  <nav aria-label="Campaign creation steps" className="overflow-x-auto rounded-2xl border border-[#deebfa] bg-white p-3 sm:p-4" tabIndex={0}>
+  <div className="rounded-2xl border border-[#deebfa] bg-white p-3 sm:hidden">
+   <div className="mb-3 flex items-center justify-between gap-2 text-xs font-bold text-brand-navy"><span>Step {step} of 6</span><span>{Math.round(step/6*100)}% of wizard</span></div>
+   <div role="progressbar" aria-label="Wizard step progress" aria-valuenow={step} aria-valuemin={1} aria-valuemax={6} className="mb-3 h-2 overflow-hidden rounded-full bg-[#e3ebf9]"><div className="h-full rounded-full bg-brand-blue transition-[width]" style={{width:Math.round(step/6*100)+"%"}}/></div>
+   <label className="block text-xs font-semibold text-[#466285]">Go to available step<select aria-label="Jump to available step" className="mt-1 min-h-11 w-full rounded-lg border border-[#cbdcf1] bg-white px-3 text-sm text-brand-navy" value={step} onChange={e=>go(Number(e.target.value))}>
+    {headings.map((h,i)=><option key={h.title} value={i+1} disabled={i+1>unlocked}>{i+1}. {h.title}{i+1>unlocked?" · Locked":""}</option>)}
+   </select></label>
+  </div>
+  <nav aria-label="Campaign creation steps" className="hidden overflow-x-auto rounded-2xl border border-[#deebfa] bg-white p-3 sm:block sm:p-4" tabIndex={0}>
    <ol className="flex min-w-[680px] items-start justify-between gap-1">{headings.map((item,i)=>{
     const number=i+1,active=number===step,done=number<step,available=number<=unlocked;
     return <li key={item.title} className="min-w-0 flex-1"><button type="button" disabled={!available} aria-current={active?"step":undefined}
@@ -126,11 +139,11 @@ export function CampaignWizard(){
      {step===4&&<StepLocations {...shared}/>}
      {step===5&&<StepSchedule draft={draft} patch={patch}/>}
      {step===6&&<StepReview {...shared}/>}
-     {error&&<p role="alert" className="rounded-xl border border-[#ffc9c9] bg-[#fff0f2] p-3 text-sm text-[#b3263e]">{error}</p>}
+     {error&&<p role="alert" ref={errorRef} tabIndex={-1} className="rounded-xl border border-[#ffc9c9] bg-[#fff0f2] p-3 text-sm text-[#b3263e] outline-none focus:ring-2 focus:ring-[#ec6b77]">{error}</p>}
      {feedback&&<p role="status" className="rounded-xl border border-[#bde0ce] bg-[#f0faf5] p-3 text-sm text-[#196940]">{feedback}</p>}
-     <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#e3ebf8] pt-5">
+     <div className="sticky bottom-0 z-20 -mx-4 flex flex-wrap items-center justify-between gap-3 border-t border-[#e3ebf8] bg-white/95 px-4 py-3 shadow-[0_-8px_25px_#031a3910] backdrop-blur-sm sm:static sm:mx-0 sm:bg-transparent sm:px-0 sm:pb-0 sm:pt-5 sm:shadow-none">
       <div className="flex flex-wrap gap-2"><Button type="button" variant="outline" onClick={save} disabled={saving||!draftEditable}><Save className="size-4"/>Save draft</Button>
-       <button type="button" onClick={()=>{useWizardStore.getState().clear(accountId);setUpload(null);setError("");setFeedback("Form cleared. Existing saved campaign records are unchanged.");go(1);}} className="inline-flex min-h-11 items-center gap-1.5 px-2 text-sm font-semibold text-[#6b7c98] hover:text-brand-navy"><Trash2 className="size-4"/>Reset form</button></div>
+       <button type="button" onClick={()=>{if(!window.confirm("Clear unsaved wizard fields? Already saved campaign records will remain unchanged."))return;useWizardStore.getState().clear(accountId);setUpload(null);setError("");setFeedback("Form cleared. Existing saved campaign records are unchanged.");go(1);}} className="inline-flex min-h-11 items-center gap-1.5 px-2 text-sm font-semibold text-[#6b7c98] hover:text-brand-navy"><Trash2 className="size-4"/>Reset form</button></div>
       <div className="flex flex-wrap gap-2">{step>1&&<Button variant="outline" type="button" onClick={()=>go(step-1)}><ChevronLeft className="size-4"/>Back</Button>}
        {step<6?<Button type="button" onClick={next}>Continue <ChevronRight className="size-4"/></Button>:<Button type="button" onClick={submit} disabled={saving||!draftEditable||!draft.agreed}><FileCheck2 className="size-4"/>Submit for Review <ArrowRight className="size-4"/></Button>}</div>
      </div>

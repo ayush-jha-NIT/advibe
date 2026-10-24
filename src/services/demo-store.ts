@@ -5,7 +5,7 @@ import {createJSONStorage,persist} from "zustand/middleware";
 import {createDemoSeed,DEMO_ACTORS} from "../data/demo-seed";
 import {assertCampaignTransition,assertDriverApproval,canGoLive,canPerform,validateBooking,inclusiveDays} from "../lib/demo-rules";
 import type {Actor,Campaign,CampaignStatus,DemoDatabase,Screen,Creative} from "../types/domain";
-import {validateWizardAll,wizardQuote,type WizardDraft} from "../features/advertiser/wizard-model";
+import {validateWizardAll,wizardQuote,localToday,type WizardDraft} from "../features/advertiser/wizard-model";
 
 export type DemoStore={
  db:DemoDatabase;
@@ -45,7 +45,7 @@ function upsertWizard(db:DemoDatabase,actor:Actor,draft:WizardDraft,submit:boole
  if(prior&&(prior.advertiserId!==actor.accountId||!["draft","changes_requested"].includes(prior.status)))
   throw Error("Only your editable draft or changes-requested campaign can be updated");
  let quote:number|undefined;
- if(submit)quote=validateWizardAll(draft,db,actor.accountId).totalPaise;
+ if(submit)quote=validateWizardAll(draft,db,actor.accountId,localToday(new Date())).totalPaise;
  else{
   try{quote=wizardQuote(draft,db).totalPaise;}
   catch{quote=undefined;}

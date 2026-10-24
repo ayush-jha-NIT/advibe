@@ -4,7 +4,10 @@ import Image from "next/image";
 import {Check,ImageIcon,MapPin,MonitorPlay,UploadCloud,Video} from "lucide-react";
 import {Card,CardContent,CardHeader,CardTitle} from "@/components/ui";
 import type {DemoDatabase,Placement} from "@/types/domain";
-import {moneyINR} from "@/lib/demo-rules";
+import {countScheduledDays,inclusiveDays,moneyINR} from "@/lib/demo-rules";
+import {inspectLocalPreview} from "./preview-inspection";
+import {fileSizeLabel} from "./creative-guards";
+import {filterTargetScreens,staleScreenIds,addUniqueScreens} from "./targeting-helpers";
 import {placementLabels,placements,suggestedScreens,weekdays,wizardQuote,type WizardDraft} from "./wizard-model";
 import type {Quote} from "@/lib/demo-rules";
 
@@ -49,93 +52,166 @@ export function StepFormats({draft,patch,db}:Props){
 export function StepCreative({draft,patch,db,owner,upload,onUpload}:{draft:WizardDraft;patch:(p:Partial<WizardDraft>)=>void;db:DemoDatabase;owner:string;upload:File|null;onUpload:(file:File|null)=>void;}){
  const files=db.creatives.filter(c=>c.advertiserId===owner&&c.placement===draft.placement);
  const [uploadError,setUploadError]=React.useState("");
+ const [inspection,setInspection]=React.useState("");
+ const [busy,setBusy]=React.useState(false);
  const [url,setUrl]=React.useState<string|null>(null);
+ const currentPick=React.useRef(0);
  React.useEffect(()=>{
   if(!upload)return;
   const object=URL.createObjectURL(upload);
-  const frame=requestAnimationFrame(()=>setUrl(object));
-  return ()=>{cancelAnimationFrame(frame);URL.revokeObjectURL(object);};
+  const frame=window.requestAnimationFrame(()=>setUrl(object));
+  return ()=>{window.cancelAnimationFrame(frame);URL.revokeObjectURL(object);};
  },[upload]);
- function select(file:File|null){
-  setUploadError("");
-  if(!file){onUpload(null);setUrl(null);return;}
-  if(!["image/png","image/jpeg","image/gif","video/mp4"].includes(file.type)){setUploadError("Choose PNG, JPG, GIF or MP4");return;}
-  if(file.size>10*1024*1024){setUploadError("Use a file no larger than 10 MB for the local preview");return;}
-  onUpload(file);
-  const format=file.type==="video/mp4"?"video":file.type==="image/gif"?"gif":"image";
-  patch({creativeMode:"preview",creativeId:"",creativeTitle:"New "+(format==="video"?"video":format==="gif"?"GIF":"image")+" creative",creativeFormat:format,agreed:false});
+ async function select(file:File|null){
+  const pick=++currentPick.current;
+  setUploadError("");setInspection("");onUpload(null);setUrl(null);
+  if(!file)return;
+  setBusy(true);
+  try{
+   const {kind,measurements}=await inspectLocalPreview(file);
+   if(pick!==currentPick.current)return;
+   onUpload(file);
+   patch({creativeMode:"preview",creativeId:"",creativeTitle:draft.creativeTitle.trim()||"New "+kind+" creative",creativeFormat:kind,agreed:false});
+   setInspection(fileSizeLabel(file.size)+" · "+measurements.width+"×"+measurements.height+" px"+
+    (kind==="video"?" · "+Math.round(measurements.durationSeconds??0)+"s":"")+" · checked locally");
+  }catch(e){
+   if(pick===currentPick.current)setUploadError(e instanceof Error?e.message:"Unable to read the selected media.");
+  }finally{
+   if(pick===currentPick.current)setBusy(false);
+  }
+ }
+ function mode(value:"existing"|"preview"){
+  ++currentPick.current;
+  setBusy(false);onUpload(null);setUrl(null);setInspection("");setUploadError("");
+  patch({creativeMode:value,creativeId:"",creativeTitle:value==="existing"?"":draft.creativeTitle,agreed:false});
  }
  return <div className="space-y-4">
   <div className="grid gap-3 sm:grid-cols-2">
-   <button type="button" aria-pressed={draft.creativeMode==="existing"} onClick={()=>patch({creativeMode:"existing",creativeTitle:"",agreed:false})}
+   <button type="button" aria-pressed={draft.creativeMode==="existing"} onClick={()=>mode("existing")}
     className={"min-h-14 rounded-xl border px-4 text-left text-sm font-semibold "+(draft.creativeMode==="existing"?"border-brand-blue bg-[#edf5ff] text-brand-blue":"border-[#dbe6f5] bg-white")}>Choose saved creative</button>
-   <button type="button" aria-pressed={draft.creativeMode==="preview"} onClick={()=>patch({creativeMode:"preview",creativeId:"",agreed:false})}
+   <button type="button" aria-pressed={draft.creativeMode==="preview"} onClick={()=>mode("preview")}
     className={"min-h-14 rounded-xl border px-4 text-left text-sm font-semibold "+(draft.creativeMode==="preview"?"border-brand-blue bg-[#edf5ff] text-brand-blue":"border-[#dbe6f5] bg-white")}>Preview a new creative</button>
   </div>
   {draft.creativeMode==="existing"?<div className="space-y-3">
-    {files.length?files.map(file=><label key={file.id} className={"flex min-h-16 cursor-pointer items-center gap-3 rounded-xl border p-3 "+(draft.creativeId===file.id?"border-brand-blue bg-[#f2f7ff]":"border-[#dce7f8]")}>
-     <input type="radio" name="creative-id" checked={draft.creativeId===file.id} onChange={()=>patch({creativeId:file.id,agreed:false})} className="size-4 accent-[#0866ff]"/>
-     <span className="grid size-10 place-items-center rounded-lg bg-[#e7f0ff] text-brand-blue">{file.format==="video"?<Video className="size-5"/>:<ImageIcon className="size-5"/>}</span>
-     <span className="min-w-0 flex-1"><strong className="block break-words text-sm text-brand-navy">{file.title}</strong><span className="mt-1 block text-xs text-muted-foreground">{file.format.toUpperCase()} · Creative {file.approval.replaceAll("_"," ")}</span></span>
-    </label>):<div className="rounded-xl border border-dashed border-[#c9d9ef] p-5 text-sm text-muted-foreground">No saved creative matches this placement. Use the preview option to create a pending metadata record.</div>}
-    <FieldHelp>The saved demo library has metadata only, not downloadable media files. An unapproved creative can be submitted for review, but cannot launch until approved.</FieldHelp>
+   {files.length?files.map(file=><label key={file.id} className={"flex min-h-16 cursor-pointer items-center gap-3 rounded-xl border p-3 "+(draft.creativeId===file.id?"border-brand-blue bg-[#f2f7ff]":"border-[#dce7f8]")}>
+    <input type="radio" name="creative-id" checked={draft.creativeId===file.id} onChange={()=>patch({creativeId:file.id,agreed:false})} className="size-4 accent-[#0866ff]"/>
+    <span className="grid size-10 place-items-center rounded-lg bg-[#e7f0ff] text-brand-blue">{file.format==="video"?<Video className="size-5"/>:<ImageIcon className="size-5"/>}</span>
+    <span className="min-w-0 flex-1"><strong className="block break-words text-sm text-brand-navy">{file.title}</strong><span className="mt-1 block text-xs text-muted-foreground">{file.format.toUpperCase()} · Creative {file.approval.replaceAll("_"," ")}</span></span>
+   </label>):<p className="rounded-xl border border-dashed border-[#c9d9ef] p-5 text-sm text-muted-foreground">No saved creative matches this placement. Preview a new file or enter metadata for a future upload.</p>}
+   <FieldHelp>Existing demo creatives contain metadata only. Approval is still required before real advertising.</FieldHelp>
   </div>:<div className="space-y-4">
-    <label className="flex min-h-36 cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#a8c8f5] bg-[#f7faff] p-5 text-center hover:bg-[#eef6ff]">
-     <UploadCloud className="size-8 text-brand-blue"/><strong className="text-sm text-brand-navy">Choose a local file to preview</strong>
-     <span className="text-xs text-muted-foreground">PNG, JPG, GIF or MP4 · Max 10 MB · Never uploaded</span>
-     <input type="file" accept="image/png,image/jpeg,image/gif,video/mp4" className="sr-only" onChange={e=>select(e.target.files?.[0]??null)}/>
-    </label>
-    {uploadError&&<p role="alert" className="text-sm text-[#bf2b41]">{uploadError}</p>}
-    <label><span className={field}>Creative title *</span><input className={input} maxLength={100} value={draft.creativeTitle} onChange={e=>patch({creativeTitle:e.target.value})} placeholder="e.g. Festival campaign visual"/></label>
-    <label><span className={field}>Creative type</span><select className={input} value={draft.creativeFormat} onChange={e=>patch({creativeFormat:e.target.value as WizardDraft["creativeFormat"]})}><option value="image">Image</option><option value="video">Video</option><option value="gif">GIF</option></select></label>
-    {url&&upload&&(upload.type==="video/mp4"?<video className="max-h-60 w-full rounded-xl bg-black object-contain" controls src={url}/>:<Image src={url} width={660} height={380} unoptimized alt="Locally selected creative preview" className="max-h-60 w-full rounded-xl bg-[#eaf2fb] object-contain"/>)}
-    <p className="rounded-xl bg-[#fff5e9] p-3 text-xs leading-6 text-[#835521]">Only creative title/type metadata is persisted for this demonstration. The media file is not uploaded or stored; after refreshing, the preview will disappear. Production upload and content checks are required before deployment.</p>
+   <label className={"flex min-h-36 cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed p-5 text-center "+(busy?"border-[#a9bfdc] bg-[#f3f7fc]":"border-[#a8c8f5] bg-[#f7faff] hover:bg-[#eef6ff]")}>
+    <UploadCloud className="size-8 text-brand-blue"/><strong className="text-sm text-brand-navy">{busy?"Inspecting selected media…":"Choose a local file to preview"}</strong>
+    <span className="text-xs leading-5 text-muted-foreground">PNG, JPG, GIF or MP4 · Up to 10 MB · Dimensions 320–4096 px · MP4 1–60 seconds</span>
+    <input type="file" accept=".png,.jpg,.jpeg,.gif,.mp4,image/png,image/jpeg,image/gif,video/mp4" disabled={busy}
+     className="sr-only" onChange={e=>{const f=e.currentTarget.files?.[0]??null;e.currentTarget.value="";void select(f);}}/>
+   </label>
+   {uploadError&&<p role="alert" className="rounded-lg border border-[#ffc2c9] bg-[#fff2f4] p-3 text-sm text-[#b52440]">{uploadError}</p>}
+   {upload&&<div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-[#eef9f4] p-3 text-xs text-[#206748]"><span className="min-w-0 break-words font-semibold">{inspection||"Selected file ready for local preview"}</span><button type="button" className="min-h-10 rounded-lg border border-[#9ecdb5] px-3 font-semibold" onClick={()=>void select(null)}>Remove file</button></div>}
+   <label><span className={field}>Creative title *</span><input className={input} maxLength={100} value={draft.creativeTitle} onChange={e=>patch({creativeTitle:e.target.value,agreed:false})} placeholder="e.g. Festival campaign visual"/></label>
+   <label><span className={field}>Creative type</span><select className={input} disabled={!!upload} value={draft.creativeFormat} onChange={e=>patch({creativeFormat:e.target.value as WizardDraft["creativeFormat"],agreed:false})}><option value="image">Image</option><option value="video">Video</option><option value="gif">GIF</option></select></label>
+   {url&&upload&&(upload.type==="video/mp4"?<video className="max-h-60 w-full rounded-xl bg-black object-contain" controls preload="metadata" src={url}/>:<Image src={url} width={660} height={380} unoptimized alt="Locally selected creative preview" className="max-h-60 w-full rounded-xl bg-[#eaf2fb] object-contain"/>)}
+   <p className="rounded-xl bg-[#fff5e9] p-3 text-xs leading-6 text-[#835521]">File checks run locally for preview only. No media is uploaded or saved. After a refresh, only the creative title/type remains. You may submit metadata for review, but actual display requires a later approved production upload and server verification.</p>
   </div>}
  </div>;
 }
 export function StepLocations({draft,patch,db}:Props){
  const [city,setCity]=React.useState("All cities");
+ const [zone,setZone]=React.useState("All zones");
+ const [query,setQuery]=React.useState("");
  const [view,setView]=React.useState<"list"|"map">("list");
  const eligible=suggestedScreens(db,draft);
  const cities=["All cities",...new Set(eligible.map(s=>db.locations.find(l=>l.id===s.locationId)?.city).filter((x):x is string=>!!x))];
- const visible=eligible.filter(s=>city==="All cities"||db.locations.find(l=>l.id===s.locationId)?.city===city);
- function toggle(id:string){patch({selectedScreenIds:draft.selectedScreenIds.includes(id)?draft.selectedScreenIds.filter(v=>v!==id):[...draft.selectedScreenIds,id],agreed:false});}
+ const zones=["All zones",...new Set(eligible.map(s=>db.locations.find(l=>l.id===s.locationId)).filter(loc=>loc&&(city==="All cities"||loc.city===city)).map(loc=>loc!.zone))];
+ const visible=filterTargetScreens(eligible,db.locations,{city,zone,query});
+ const stale=staleScreenIds(draft.selectedScreenIds,eligible);
+ const checked=new Set(draft.selectedScreenIds);
+ function update(selectedScreenIds:string[]){patch({selectedScreenIds,agreed:false});}
+ function toggle(id:string){update(checked.has(id)?draft.selectedScreenIds.filter(x=>x!==id):addUniqueScreens(draft.selectedScreenIds,[id]));}
+ function selectVisible(){update(addUniqueScreens(draft.selectedScreenIds,visible.map(s=>s.id)));}
+ function removeStale(){update(draft.selectedScreenIds.filter(id=>!stale.includes(id)));}
  return <div className="space-y-4">
-  <div className="flex flex-wrap items-center justify-between gap-3"><p className="text-sm text-muted-foreground">Choose provisional screens for your placement. Dates are validated in Step 5.</p><span className="rounded-lg bg-[#eaf2ff] px-3 py-2 text-xs font-bold text-brand-blue">{draft.selectedScreenIds.length} selected</span></div>
-  <div className="flex flex-wrap items-end justify-between gap-3"><label className="min-w-[170px] flex-1 sm:max-w-64"><span className={field}>City</span><select className={input} value={city} onChange={e=>setCity(e.target.value)}>{cities.map(c=><option key={c}>{c}</option>)}</select></label>
-   <div className="flex gap-2"><button type="button" aria-pressed={view==="list"} onClick={()=>setView("list")} className={"min-h-11 rounded-lg border px-4 text-xs font-bold "+(view==="list"?"bg-brand-blue text-white":"bg-white text-brand-navy")}>List</button><button type="button" aria-pressed={view==="map"} onClick={()=>setView("map")} className={"min-h-11 rounded-lg border px-4 text-xs font-bold "+(view==="map"?"bg-brand-blue text-white":"bg-white text-brand-navy")}>Map</button></div></div>
-  {view==="map"&&<div className="relative h-44 overflow-hidden rounded-2xl bg-[#e8f2eb]" aria-label="Schematic sample-zone map">
-   <svg viewBox="0 0 560 180" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 size-full" aria-hidden><rect width="560" height="180" fill="#eaf2e5"/>{Array.from({length:9},(_,i)=><path key={i} d={"M"+(i*80-100)+" -10 L"+(i*80+100)+" 200"} stroke="#fff" strokeWidth={i%2?6:11}/>)}</svg>
-   {visible.map((s,i)=><button type="button" key={s.id} onClick={()=>toggle(s.id)} aria-pressed={draft.selectedScreenIds.includes(s.id)}
-    className={"absolute rounded-full border-2 border-white px-3 py-2 text-xs font-semibold text-white shadow "+(draft.selectedScreenIds.includes(s.id)?"bg-brand-orange":"bg-brand-blue")} style={{left:(18+i*27)+"%",top:(35+(i%2)*30)+"%"}}>{s.id}</button>)}
-   <span className="absolute bottom-2 left-2 rounded bg-white/95 p-1.5 text-[10px] text-[#4d6b87]">Illustration only · Not live GPS</span>
+  <div className="flex flex-wrap items-center justify-between gap-3"><p className="text-sm text-muted-foreground">Choose provisional, eligible screens. Actual availability is rechecked when you set dates.</p><span className="rounded-lg bg-[#eaf2ff] px-3 py-2 text-xs font-bold text-brand-blue">{draft.selectedScreenIds.length} selected</span></div>
+  {stale.length>0&&<div role="alert" className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#ffceaa] bg-[#fff5ea] p-3">
+   <p className="text-xs leading-5 text-[#865016]">{stale.length} previously selected screen(s) are now unavailable or incompatible: {stale.join(", ")}</p>
+   <button type="button" className="min-h-10 rounded-lg border border-[#da9f62] px-3 text-xs font-bold text-[#865016]" onClick={removeStale}>Remove unavailable</button>
+  </div>}
+  <div className="grid gap-3 sm:grid-cols-2">
+   <label><span className={field}>City</span><select className={input} value={city} onChange={e=>{setCity(e.target.value);setZone("All zones");}}>{cities.map(c=><option key={c}>{c}</option>)}</select></label>
+   <label><span className={field}>Zone</span><select className={input} value={zone} onChange={e=>setZone(e.target.value)}>{zones.map(z=><option key={z}>{z}</option>)}</select></label>
+   <label className="sm:col-span-2"><span className={field}>Find locality or screen</span><input type="search" className={input} value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search by locality, zone or screen ID"/></label>
+  </div>
+  <div className="flex flex-wrap items-center justify-between gap-2">
+   <p className="text-xs text-muted-foreground">{visible.length} eligible demo screens match your filters</p>
+   <div className="flex flex-wrap gap-2">
+    <button type="button" disabled={!visible.length||visible.every(s=>checked.has(s.id))} onClick={selectVisible} className="min-h-11 rounded-lg border border-[#8ebafb] px-3 text-xs font-bold text-brand-blue disabled:opacity-50">Select visible</button>
+    <button type="button" disabled={!checked.size} onClick={()=>update([])} className="min-h-11 rounded-lg border border-[#cadbef] px-3 text-xs font-bold text-[#516989] disabled:opacity-50">Clear selections</button>
+    <button type="button" aria-pressed={view==="list"} onClick={()=>setView("list")} className={"min-h-11 rounded-lg border px-3 text-xs font-bold "+(view==="list"?"bg-brand-blue text-white":"bg-white text-brand-navy")}>List</button>
+    <button type="button" aria-pressed={view==="map"} onClick={()=>setView("map")} className={"min-h-11 rounded-lg border px-3 text-xs font-bold "+(view==="map"?"bg-brand-blue text-white":"bg-white text-brand-navy")}>Map</button>
+   </div>
+  </div>
+  {view==="map"&&<div className="relative min-h-52 overflow-hidden rounded-2xl bg-[#e8f2eb]" aria-label="Schematic screen selection map">
+   <svg viewBox="0 0 560 220" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 size-full" aria-hidden="true"><rect width="560" height="220" fill="#eaf2e5"/>{Array.from({length:9},(_,i)=><path key={i} d={"M"+(i*80-100)+" -10 L"+(i*80+100)+" 240"} stroke="#fff" strokeWidth={i%2?6:11}/>)}</svg>
+   <div className="relative z-10 grid min-h-52 grid-cols-2 place-items-center gap-2 px-3 py-9 sm:grid-cols-3">
+    {visible.map(s=><button type="button" key={s.id} onClick={()=>toggle(s.id)} aria-pressed={checked.has(s.id)} className={"min-h-11 max-w-full rounded-full border-2 border-white px-3 text-xs font-semibold text-white shadow "+(checked.has(s.id)?"bg-brand-orange":"bg-brand-blue")}>{s.id}</button>)}
+   </div>
+   <span className="absolute bottom-2 left-2 z-20 rounded bg-white/95 px-2 py-1 text-[10px] text-[#4d6b87]">Schematic only · No live GPS</span>
   </div>}
   {visible.length?<div className="grid gap-3 sm:grid-cols-2">{visible.map(s=>{
-   const loc=db.locations.find(l=>l.id===s.locationId);
-   const checked=draft.selectedScreenIds.includes(s.id);
-   return <button key={s.id} type="button" aria-pressed={checked} onClick={()=>toggle(s.id)} className={"flex min-h-28 items-start gap-3 rounded-xl border p-4 text-left "+(checked?"border-brand-blue bg-[#edf5ff] ring-1 ring-brand-blue":"border-[#dce8f8] bg-white")}>
-    <span className={"grid size-8 shrink-0 place-items-center rounded-full border "+(checked?"border-brand-blue bg-brand-blue text-white":"border-[#b6c8e2]")}><Check className="size-4"/></span>
-    <span><strong className="text-sm text-brand-navy">{loc?.name??"Sample zone"} · {loc?.city}</strong><span className="mt-1 block text-xs leading-5 text-muted-foreground">{s.id} · {placementLabels[s.placement]} · {s.sizeInches}&quot; display</span><span className="mt-2 inline-flex items-center gap-1 text-xs text-[#138652]"><MapPin className="size-3.5"/>Eligible sample device</span></span>
+   const loc=db.locations.find(x=>x.id===s.locationId);
+   return <button key={s.id} type="button" aria-pressed={checked.has(s.id)} onClick={()=>toggle(s.id)}
+    className={"flex min-h-28 items-start gap-3 rounded-xl border p-4 text-left "+(checked.has(s.id)?"border-brand-blue bg-[#edf5ff] ring-1 ring-brand-blue":"border-[#dce8f8] bg-white")}>
+    <span className={"grid size-8 shrink-0 place-items-center rounded-full border "+(checked.has(s.id)?"border-brand-blue bg-brand-blue text-white":"border-[#b6c8e2]")}><Check className="size-4"/></span>
+    <span><strong className="text-sm text-brand-navy">{loc?.name??"Sample zone"} · {loc?.city}</strong>
+     <span className="mt-1 block text-xs leading-5 text-muted-foreground">{s.id} · Zone {loc?.zone} · {placementLabels[s.placement]} · {s.sizeInches}&quot;</span>
+     <span className="mt-2 inline-flex items-center gap-1 text-xs text-[#138652]"><MapPin className="size-3.5"/>Eligible demo screen</span>
+    </span>
    </button>;
-  })}</div>:<div className="rounded-xl border border-dashed border-[#d6e2f3] bg-[#f7faff] p-6 text-center"><MapPin className="mx-auto size-8 text-[#86a0c4]"/><p className="mt-2 font-semibold text-brand-navy">No eligible demo screens found</p><p className="mt-1 text-sm text-muted-foreground">Try a different placement in Step 2 or another city. Unverified and offline devices cannot be selected.</p></div>}
-  <FieldHelp>Screen selection is a planning preference only. It does not reserve inventory or assign a driver.</FieldHelp>
+  })}</div>:<div className="rounded-xl border border-dashed border-[#d6e2f3] bg-[#f7faff] p-6 text-center"><MapPin className="mx-auto size-8 text-[#86a0c4]"/><p className="mt-2 font-semibold text-brand-navy">No matching sample screens</p><p className="mt-1 text-sm text-muted-foreground">Clear the search, choose another city/zone or select a different placement. Unverified and offline devices cannot be selected.</p></div>}
+  <FieldHelp>These are planning preferences only. No inventory is held, booked or assigned from the frontend.</FieldHelp>
  </div>;
 }
 export function StepSchedule({draft,patch}:Pick<Props,"draft"|"patch">){
+ const [today,setToday]=React.useState("");
+ React.useEffect(()=>{
+  const frame=window.requestAnimationFrame(()=>{
+   const now=new Date();
+   const pad=(n:number)=>String(n).padStart(2,"0");
+   setToday(now.getFullYear()+"-"+pad(now.getMonth()+1)+"-"+pad(now.getDate()));
+  });
+  return ()=>window.cancelAnimationFrame(frame);
+ },[]);
+ let days=0,daysError="";
+ if(draft.startDate&&draft.endDate){
+  try{days=countScheduledDays(draft.startDate,draft.endDate,draft.weekdays);}
+  catch(e){daysError=e instanceof Error?e.message:"Invalid schedule";}
+ }
+ const startPast=Boolean(today&&draft.startDate&&draft.startDate<today);
+ const hourError=Boolean(draft.startTime&&draft.endTime&&draft.startTime>=draft.endTime);
  return <div className="space-y-5">
   <div className="grid gap-4 sm:grid-cols-2">
-   <label><span className={field}>Start date *</span><input type="date" className={input} value={draft.startDate} max={draft.endDate||undefined} onChange={e=>patch({startDate:e.target.value,agreed:false})}/></label>
-   <label><span className={field}>End date *</span><input type="date" className={input} value={draft.endDate} min={draft.startDate||undefined} onChange={e=>patch({endDate:e.target.value,agreed:false})}/></label>
+   <label><span className={field}>Start date *</span><input type="date" className={input} min={today||undefined} value={draft.startDate} max={draft.endDate||undefined} onChange={e=>patch({startDate:e.target.value,agreed:false})}/></label>
+   <label><span className={field}>End date *</span><input type="date" className={input} min={draft.startDate||today||undefined} value={draft.endDate} onChange={e=>patch({endDate:e.target.value,agreed:false})}/></label>
   </div>
-  <fieldset><legend className={field}>Delivery days *</legend><div className="flex flex-wrap gap-2">{weekdays.map((w,i)=><label key={w} className={"flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border px-3 text-xs font-semibold "+(draft.weekdays.includes(i)?"border-brand-blue bg-[#eaf3ff] text-brand-blue":"border-[#d6e5f7] bg-white text-brand-navy")}>
+  {startPast&&<p role="alert" className="rounded-lg bg-[#fff2e5] p-3 text-sm text-[#90500e]">The start date is in the past. Choose today or a future date.</p>}
+  <fieldset><legend className={field}>Delivery days *</legend><div className="mb-3 flex flex-wrap gap-2" role="group" aria-label="Delivery day presets">
+   {[{text:"Every day",days:[0,1,2,3,4,5,6]},{text:"Weekdays",days:[1,2,3,4,5]},{text:"Weekends",days:[0,6]}].map(p=><button key={p.text} type="button" onClick={()=>patch({weekdays:p.days,agreed:false})}
+    aria-pressed={p.days.length===draft.weekdays.length&&p.days.every(d=>draft.weekdays.includes(d))}
+    className="min-h-10 rounded-lg border border-[#b8d2fa] bg-white px-3 text-xs font-bold text-brand-blue hover:bg-[#edf5ff] aria-pressed:bg-[#dfedff]">{p.text}</button>)}
+  </div><div className="flex flex-wrap gap-2">{weekdays.map((w,i)=><label key={w} className={"flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border px-3 text-xs font-semibold "+(draft.weekdays.includes(i)?"border-brand-blue bg-[#eaf3ff] text-brand-blue":"border-[#d6e5f7] bg-white text-brand-navy")}>
    <input type="checkbox" checked={draft.weekdays.includes(i)} onChange={e=>patch({weekdays:e.target.checked?[...draft.weekdays,i].sort():draft.weekdays.filter(v=>v!==i),agreed:false})} className="size-4 accent-[#0866ff]"/>{w}
   </label>)}</div></fieldset>
   <div className="grid gap-4 sm:grid-cols-2">
    <label><span className={field}>Daily start *</span><input type="time" className={input} value={draft.startTime} onChange={e=>patch({startTime:e.target.value,agreed:false})}/></label>
    <label><span className={field}>Daily end *</span><input type="time" className={input} value={draft.endTime} onChange={e=>patch({endTime:e.target.value,agreed:false})}/></label>
   </div>
-  <label className="block"><span className={field}>Requested plays per day</span><input type="number" min={1} max={500} step={1} className={input} value={draft.playsPerDay} onChange={e=>patch({playsPerDay:Number(e.target.value),agreed:false})}/><FieldHelp>This is a requested target, not a delivery guarantee. Demonstration pricing is per selected active screen-day.</FieldHelp></label>
-  <div className="rounded-xl border border-[#d2e4f9] bg-[#f0f6ff] px-4 py-3 text-sm text-[#436087]">Date validation rechecks screen conflicts, pricing-rule validity and the selected days before allowing the final review.</div>
+  {hourError&&<p role="alert" className="rounded-lg bg-[#fff2e5] p-3 text-sm text-[#90500e]">End time must be later than the start time on the same day. Overnight delivery is not supported in this demo.</p>}
+  <label className="block"><span className={field}>Requested plays per day</span><input type="number" min={1} max={500} step={1} className={input} value={draft.playsPerDay} onChange={e=>patch({playsPerDay:Number(e.target.value),agreed:false})}/><FieldHelp>Requested target, not guaranteed delivery. Pricing is per scheduled screen-day and does not multiply by plays.</FieldHelp></label>
+  <div aria-live="polite" className="rounded-xl border border-[#d2e4f9] bg-[#f0f6ff] px-4 py-3 text-sm text-[#436087]">
+   <strong>{daysError? "Schedule needs attention" : days?days+" selected delivery day"+(days===1?"":"s"):"Select start and end dates"}</strong>
+   {daysError&&<p className="mt-1 text-xs text-[#9b5c1a]">{daysError}</p>}
+   {!daysError&&days>0&&<p className="mt-1 text-xs">Within {inclusiveDays(draft.startDate,draft.endDate)} calendar day(s). Screen eligibility and city rate cards are rechecked on Continue.</p>}
+  </div>
  </div>;
 }
 export function QuoteTable({quote,db}: {quote:Quote;db:DemoDatabase}){

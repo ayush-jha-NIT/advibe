@@ -22,10 +22,13 @@ Client-approved visual reference set: 59 screenshots across Public, Admin, Adver
 - [x] Part 6: Responsive demo login, role signup, OTP, recovery and local session access gates
 - [x] Part 7: Advertiser dashboard and My Campaigns listing, KPIs, visualizations, filtering, CSV and allowed demo draft submissions
 - [x] Part 8: Six-step advertiser campaign wizard with persistent drafts, media preview, screen targeting, weekday quote and review submission
-- [ ] Parts 9–23: Remaining advertiser modules, driver/admin workflows, integrations and mobile QA
+- [x] Part 9: Wizard creative-file inspection, zone targeting, schedule warnings, mobile step controls and regression tests
+- [ ] Parts 10–23: Remaining advertiser modules, driver/admin workflows, integrations and mobile QA
 
 **Part 3 delivers a frontend demo engine, not a backend.** Role switching is public, data is fictional and browser-local, device controls are simulated and no Cashfree checkout occurs. See [DEMO_ENGINE.md](DEMO_ENGINE.md) and [ROUTES.md](ROUTES.md).
 
 **Authentication boundary:** Part 6 is a sessionStorage demo, not secure login. Demo OTP 123456 and preset credentials are intentionally visible. Real identity verification, email/SMS, sessions, password resets, rate limiting and server-side RBAC require the backend.
 
 **Part 7:** dashboard statistics and charts only summarize fictional, owner-scoped campaign data; there is no verified reach, time-series, production accounting or billing. The campaign wizard and detail pages are reserved for later phases.
+
+**Part 9:** The wizard checks local preview media headers and dimensions, detects stale/incompatible screen targets, rechecks future dates, and has compact phone navigation. These are frontend demo safeguards, not production asset validation or reservation.
