@@ -1,39 +1,44 @@
 # AdVibe frontend architecture
 
-## Technology boundaries
+## Implemented foundation (Parts 0–2)
 
-- Next.js App Router for routing, layouts and server-rendered content.
-- Interactive forms and portal tools use client components only where needed.
-- Typed domain models and adapters isolate demo repositories from future backend APIs.
-- Browser persistence holds non-sensitive demo state only.
-- Cashfree Checkout is a frontend integration. Secure order creation and authoritative payment verification belong to the backend.
-- Hardware diagnostics, screen controls, telemetry, location pings, SMS/OTP, KYC and real payouts are not active in the initial demo.
+- Next.js 16 App Router and TypeScript for route groups, layouts and typed components.
+- CSS role tokens in globals.css: public orange, admin purple, advertiser/driver blue.
+- Official source artwork at public/brand/advibe-logo.png and icon.png.
+- src/config/navigation.ts is the single source for portal routes, labels, navigation descriptions and search suggestions.
+- src/app/(site) provides public pages with a shared public shell.
+- src/app/(auth) provides auth route placeholders with consistent public navigation.
+- src/app/(portals)/admin, advertiser, driver wrap their own content with PortalShell. Each portal has active navigation, search, user menu and responsive drawer.
+- src/app/design-system preserves the Part 1 UI showcase independently of the site layout.
+- src/components/shared contains placeholder pages until each business feature is implemented.
 
-## Planned route groups
+See ROUTES.md for full path inventory and status.
 
-- Public marketing pages at /, /about, /pricing and other public routes
-- Authentication screens at /login, /signup and /verify
-- Advertiser workspace under /advertiser/*
-- Driver partner workspace under /driver/*
-- Admin workspace under /admin/*
+## Planned application technology boundaries
 
-Only the root placeholder is implemented in Part 0. Routes will be added during their designated roadmap parts, not as dead-end links.
+- Interactive features will become React client components only where interactivity is needed.
+- Typed domain models and replaceable service adapters will isolate browser demo repositories from production backend APIs (Part 3).
+- Browser persistence is for non-sensitive frontend demo records only.
+- Cashfree Checkout uses frontend SDK, but backend endpoints must create orders and verify authoritative payment status; no Cashfree secret in client code.
+- Actual screen diagnostics/control, device telemetry, GPS reports, SMS/OTP, KYC decisions, and real payouts require production integrations.
+- No production authentication/authorization exists in Part 2. All portal pages are navigable previews; role switching is not an access control.
 
-## Planned source folders
+## Planned source folder architecture
 
-- src/app/ : route groups and page layouts
-- src/components/ : shared UI primitives and portal navigation
-- src/features/ : campaign, driver, inventory, payment, settlement and support modules
-- src/data/ : shared demo seed records
-- src/services/ : replaceable repositories and adapters
-- src/lib/ : utilities and calculations
-- src/types/ : domain types and contracts
+- src/app/: pages and route layouts
+- src/components/: shared UI primitives and navigation shells
+- src/config/: canonical navigation and static configuration
+- src/features/: business modules and portal features
+- src/data/: demo fixtures
+- src/services/: replaceable repositories and adapters
+- src/lib/: utilities, calculations, shared theme
+- src/types/: typed domain contracts
 
-## Fundamental domain invariants
+## Fundamental domain invariants for future phases
 
-- Inventory allocation prevents conflicting reservations.
-- Creative *file format* is distinct from physical advertising placement.
-- Pricing uses a single rule engine with clear units and validity dates.
-- An advertiser payment never automatically marks a campaign live.
-- Admin review and driver verification change the same records the portals read.
-- Payout details are masked and sensitive banking credentials never enter localStorage.
+- Inventory allocation must prevent conflicting bookings.
+- Creative file format is distinct from physical screen format and placement.
+- Pricing uses one engine with explicit units, taxes and validity.
+- Advertiser payment success cannot automatically make a campaign live.
+- Admin review and driver verification propagate to shared records.
+- Credentials, KYC artifacts and full bank details must never be persisted in browser localStorage.

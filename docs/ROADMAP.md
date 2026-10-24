@@ -1,22 +1,22 @@
 # AdVibe frontend roadmap
 
-Client-approved visual reference set: 59 screenshots across four portals.
+Client-approved visual reference set: 59 screenshots across Public, Admin, Advertiser and Driver Partner portals.
 
 | Parts | Stage | Scope |
 |---|---|---|
-| 0–3 | Foundation | Repository, visual system, layouts, typed demo records and shared services |
-| 4–6 | Public Website | Landing animation, marketing pages, role-aware demo authentication |
-| 7–12 | Advertiser | Dashboard, six-step campaign wizard, formats, creatives, billing, notifications, support |
-| 13–17 | Driver | Five-step onboarding, verification, vehicle/device, assignments, earnings, maintenance |
-| 18–21 | Admin | Dashboard, approvals, operations, inventory, pricing, finance, analytics, users |
-| 22–23 | QA and delivery | Cross-portal tests, mobile accessibility/performance, CI, Vercel and API handoff |
+| 0–3 | Foundation | Repository, design system, layouts, typed demo records |
+| 4–6 | Public Website | Landing animation, marketing pages, auth |
+| 7–12 | Advertiser | Dashboard, six-step campaign wizard, creatives, billing |
+| 13–17 | Driver | Five-step onboarding, vehicle, delivery, earnings, maintenance |
+| 18–21 | Admin | Approvals, operations, inventory, finance, analytics and users |
+| 22–23 | QA and delivery | Cross-portal checks, mobile reliability, CI, Vercel handoff |
 
-## Status
+## Current progress
 
-- [x] Part 0: Repository initialization and minimal runnable App Router page
-- [x] Part 1: Approved asset derivatives, design tokens and interactive UI component foundation
-- [ ] Part 2: Responsive portal shells and navigation
-- [ ] Part 3: Shared demo repositories and business rules
-- [ ] Parts 4–23: Screen implementation, integrations and verification
+- [x] Part 0: Repository initialization, toolchain and GitHub CI
+- [x] Part 1: Approved logo, brand tokens and interactive UI components
+- [x] Part 2: Public/portal shells, mobile navigation, route placeholders, menu search
+- [ ] Part 3: Shared demo repositories, state, business rules and role-aware data
+- [ ] Parts 4–23: Business screens, real workflows and QA
 
-Part 1's homepage is a component demonstration, NOT the final public website. Production payments, authentication, location telemetry and sensitive data require secure backend APIs.
+**Part 2 does not deliver business logic**: user role selection is only a demo, notification center is a placeholder, and nav search searches only routes. Routing inventory: [ROUTES.md](ROUTES.md).

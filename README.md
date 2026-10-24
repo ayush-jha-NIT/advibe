@@ -1,19 +1,20 @@
 # AdVibe Frontend
 
-Mobile-first frontend for AdVibe's Public Website, Advertiser Portal, Driver Partner Portal and Admin Portal.
+Responsive four-portal frontend for AdVibe: Public Website, Advertiser Portal, Driver Partner Portal and Admin Portal.
 
-**Current status:** Part 0 foundation only. Portal pages, login flows, shared demo data and Cashfree integration have **not** been implemented yet.
+## Status
 
-## Tech foundation
+**Part 2 complete:** Official approved logo; role-aware UI component library; responsive public navbar/footer; admin, advertiser and driver navigation shells; live route switching, mobile drawer and navigation search.
 
-- Next.js 16 App Router, React 19, strict TypeScript
-- Tailwind CSS 4 and ESLint flat config
-- shadcn/ui-compatible project aliases (components are added in Part 1)
-- Planned: React Hook Form + Zod, Zustand, Recharts, Motion, Lucide, interactive maps
+**Not implemented:** Real login/authorization, OTP, campaign wizard, Cashfree payment processing, payouts, KYC, device/vehicle telemetry or interconnected demo data. These are planned for later parts. Current portal routes are honest placeholders, not fully built dashboards.
+
+## Stack
+
+Next.js 16 App Router, React 19, TypeScript, Tailwind CSS 4, ESLint.
 
 ## Local setup
 
-Requires Node.js 20.9+ (Node 22 recommended) and npm.
+Requires Node.js 20.9+ (Node 22 recommended).
 
 ~~~bash
 git clone https://github.com/ayush-jha-NIT/advibe.git
@@ -25,7 +26,18 @@ npm run dev
 
 Open http://localhost:3000.
 
-## Validation
+## Route previews
+
+- / : Public website shell preview
+- /design-system : Part 1 component showcase
+- /admin : Admin shell
+- /advertiser : Advertiser shell
+- /driver : Driver Partner shell
+- /login and /signup : Authentication placeholders
+
+Full route map: [docs/ROUTES.md](docs/ROUTES.md)
+
+## Verification
 
 ~~~bash
 npm run lint
@@ -33,14 +45,13 @@ npm run typecheck
 npm run build
 ~~~
 
-The GitHub Actions workflow runs these checks on pushes and pull requests.
+CI executes these on pushes and pull requests.
 
-## Design and implementation plan
+## Implementation references
 
-See [Roadmap](docs/ROADMAP.md), [Architecture](docs/ARCHITECTURE.md) and [Brand rules](docs/BRAND.md).
+- [Roadmap](docs/ROADMAP.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Design system](docs/DESIGN_SYSTEM.md)
+- [Brand rules](docs/BRAND.md)
 
-## Important boundaries
-
-This is a **frontend project**. Browser demo storage does not provide real authentication, cross-device synchronization, financial settlement, identity verification or device telemetry. Cashfree will be used for payments after a secure backend integration exists; no Cashfree secret must be exposed in frontend code.
-
-**Branding:** Use only the supplied "AdVibe Megaphone Brand Logo.png" for logo assets. The actual logo is introduced in Part 1; the Part 0 starter view intentionally shows no substitute logo.
+The supplied megaphone artwork is the sole approved AdVibe logo. Cashfree requires backend order creation and verification; secret keys must never enter NEXT_PUBLIC environment variables.
