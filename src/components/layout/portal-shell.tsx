@@ -89,7 +89,7 @@ function Sidebar({role, collapsed, onToggle, onNavigate, mobile=false}:{
   );
 }
 
-function NavSearch({role, pathname}:{role:PortalRole;pathname:string}) {
+function NavSearch({role}:{role:PortalRole}) {
   const router = useRouter();
   const [query,setQuery] = React.useState("");
   const [open,setOpen] = React.useState(false);
@@ -104,7 +104,6 @@ function NavSearch({role, pathname}:{role:PortalRole;pathname:string}) {
     ).slice(0,6);
   },[query,role]);
 
-  React.useEffect(() => { setOpen(false);setQuery("");setFocusedIndex(-1); }, [pathname]);
   React.useEffect(() => {
     function outside(e:PointerEvent) { if(ref.current && !ref.current.contains(e.target as Node)) setOpen(false); }
     document.addEventListener("pointerdown",outside);
@@ -168,15 +167,17 @@ export function PortalShell({role,children}:{role:PortalRole;children:React.Reac
   const person=portalPeople[role];
 
   React.useEffect(()=>{
-    try {setCollapsed(window.localStorage.getItem("advibe:sidebar:"+role)==="collapsed");}
-    catch { /* Storage unavailable in private browsing. */ }
+    const frame = window.requestAnimationFrame(() => {
+      try { setCollapsed(window.localStorage.getItem("advibe:sidebar:"+role)==="collapsed"); }
+      catch { /* Storage unavailable in private browsing. */ }
+    });
+    return () => window.cancelAnimationFrame(frame);
   },[role]);
   React.useEffect(()=>{ if(!mobileOpen)return; const old=document.body.style.overflow;document.body.style.overflow="hidden";drawerCloseRef.current?.focus();
     function onKey(e:KeyboardEvent){if(e.key==="Escape")setMobileOpen(false);}
     document.addEventListener("keydown",onKey);
     return ()=>{document.body.style.overflow=old;document.removeEventListener("keydown",onKey);};
   },[mobileOpen]);
-  React.useEffect(()=>{setMobileOpen(false);setShowAccount(false);setShowNotifications(false);},[pathname]);
 
   function toggleCollapsed() {
     setCollapsed(v=>{const next=!v;try{window.localStorage.setItem("advibe:sidebar:"+role,next?"collapsed":"expanded");}catch{}return next;});
@@ -200,7 +201,7 @@ export function PortalShell({role,children}:{role:PortalRole;children:React.Reac
                   <Menu className="size-6" aria-hidden/>
                 </button>
                 <span className="hidden shrink-0 text-xs font-bold text-muted-foreground sm:block lg:hidden">{portalNames[role]}</span>
-                <div className="hidden min-w-0 flex-1 md:block"><NavSearch role={role} pathname={pathname}/></div>
+                <div className="hidden min-w-0 flex-1 md:block"><NavSearch key={pathname} role={role}/></div>
                 <p className="truncate text-sm font-semibold md:hidden">{active.label}</p>
               </div>
               <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
@@ -212,7 +213,7 @@ export function PortalShell({role,children}:{role:PortalRole;children:React.Reac
                   {showNotifications && <div className="absolute right-0 top-[calc(100%+10px)] z-[65] w-[min(85vw,310px)] rounded-xl border border-line bg-white p-4 shadow-xl" role="region" aria-label="Notification preview">
                     <p className="font-semibold">Notifications</p>
                     <p className="mt-2 text-xs leading-5 text-muted-foreground">Notification events and real-time updates are scheduled for future parts. No live unread count is shown.</p>
-                    <Link href={notificationHref} className="mt-3 flex min-h-11 items-center gap-2 text-sm font-semibold text-brand-blue">Open notifications <ArrowRight className="size-4" aria-hidden/></Link>
+                    <Link href={notificationHref} onClick={()=>setShowNotifications(false)} className="mt-3 flex min-h-11 items-center gap-2 text-sm font-semibold text-brand-blue">Open notifications <ArrowRight className="size-4" aria-hidden/></Link>
                   </div>}
                 </div>
                 <div className="relative border-l border-line pl-2 sm:pl-3">
@@ -225,15 +226,15 @@ export function PortalShell({role,children}:{role:PortalRole;children:React.Reac
                   </button>
                   {showAccount && <div className="absolute right-0 top-[calc(100%+10px)] z-[65] w-[min(84vw,250px)] rounded-xl border border-line bg-white p-2 shadow-xl" role="menu" aria-label="Demo account">
                     <p className="px-3 py-2 text-xs font-semibold text-muted-foreground">Demo portal selection</p>
-                    {(["admin","advertiser","driver"] as const).map(r=><Link key={r} role="menuitem" href={"/"+r} className="flex min-h-10 items-center rounded-lg px-3 text-sm hover:bg-surface-alt">{portalNames[r]}{r===role?" ✓":""}</Link>)}
+                    {(["admin","advertiser","driver"] as const).map(r=><Link key={r} role="menuitem" href={"/"+r} onClick={()=>setShowAccount(false)} className="flex min-h-10 items-center rounded-lg px-3 text-sm hover:bg-surface-alt">{portalNames[r]}{r===role?" ✓":""}</Link>)}
                     <div className="my-1 border-t border-line"/>
-                    <Link role="menuitem" href={accountHref} className="flex min-h-10 items-center gap-2 rounded-lg px-3 text-sm hover:bg-surface-alt"><Settings className="size-4"/>Account settings</Link>
-                    <Link role="menuitem" href="/login" className="flex min-h-10 items-center gap-2 rounded-lg px-3 text-sm hover:bg-surface-alt"><LogIn className="size-4"/>Authentication preview</Link>
+                    <Link role="menuitem" href={accountHref} onClick={()=>setShowAccount(false)} className="flex min-h-10 items-center gap-2 rounded-lg px-3 text-sm hover:bg-surface-alt"><Settings className="size-4"/>Account settings</Link>
+                    <Link role="menuitem" href="/login" onClick={()=>setShowAccount(false)} className="flex min-h-10 items-center gap-2 rounded-lg px-3 text-sm hover:bg-surface-alt"><LogIn className="size-4"/>Authentication preview</Link>
                   </div>}
                 </div>
               </div>
             </div>
-            <div className="border-t border-line px-3 py-2 md:hidden sm:px-5"><NavSearch role={role} pathname={pathname}/></div>
+            <div className="border-t border-line px-3 py-2 md:hidden sm:px-5"><NavSearch key={pathname} role={role}/></div>
           </header>
 
           <div className="flex min-h-0 flex-1 flex-col">
