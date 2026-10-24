@@ -70,7 +70,7 @@ Campaign detail route /advertiser/campaigns/[id] is implemented in Part 10 with 
 
 Root: /driver. Paths:
 - /driver
-- /driver/onboarding (future five-step wizard, Parts 13–14)
+- /driver/onboarding (Part 13 mobile steps 1–3; screen setup and agreement Steps 4–5 in Part 14)
 - /driver/verification
 - /driver/vehicle
 - /driver/assigned-ads
@@ -120,3 +120,7 @@ The ad-format comparison, screen/location planner and creative library are imple
 ## Part 12 advertiser account modules
 
 The billing, reports, notifications, support and settings pages are implemented. They use sample browser-local records, and none should be confused with a real payment, official tax invoice, device telemetry, authenticated account update, or external support ticket. The Cashfree checkout button is deliberately unavailable pending trusted backend integration. See docs/ADVERTISER_PART_12.md.
+
+## Part 13 driver onboarding
+
+The driver landing dashboard links to /driver/onboarding. The first three onboarding previews collect only sample alias, operating city, driving experience/availability, generic vehicle category/model/year/ownership, and three boolean placeholder document-readiness states. They validate each step and persist the allowlisted draft in sessionStorage. No personal KYC identifiers or file bytes are requested. Approval of seeded demo driver and vehicle records remains unchanged, and real KYC, device installation, agreement, banking and submission are reserved for Part 14 and server integrations.

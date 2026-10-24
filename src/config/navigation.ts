@@ -48,7 +48,7 @@ export const portalNavigation: Record<PortalRole,NavItem[]> = {
   ],
   driver:[
     {label:"Dashboard",href:"/driver",icon:House,description:"Today's schedule, screen status and earnings"},
-    {label:"Onboarding",href:"/driver/onboarding",icon:ListChecks,description:"Five-step driver partner onboarding"},
+    {label:"Onboarding",href:"/driver/onboarding",icon:ListChecks,description:"Profile, vehicle and sample KYC steps 1–3; final steps upcoming"},
     {label:"Verification Status",href:"/driver/verification",icon:BadgeCheck,description:"Track identity and vehicle verification"},
     {label:"My Vehicle & Screen",href:"/driver/vehicle",icon:CarFront,description:"Vehicle and device settings"},
     {label:"Assigned Ads & Schedule",href:"/driver/assigned-ads",icon:Megaphone,description:"Current ads and daily schedule"},
