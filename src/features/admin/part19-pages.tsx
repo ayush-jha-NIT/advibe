@@ -1,7 +1,7 @@
 "use client";
 import * as React from "react";
 import {MapPin,Monitor} from "lucide-react";
-import {Badge,Button,Card,CardContent,CardHeader,CardTitle} from "@/components/ui";
+import {Badge,Card,CardContent,CardHeader,CardTitle} from "@/components/ui";
 import {useDemoStore} from "@/services/demo-store";
 import type {ReviewStatus,Screen} from "@/types/domain";
 import {AdminAccess,AdminAction,AdminHeading,AdminNotice,AdminWarning,control,demoAdmin,MiniStat,StatusPill,useAdminData} from "./admin-shared";

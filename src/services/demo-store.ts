@@ -258,7 +258,7 @@ export const useDemoStore=create<DemoStore>()(persist<DemoStore,[],[],Persisted>
   if(patch.documentsStatus!==undefined&&!allowed.includes(patch.documentsStatus))throw Error("Invalid document review flag.");
   if(patch.screenSetupStatus!==undefined&&!allowed.includes(patch.screenSetupStatus))throw Error("Invalid device setup review flag.");
   if(!Object.keys(patch).length)throw Error("Choose a demo review change.");
-  let next=audit({...s.db,driverApplications:s.db.driverApplications.map(a=>a.id===id?{...a,...patch}:a)},actor,"driverApplication",id,"demo_checklist_updated");
+  const next=audit({...s.db,driverApplications:s.db.driverApplications.map(a=>a.id===id?{...a,...patch}:a)},actor,"driverApplication",id,"demo_checklist_updated");
   return {db:notice(next,app.driverId,"verification","Demo driver checklist updated","Example onboarding review markers were updated. No identity files or devices were verified.")};
  }),
  reviewDriver:(actor,applicationId)=>set(s=>{
