@@ -1,2 +1,2 @@
-import {DemoDashboard} from "@/components/demo/demo-dashboard";
-export default function Page(){return <DemoDashboard role="advertiser"/>;}
+import {AdvertiserDashboard} from "@/features/advertiser/dashboard";
+export default function Page(){return <AdvertiserDashboard/>;}
