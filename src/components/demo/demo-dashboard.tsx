@@ -44,10 +44,9 @@ export function DemoDashboard({role}:{role:Role}){
  }
  function createDraft(){
   run(()=>{
-   const id=useDemoStore.getState().createDraft(actor,{title:"Sample Campaign "+new Date().toLocaleDateString("en-IN"),
+   useDemoStore.getState().createDraft(actor,{title:"Sample Campaign "+new Date().toLocaleDateString("en-IN"),
     creativeId:"crt-1",objective:"awareness",startDate:start,endDate:end});
-   setFeedback("Created draft "+id+". You can submit it using the button below.");
-  },"Draft created");
+  },"Demo draft created. Use the button below to submit it.");
  }
  function submitDraft(){
   const mine=db.campaigns.find(c=>c.advertiserId===actor.accountId&&c.status==="draft"&&c.creativeId==="crt-1");

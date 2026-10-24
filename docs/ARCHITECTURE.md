@@ -1,6 +1,6 @@
 # AdVibe frontend architecture
 
-## Implemented foundation (Parts 0–2)
+## Implemented foundation (Parts 0–3)
 
 - Next.js 16 App Router and TypeScript for route groups, layouts and typed components.
 - CSS role tokens in globals.css: public orange, admin purple, advertiser/driver blue.
@@ -10,6 +10,10 @@
 - src/app/(auth) provides auth route placeholders with consistent public navigation.
 - src/app/(portals)/admin, advertiser, driver wrap their own content with PortalShell. Each portal has active navigation, search, user menu and responsive drawer.
 - src/app/design-system preserves the Part 1 UI showcase independently of the site layout.
+- src/types/domain.ts + src/data/demo-seed.ts define fictional linked records.
+- src/services/demo-store.ts persists sanitized demo data in browser storage (not for secrets), and src/services/demo-selectors.ts defines cross-portal views.
+- src/lib/demo-rules.ts handles date, allocation, pricing, campaign and driver-approval rules; tests run in CI.
+- The three portal dashboards provide live cross-portal demo data previews, while individual business modules remain placeholders.
 - src/components/shared contains placeholder pages until each business feature is implemented.
 
 See ROUTES.md for full path inventory and status.
@@ -21,7 +25,7 @@ See ROUTES.md for full path inventory and status.
 - Browser persistence is for non-sensitive frontend demo records only.
 - Cashfree Checkout uses frontend SDK, but backend endpoints must create orders and verify authoritative payment status; no Cashfree secret in client code.
 - Actual screen diagnostics/control, device telemetry, GPS reports, SMS/OTP, KYC decisions, and real payouts require production integrations.
-- No production authentication/authorization exists in Part 2. All portal pages are navigable previews; role switching is not an access control.
+- No production authentication/authorization exists. All portals remain navigable demos; frontend role checks are not an access control.
 
 ## Planned source folder architecture
 

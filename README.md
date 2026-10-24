@@ -4,9 +4,11 @@ Responsive four-portal frontend for AdVibe: Public Website, Advertiser Portal, D
 
 ## Status
 
-**Part 2 complete:** Official approved logo; role-aware UI component library; responsive public navbar/footer; admin, advertiser and driver navigation shells; live route switching, mobile drawer and navigation search.
+**Parts 0–3 complete:** Official approved logo; role-aware UI component library; responsive public navbar/footer; admin, advertiser and driver navigation shells; live route switching, mobile drawer and navigation search.
 
-**Not implemented:** Real login/authorization, OTP, campaign wizard, Cashfree payment processing, payouts, KYC, device/vehicle telemetry or interconnected demo data. These are planned for later parts. Current portal routes are honest placeholders, not fully built dashboards.
+**Part 3 adds:** typed fictional data for accounts, campaigns, creatives, screens, vehicles, locations, bookings, payments and settlements; owner-aware selectors; persisted Zustand store; pricing and availability validations; and cross-portal interactive dashboard previews.
+
+**Not implemented:** Real login/authorization, OTP, campaign wizard, Cashfree payments, actual payouts, KYC or device telemetry. Module routes remain labeled placeholders. Demo role switching is not security; no real personal or payment data should be stored here.
 
 ## Stack
 
@@ -42,6 +44,7 @@ Full route map: [docs/ROUTES.md](docs/ROUTES.md)
 ~~~bash
 npm run lint
 npm run typecheck
+npm run test:demo
 npm run build
 ~~~
 
@@ -51,6 +54,7 @@ CI executes these on pushes and pull requests.
 
 - [Roadmap](docs/ROADMAP.md)
 - [Architecture](docs/ARCHITECTURE.md)
+- [Demo data engine and payment boundaries](docs/DEMO_ENGINE.md)
 - [Design system](docs/DESIGN_SYSTEM.md)
 - [Brand rules](docs/BRAND.md)
 

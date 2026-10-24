@@ -3,7 +3,7 @@
 import {create} from "zustand";
 import {createJSONStorage,persist} from "zustand/middleware";
 import {createDemoSeed,DEMO_ACTORS} from "../data/demo-seed";
-import {assertCampaignTransition,assertDriverApproval,canGoLive,canPerform,validateBooking} from "../lib/demo-rules";
+import {assertCampaignTransition,assertDriverApproval,canGoLive,canPerform,validateBooking,inclusiveDays} from "../lib/demo-rules";
 import type {Actor,Campaign,CampaignStatus,DemoDatabase,Screen} from "../types/domain";
 
 export type DemoStore={
@@ -37,7 +37,6 @@ export const useDemoStore=create<DemoStore>()(persist<DemoStore,[],[],Persisted>
   requireAction(actor,"createCampaign",actor.accountId);
   if(!params.title.trim()||params.title.length>120)throw Error("Campaign title must be 1–120 characters");
   // Validates date format, range and order even for drafts.
-  const {inclusiveDays}=requireDateRules();
   inclusiveDays(params.startDate,params.endDate);
   const creative=get().db.creatives.find(c=>c.id===params.creativeId&&c.advertiserId===actor.accountId);
   if(!creative)throw Error("Select a creative owned by this advertiser");
@@ -122,10 +121,4 @@ export const useDemoStore=create<DemoStore>()(persist<DemoStore,[],[],Persisted>
  skipHydration:true,
  migrate:()=>({db:createDemoSeed()}),
 }));
-// Imported as a function so the store's state type stays stable; actual rules remain pure.
-function requireDateRules(){return {inclusiveDays:(start:string,end:string)=>{
- const date=/^\d{4}-\d{2}-\d{2}$/;
- if(!date.test(start)||!date.test(end))throw Error("Use ISO dates");
- const s=Date.parse(start+"T00:00:00Z"),e=Date.parse(end+"T00:00:00Z");
- if(!Number.isFinite(s)||!Number.isFinite(e)||new Date(s).toISOString().slice(0,10)!==start||new Date(e).toISOString().slice(0,10)!==end||e<s||e-s>365*86400000)throw Error("Invalid campaign date range");
- }};}
+
