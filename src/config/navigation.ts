@@ -15,7 +15,7 @@ export const portalPeople: Record<PortalRole,{name:string;subtitle:string;initia
 };
 export const portalNavigation: Record<PortalRole,NavItem[]> = {
   admin:[
-    {label:"Dashboard",href:"/admin",icon:House,description:"Platform overview, live status and quick actions"},
+    {label:"Dashboard",href:"/admin",icon:House,description:"Fictional platform KPIs, reviews and quick actions"},
     {label:"Campaigns",href:"/admin/campaigns",icon:Megaphone,description:"Campaign operations and monitoring"},
     {label:"Advertisers",href:"/admin/advertisers",icon:Users,description:"Advertiser accounts and activity"},
     {label:"Driver Partners",href:"/admin/drivers",icon:CarFront,description:"Driver onboarding and verification",keywords:["applications","kyc"]},
@@ -25,10 +25,11 @@ export const portalNavigation: Record<PortalRole,NavItem[]> = {
     {label:"Pricing & Commercial",href:"/admin/pricing",icon:SlidersHorizontal,description:"Rate cards, discounts and commercial rules"},
     {label:"Approvals",href:"/admin/approvals",icon:ClipboardCheck,description:"Campaign, driver and creative review"},
     {label:"Bookings & Schedule",href:"/admin/bookings",icon:CalendarDays,description:"Screen reservations and delivery schedules"},
-    {label:"Payments & Refunds",href:"/admin/payments",icon:CreditCard,description:"Advertiser transactions, refunds and invoices",group:"management"},
-    {label:"Driver Settlements",href:"/admin/settlements",icon:Banknote,description:"Driver earnings and payouts",group:"management"},
+    {label:"Payments & Refunds",href:"/admin/payments",icon:CreditCard,description:"Fictional payment ledger; real refunds disabled",group:"management"},
+    {label:"Driver Settlements",href:"/admin/settlements",icon:Banknote,description:"Sample settlement amounts and status workflow",group:"management"},
     {label:"Reports & Analytics",href:"/admin/analytics",icon:ChartNoAxesCombined,description:"Revenue, reach and network analytics",group:"management"},
-    {label:"Users & Roles",href:"/admin/users",icon:UserRound,description:"Accounts, permissions and audit trails",group:"management"},
+    {label:"Users & Roles",href:"/admin/users",icon:UserRound,description:"Fictional account roles, active flags and access boundaries",group:"management"},
+    {label:"Audit History",href:"/admin/audit",icon:ReceiptText,description:"Search recorded browser-local demo actions",group:"management"},
     {label:"Notifications",href:"/admin/notifications",icon:Bell,description:"System and approval notifications",group:"account"},
     {label:"Support & Disputes",href:"/admin/support",icon:CircleHelp,description:"Tickets, disputes and refunds",group:"account"},
     {label:"Settings",href:"/admin/settings",icon:Settings,description:"Roles, security and platform configuration",group:"account"},

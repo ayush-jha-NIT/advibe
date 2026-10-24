@@ -12,6 +12,7 @@ import {validateAccountProfile,validateTicketDraft,type AccountProfileDraft,type
 import {validateDriverSubmission,type DriverDraft} from "../features/driver/onboarding-model";
 import {assertDemoAdmin,assertCreativeMetadataReview} from "../features/admin/admin-rules";
 import {validatePricingUpdate,validateSettlementTransition} from "../features/admin/admin-finance-rules";
+import {validateAccountChange,validateTicketTransition} from "../features/admin/admin-governance-rules";
 import {assertProvisionedDriver,validateDriverIssue,validateDriverSupport,type DriverIssueDraft,type DriverSupportDraft} from "../features/driver/service-model";
 
 export type DemoStore={
@@ -34,6 +35,9 @@ export type DemoStore={
  adminUpdateRate:(actor:Actor,id:string,patch:Pick<DemoDatabase["pricingRules"][number],"rupeesPerScreenDay"|"active"|"validFrom"|"validTo">)=>void;
  adminMarkSettlement:(actor:Actor,id:string,status:"processed"|"failed")=>void;
  adminScheduleCampaign:(actor:Actor,id:string,screenIds:string[])=>void;
+ adminSetAccountActive:(actor:Actor,id:string,active:boolean)=>void;
+ adminUpdateTicket:(actor:Actor,id:string,status:DemoDatabase["tickets"][number]["status"])=>void;
+ adminMarkNoticesRead:(actor:Actor)=>void;
  setScreenStatus:(actor:Actor,id:string,status:Screen["status"])=>void;
  markNoticeRead:(actor:Actor,id:string)=>void;
  markAllNoticesRead:(actor:Actor)=>void;
@@ -251,6 +255,24 @@ export const useDemoStore=create<DemoStore>()(persist<DemoStore,[],[],Persisted>
   });
   return id;
  },
+ adminSetAccountActive:(actor,id,active)=>set(s=>{
+  const account=validateAccountChange(s.db,actor,id,active);
+  let next=audit({...s.db,accounts:s.db.accounts.map(a=>a.id===id?{...a,active}:a)},actor,"account",id,"demo_account_"+(active?"enabled":"disabled"));
+  next=notice(next,account.id,"support","Demo account flag updated",
+   "Your fictional account was marked "+(active?"active":"inactive")+" in the Admin directory. This does not change production authentication.");
+  return {db:next};
+ }),
+ adminUpdateTicket:(actor,id,status)=>set(s=>{
+  const ticket=validateTicketTransition(s.db,actor,id,status);
+  let next=audit({...s.db,tickets:s.db.tickets.map(t=>t.id===id?{...t,status}:t)},actor,"ticket",id,"demo_ticket_"+status);
+  next=notice(next,ticket.accountId,"support","Demo ticket status changed",
+   "Fictional support ticket "+id+" is now "+status.replaceAll("_"," ")+". No helpdesk message was sent.");
+  return {db:next};
+ }),
+ adminMarkNoticesRead:(actor)=>set(s=>{
+  assertDemoAdmin(actor);
+  return {db:{...s.db,notices:s.db.notices.map(n=>n.recipientId===actor.accountId?{...n,read:true}:n)}};
+ }),
  adminScheduleCampaign:(actor,id,screenIds)=>set(s=>{
   assertDemoAdmin(actor);
   const row=s.db.campaigns.find(c=>c.id===id);

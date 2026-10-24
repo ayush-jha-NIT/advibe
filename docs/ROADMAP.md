@@ -31,7 +31,11 @@ Client-approved visual reference set: 59 screenshots across Public, Admin, Adver
 - [x] Part 15: Driver dashboard, vehicle and screen inventory, confirmed assigned campaigns, and IST daily scheduling
 - [x] Part 16: Driver sample earnings, status-filtered payout ledger, monthly breakdown and CSV
 - [x] Part 17: Driver maintenance reports, support, notifications, read-only profile, activity/trips boundaries
-- [ ] Parts 18–23: Admin modules, integrated accessibility/responsive QA and deployment handoff
+- [x] Part 18: Admin dashboard, campaign reviews and creative metadata approvals
+- [x] Part 19: Admin driver verification and screen/location inventory
+- [x] Part 20: Admin sample pricing, bookings, payments and driver settlements
+- [x] Part 21: Admin reports, accounts, tickets, notifications, settings and audit
+- [ ] Parts 22–23: Cross-portal responsive/accessibility QA and deployment handoff
 
 **Part 3 delivers a frontend demo engine, not a backend.** Role switching is public, data is fictional and browser-local, device controls are simulated and no Cashfree checkout occurs. See [DEMO_ENGINE.md](DEMO_ENGINE.md) and [ROUTES.md](ROUTES.md).
 
@@ -56,3 +60,5 @@ Client-approved visual reference set: 59 screenshots across Public, Admin, Adver
 **Part 16:** Settlement analytics use only the driver-owned fictional ledger and integer-paise amounts. There are no bank transactions, payout timestamps, verified earnings or tax documentation.
 
 **Part 17:** Driver issue reports must reference driver-owned screens. Both maintenance and support create browser-local tickets and Admin notices, not repairs/helpdesk dispatch. Notifications are owner-scoped; profile documents are read-only. Trips/activity show explicit missing telemetry rather than fabricated playback/GPS.
+
+**Parts 18–21:** All Admin navigation routes now lead to dedicated views and operations. Actions are protected by seeded demo role/transition guards, create local audit records and notices, and never claim real money movement, KYC, hardware telemetry or production user access control. See docs/ADMIN_PART_18.md through docs/ADMIN_PART_21.md.

@@ -46,8 +46,9 @@ Implemented paths:
 - /admin/notifications
 - /admin/support
 - /admin/settings
+- /admin/audit (Part 21 local audit history viewer)
 
-Review and monitoring detail URLs will be introduced with the respective admin modules (Parts 18–21), not filled with nonfunctional fake controls now.
+All Admin navigation routes are implemented in Parts 18–21 as dedicated browser-local demo workbenches. The additional /admin/audit route provides the local audit viewer. No secure backend, actual device integration or real payment/payout processing exists.
 
 ## Advertiser Portal
 
@@ -136,3 +137,7 @@ The dashboard and three operational pages replace the Part 2 placeholders, with 
 ## Parts 16–17 driver finance and support
 
 All remaining Driver Portal menu routes now have intentional screens. Finance displays only fictional settlements with derived gross, deductions and net. A processed demo status is never bank proof. Maintenance creates screen-linked browser-local tickets with ownership validation and notifications for the demo Admin and driver; general support is separate. Profile and document states remain read-only. Trips and playback pages show missing telemetry explicitly. Read docs/DRIVER_PARTS_16_17.md.
+
+## Parts 18–21 Admin implementation
+
+Part 18 introduces sample KPI dashboard, advertiser campaign transitions and creative metadata reviews. Part 19 provides seeded driver checklist review, vehicle and simulated screen statuses plus location inventory. Part 20 adds validated fictional rate editing, guarded booking creation, payment ledger and explicitly non-financial settlement state changes. Part 21 completes advertiser/users reports, owner-linked ticket workflow, admin notifications, audit logs and settings reset. Every route uses fictional browser-local data; role guards are not production RBAC, audit logs are not immutable, and no Cashfree, document verification, device telemetry, helpdesk or payout rails are connected.
