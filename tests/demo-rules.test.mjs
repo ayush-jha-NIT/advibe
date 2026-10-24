@@ -36,7 +36,7 @@ test("booking enforces creative ownership, placement and conflicts",()=>{
  validateBooking(db,c,["scr-1"]);
  assert.throws(()=>validateBooking(db,c,["scr-2"]),/placement/);
  assert.throws(()=>validateBooking(db,c,["scr-1","scr-1"]),/unique/);
- assert.throws(()=>validateBooking(db,db.campaigns[0],["scr-1"]),/unavailable/);
+ assert.throws(()=>validateBooking(db,{...db.campaigns[0],id:"cmp-different"},["scr-1"]),/unavailable/);
 });
 test("price quote uses screen-days, integer paise, GST and discounts",()=>{
  const db=createDemoSeed();
