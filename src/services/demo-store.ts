@@ -7,6 +7,7 @@ import {assertCampaignTransition,assertDriverApproval,canGoLive,canPerform,valid
 import type {Actor,Campaign,CampaignStatus,DemoDatabase,Screen,Creative} from "../types/domain";
 import {validateWizardAll,wizardQuote,localToday,type WizardDraft} from "../features/advertiser/wizard-model";
 import {assertAdvertiserManagement,type CampaignManagementAction} from "../features/advertiser/campaign-detail-model";
+import {assertCreativeEdit,validateCreativeDraft,type CreativeDraft} from "../features/advertiser/library-model";
 
 export type DemoStore={
  db:DemoDatabase;
@@ -15,6 +16,9 @@ export type DemoStore={
  submitWizardDraft:(actor:Actor,draft:WizardDraft)=>string;
  submitCampaign:(actor:Actor,id:string)=>void;
  manageCampaign:(actor:Actor,id:string,action:CampaignManagementAction)=>void;
+ createCreativeMetadata:(actor:Actor,input:CreativeDraft)=>string;
+ updateCreativeMetadata:(actor:Actor,id:string,input:CreativeDraft)=>void;
+ deleteCreativeMetadata:(actor:Actor,id:string)=>void;
  reviewCampaign:(actor:Actor,id:string,status:"under_review"|"approved"|"changes_requested"|"rejected")=>void;
  reserveScreens:(actor:Actor,id:string,screenIds:string[])=>void;
  setLive:(actor:Actor,id:string)=>void;
@@ -115,6 +119,28 @@ export const useDemoStore=create<DemoStore>()(persist<DemoStore,[],[],Persisted>
   }]},actor,"campaign",id,"created_draft")}));
   return id;
  },
+ createCreativeMetadata:(actor,input)=>{
+  requireAction(actor,"createCampaign",actor.accountId);
+  if(!get().db.accounts.some(a=>a.id===actor.accountId&&a.role==="advertiser"))
+   throw Error("Use the preset Advertiser demo identity to save creative metadata.");
+  const clean=validateCreativeDraft(input);
+  const id=makeId("crt");
+  set(s=>({db:audit({...s.db,creatives:[...s.db.creatives,{
+   id,advertiserId:actor.accountId,title:clean.title,format:clean.format,
+   placement:clean.placement,approval:"pending" as const
+  }]},actor,"creative",id,"metadata_created")}));
+  return id;
+ },
+ updateCreativeMetadata:(actor,id,input)=>set(s=>{
+  assertCreativeEdit(s.db,actor,id);
+  const clean=validateCreativeDraft(input);
+  return {db:audit({...s.db,creatives:s.db.creatives.map(c=>c.id===id
+   ?{...c,title:clean.title,format:clean.format,placement:clean.placement}:c)},actor,"creative",id,"metadata_updated")};
+ }),
+ deleteCreativeMetadata:(actor,id)=>set(s=>{
+  assertCreativeEdit(s.db,actor,id);
+  return {db:audit({...s.db,creatives:s.db.creatives.filter(c=>c.id!==id)},actor,"creative",id,"metadata_deleted")};
+ }),
  submitCampaign:(actor,id)=>set(s=>{
   const row=s.db.campaigns.find(c=>c.id===id);
   if(!row)throw Error("Campaign not found");

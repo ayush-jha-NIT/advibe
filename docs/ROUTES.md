@@ -55,9 +55,9 @@ Root: /advertiser. Paths:
 - /advertiser (Part 7 interactive dashboard)
 - /advertiser/create-campaign (Part 8 wizard, refined in Part 9 for media, targeting, scheduling and phones)
 - /advertiser/campaigns (Part 7 responsive filterable listing)
-- /advertiser/ad-formats
-- /advertiser/locations
-- /advertiser/creatives
+- /advertiser/ad-formats (Part 11 interactive format catalogue)
+- /advertiser/locations (Part 11 sample inventory and wizard prefill)
+- /advertiser/creatives (Part 11 creative metadata library)
 - /advertiser/billing
 - /advertiser/reports
 - /advertiser/notifications
@@ -112,3 +112,7 @@ Replace each placeholder route with its actual feature page. Keep the route path
 ## Part 7 advertiser access and boundaries
 
 The /advertiser homepage and /advertiser/campaigns use selectors scoped to the preset demo advertiser account (adv-1). Users registering new demonstration identities see an empty account, not the preset advertiser's campaigns. Data is browser-local and is not a security boundary. A real backend must enforce ownership. The creation wizard now has six steps and draft/resume support (Part 8). Full campaign details and real tracking belong to later phases.
+
+## Part 11 advertiser submodules
+
+The ad-format comparison, screen/location planner and creative library are implemented. Display numbers come from shared seeded demo data and browser-local changes. Users can explicitly copy provisional format, date and eligible screen IDs into their wizard draft after confirming replacement. Media files are inspected locally and previews are not stored or uploaded. Admin review, real creative delivery, GPS, payment and booking are not connected.

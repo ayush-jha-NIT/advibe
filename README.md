@@ -4,7 +4,7 @@ Responsive four-portal frontend for AdVibe: Public Website, Advertiser Portal, D
 
 ## Status
 
-**Parts 0–10 complete:** Official approved logo; role-aware UI component library; responsive public navbar/footer; admin, advertiser and driver navigation shells; live route switching, mobile drawer and navigation search.
+**Parts 0–11 complete:** Official approved logo; role-aware UI component library; responsive public navbar/footer; admin, advertiser and driver navigation shells; live route switching, mobile drawer and navigation search.
 
 **Part 3 adds:** typed fictional data for accounts, campaigns, creatives, screens, vehicles, locations, bookings, payments and settlements; owner-aware selectors; persisted Zustand store; pricing and availability validations; and cross-portal interactive dashboard previews.
 
@@ -21,6 +21,8 @@ Responsive four-portal frontend for AdVibe: Public Website, Advertiser Portal, D
 **Part 9 adds:** Browser-only image/video file header and metadata checks, city/zone/ID targeting filters, bulk screen selection with stale inventory warnings, weekday presets and delivery-day feedback, future-date safeguards, and compact mobile wizard step controls.
 
 **Part 10 adds:** Dedicated advertiser campaign detail pages with Overview, Creative, Locations & Screens, Review History and Billing sections; actionable demo pause/resume/cancel with lifecycle validation, local audit entries and affected-driver notifications on demo booking cancellation.
+
+**Part 11 adds:** Interactive Advertiser Creative Library with metadata-only create/edit/delete, local file validation and previews; Ad Formats comparison with applicable fictional rate cards; Locations exploration with status/date filters, schematic map, screen selections and intentional wizard prefill. All operations remain role-scoped client-side demonstrations.
 
 **Not implemented:** Real backend login/authorization, live OTP, production creative uploads and moderation, Cashfree payments, actual payouts, KYC or device telemetry. Many operational module routes remain placeholders. Demo role switching is not security; no real personal or payment data should be stored here.
 
@@ -87,3 +89,5 @@ The supplied megaphone artwork is the sole approved AdVibe logo. Cashfree requir
 - [Part 9 wizard reliability and mobile UX](docs/ADVERTISER_PART_9.md)
 
 - [Part 10 campaign details, lifecycle rules and limitations](docs/ADVERTISER_PART_10.md)
+
+- [Part 11 creative library, formats and locations](docs/ADVERTISER_PART_11.md)

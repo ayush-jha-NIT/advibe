@@ -39,7 +39,7 @@ export const portalNavigation: Record<PortalRole,NavItem[]> = {
     {label:"My Campaigns",href:"/advertiser/campaigns",icon:ListVideo,description:"Active, completed and draft campaigns"},
     {label:"Ad Formats",href:"/advertiser/ad-formats",icon:LayoutGrid,description:"Screen formats and specifications"},
     {label:"Locations",href:"/advertiser/locations",icon:MapPinned,description:"Search cities, areas and screens"},
-    {label:"Creative Library",href:"/advertiser/creatives",icon:Paintbrush,description:"Upload and organize campaign media"},
+    {label:"Creative Library",href:"/advertiser/creatives",icon:Paintbrush,description:"Organize creative metadata and preview local media"},
     {label:"Billing & Payments",href:"/advertiser/billing",icon:Wallet,description:"Wallet, invoices and Cashfree transactions",group:"management"},
     {label:"Reports & Analytics",href:"/advertiser/reports",icon:FileChartColumnIncreasing,description:"Campaign performance and reach",group:"management"},
     {label:"Notifications",href:"/advertiser/notifications",icon:Bell,description:"Campaign, creative and billing alerts",group:"account"},

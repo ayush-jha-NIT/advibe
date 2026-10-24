@@ -50,7 +50,7 @@ export function PartSevenHeader({title,description,eyebrow}:{title:string;descri
 export function DemoDataNotice(){
  return <div className="flex items-start gap-2 rounded-xl border border-[#d4e5fa] bg-[#eff6ff] px-4 py-3 text-xs leading-5 text-[#43638e]">
   <ShieldAlert className="mt-0.5 size-4 shrink-0 text-brand-blue" aria-hidden/>
-  <p>All figures and campaigns on this page are fictional records stored in this browser. This does not measure real delivery, audience reach, screen availability or payments. The six-step creation wizard starts in Part 8.</p>
+  <p>All figures and campaigns on this page are fictional records stored in this browser. This does not measure real delivery, audience reach, screen availability or payments. The six-step wizard, creative library and locations explorer are demo-only; production APIs are not connected.</p>
  </div>;
 }
 export function EmptyAdvertiser({filtered=false}:{filtered?:boolean}){

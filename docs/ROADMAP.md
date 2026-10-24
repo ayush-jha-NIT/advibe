@@ -24,7 +24,8 @@ Client-approved visual reference set: 59 screenshots across Public, Admin, Adver
 - [x] Part 8: Six-step advertiser campaign wizard with persistent drafts, media preview, screen targeting, weekday quote and review submission
 - [x] Part 9: Wizard creative-file inspection, zone targeting, schedule warnings, mobile step controls and regression tests
 - [x] Part 10: Advertiser-owned campaign detail pages, metadata tabs, audit timeline, demo pause/resume/cancel and linked billing records
-- [ ] Parts 11–23: Remaining advertiser modules, driver/admin workflows, integrations and mobile QA
+- [x] Part 11: Creative metadata library, ad-format comparison and sample-screen location explorer linked to the wizard
+- [ ] Parts 12–23: Advertiser billing/support, driver/admin workflows, integration and final QA
 
 **Part 3 delivers a frontend demo engine, not a backend.** Role switching is public, data is fictional and browser-local, device controls are simulated and no Cashfree checkout occurs. See [DEMO_ENGINE.md](DEMO_ENGINE.md) and [ROUTES.md](ROUTES.md).
 
@@ -35,3 +36,5 @@ Client-approved visual reference set: 59 screenshots across Public, Admin, Adver
 **Part 9:** The wizard checks local preview media headers and dimensions, detects stale/incompatible screen targets, rechecks future dates, and has compact phone navigation. These are frontend demo safeguards, not production asset validation or reservation.
 
 **Part 10:** Details show only stored campaign metrics, creative metadata, demo screen assignments, real recorded audit entries in the local dataset, and demo payment records. Cancellation does not refund Cashfree; pause/resume do not send hardware commands. Owner check is a local demo UI rule, not server authorization.
+
+**Part 11:** The library saves only creative metadata, never file contents. Format pricing and location availability use fictional demo records; adding targets to the wizard is only a provisional planning action. Backend asset storage, moderation, live device inventory, reliable location maps and real booking are still required.
