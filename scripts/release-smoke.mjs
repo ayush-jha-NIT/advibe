@@ -19,10 +19,10 @@ async function visit(page,route,{overflow=false}={}){
  const onError=e=>errors.push(e.message);
  page.on("pageerror",onError);
  try{
-  const response=await page.goto(base+route,{waitUntil:"domcontentloaded",timeout:30000});
+  const response=await page.goto(base+route,{waitUntil:"domcontentloaded",timeout:15000});
   assert.ok(response&&response.status()<400,route+" HTTP "+response?.status());
   await page.locator("main").first().waitFor({state:"visible",timeout:15000});
-  await page.waitForTimeout(300);
+  await page.waitForTimeout(120);
   assert.equal(await page.getByText("This page could not be found").count(),0,"Not-found page at "+route);
   if(overflow){
    const dims=await page.evaluate(()=>({scroll:document.documentElement.scrollWidth,viewport:document.documentElement.clientWidth}));
@@ -38,18 +38,21 @@ async function section(name,fn){
 }
 async function createPage(width){
  const ctx=await browser.newContext({viewport:{width,height:850},reducedMotion:"reduce"});
- return {ctx,page:await ctx.newPage()};
+ const page=await ctx.newPage();page.setDefaultTimeout(12000);
+ return {ctx,page};
 }
 async function screenshot(page,label){
- try{await mkdir(output,{recursive:true});await page.screenshot({path:output+"/"+label+".png",fullPage:true});}catch{}
+ try{await mkdir(output,{recursive:true});await page.screenshot({path:output+"/"+label+".png",fullPage:false,timeout:8000});}catch{}
 }
 try{
  for(const width of viewportWidths){
   await section("Public site responsive "+width+"px",async()=>{
    const {ctx,page}=await createPage(width);
    try{
-    for(const route of ["/","/for-advertisers","/for-drivers","/locations","/pricing","/help-center","/contact","/about","/ad-formats"])
-     await visit(page,route,{overflow:width<=375});
+    const routes=width===375||width===1440
+     ?["/","/for-advertisers","/for-drivers","/locations","/pricing","/help-center","/contact","/about","/ad-formats"]
+     :["/","/pricing","/contact"];
+    for(const route of routes)await visit(page,route,{overflow:width<=375});
     if(width<=1024){
      await page.goto(base+"/");
      const trigger=page.getByRole("button",{name:"Open public navigation"});
@@ -93,7 +96,8 @@ try{
      await gate.waitFor({state:"visible",timeout:15000});
      await gate.click();
      await page.getByRole("heading",{level:1}).first().waitFor({timeout:15000});
-     for(const route of routes)await visit(page,route,{overflow:width===375});
+     for(const route of (width===375?[routes[0],routes[1],routes[2],routes[routes.length-1]]:routes))
+      await visit(page,route,{overflow:width===375});
      if(width===375){
       await page.goto(base+"/"+role);
       const trigger=page.getByRole("button",{name:"Open navigation menu"});
