@@ -84,3 +84,110 @@ button:not(:disabled) { cursor: pointer; }
     transition-duration: 0.01ms !important;
   }
 }
+
+
+/* Part 4: cinematic homepage composition. CSS-only motion keeps hydration minimal. */
+.advibe-hero-sky {
+  top: auto;
+  bottom: 0;
+  height: 315px;
+  overflow: hidden;
+  background: #06162e;
+}
+.advibe-hero-sky > svg {
+  display: block;
+  object-fit: cover;
+}
+.advibe-hero-shade {
+  background:
+    linear-gradient(180deg, #03152c 0%, #03152cfb 32%, #03152ce8 56%, #03152c80 77%, #03152c11 100%);
+}
+.advibe-scene-city {
+  animation: advibe-sky-cycle 9.6s ease-in-out infinite;
+}
+.advibe-scene-parallax {
+  animation: advibe-parallax 9.6s ease-in-out infinite;
+}
+.advibe-scene-bike {
+  animation: advibe-bike-reveal 9.6s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center bottom;
+}
+.advibe-scene-car {
+  animation: advibe-car-reveal 9.6s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center bottom;
+}
+.advibe-scene-network {
+  animation: advibe-network-appear 9.6s ease-in-out infinite;
+}
+.advibe-pin-pulse {
+  animation: advibe-pin-ring 3.2s ease-in-out infinite;
+}
+.advibe-scene-light {
+  animation: advibe-tail-light 9.6s ease-in-out infinite;
+}
+.advibe-loop-indicator {
+  animation: advibe-indicator 1.8s ease-in-out infinite;
+}
+@keyframes advibe-sky-cycle {
+  0%, 100% { opacity: .94; }
+  32%, 78% { opacity: 1; }
+}
+@keyframes advibe-parallax {
+  0%, 100% { translate: 0 0; }
+  50% { translate: -9px 0; }
+}
+@keyframes advibe-bike-reveal {
+  0%, 12% { opacity: .72; translate: 0 32px; }
+  28%, 89% { opacity: 1; translate: 0 0; }
+  100% { opacity: .72; translate: 0 32px; }
+}
+@keyframes advibe-car-reveal {
+  0%, 22% { opacity: .7; translate: 18px 20px; }
+  43%, 89% { opacity: 1; translate: 0 0; }
+  100% { opacity: .7; translate: 18px 20px; }
+}
+@keyframes advibe-network-appear {
+  0%, 42% { opacity: 0; }
+  57%, 86% { opacity: .95; }
+  100% { opacity: 0; }
+}
+@keyframes advibe-pin-ring {
+  0%,100% { opacity: .08; stroke-width: 1; }
+  50% { opacity: .7; stroke-width: 3; }
+}
+@keyframes advibe-tail-light {
+  0%, 34%, 100% { opacity: .3; }
+  52%, 82% { opacity: .86; }
+}
+@keyframes advibe-indicator {
+  0%, 100% { opacity: .45; scale: .75; }
+  50% { opacity: 1; scale: 1.2; }
+}
+@media (min-width: 768px) {
+  .advibe-hero-sky { top: 0; bottom: auto; height: 100%; }
+  .advibe-hero-shade {
+    background:
+      linear-gradient(90deg, #03152cfa 0%, #03152cf2 26%, #03152cb0 47%, #03152c18 82%),
+      linear-gradient(0deg, #03152c99 0%, transparent 34%);
+  }
+}
+@media (max-width: 389px) {
+  .advibe-hero-sky { height: 265px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .advibe-scene-city,
+  .advibe-scene-parallax,
+  .advibe-scene-bike,
+  .advibe-scene-car,
+  .advibe-scene-network,
+  .advibe-pin-pulse,
+  .advibe-scene-light,
+  .advibe-loop-indicator {
+    animation: none !important;
+    translate: none !important;
+    scale: 1 !important;
+    opacity: 1 !important;
+  }
+}
