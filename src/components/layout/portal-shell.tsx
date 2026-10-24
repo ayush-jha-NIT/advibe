@@ -2,11 +2,11 @@
 
 import * as React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { ArrowRight, Bell, ChevronDown, ChevronLeft, ChevronRight, CircleHelp,
-  Command, LogIn, Menu, PanelLeftClose, PanelLeftOpen, Search, Settings, X } from "lucide-react";
+import { ArrowRight, Bell, ChevronDown, ChevronRight, CircleHelp,
+  LogIn, Menu, PanelLeftClose, PanelLeftOpen, Search, Settings, X } from "lucide-react";
 import { BrandLogo } from "@/components/brand/brand-logo";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { activePortalItem, portalNavigation, portalNames, portalPeople,
   type PortalRole, type NavItem } from "@/config/navigation";
@@ -66,7 +66,7 @@ function Sidebar({role, collapsed, onToggle, onNavigate, mobile=false}:{
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-[linear-gradient(160deg,#03152e,#062650_58%,#03152e)] text-white">
       <div className={cn("flex h-[76px] min-h-[76px] items-center border-b border-white/10 px-4", collapsed && "justify-center px-2")}>
-        {collapsed ? <Link href={"/"+role} className="flex size-11 items-center justify-center rounded-lg bg-[#12366d] text-lg font-extrabold text-white" aria-label={portalNames[role]+" home"}>A<span className="text-brand-orange">V</span></Link>
+        {collapsed ? <Link href={"/"+role} className="flex size-11 items-center justify-center rounded-lg bg-[#12366d]" aria-label={portalNames[role]+" home"}><Image src="/icon.png" alt="" width={36} height={36} className="size-9 object-contain"/></Link>
           : <BrandLogo href={"/"+role} width={183} className="w-[174px]" priority />}
       </div>
       <SidebarNavigation role={role} collapsed={collapsed} onNavigate={onNavigate}/>
@@ -208,7 +208,6 @@ export function PortalShell({role,children}:{role:PortalRole;children:React.Reac
                   <button type="button" className="relative inline-flex size-11 items-center justify-center rounded-xl hover:bg-surface-alt" aria-label="Notifications" aria-expanded={showNotifications}
                     onClick={()=>{setShowNotifications(v=>!v);setShowAccount(false);}}>
                     <Bell className="size-5" aria-hidden />
-                    <span className="absolute right-2.5 top-2.5 size-2.5 rounded-full border-2 border-white bg-[#f42537]" aria-hidden/>
                   </button>
                   {showNotifications && <div className="absolute right-0 top-[calc(100%+10px)] z-[65] w-[min(85vw,310px)] rounded-xl border border-line bg-white p-4 shadow-xl" role="region" aria-label="Notification preview">
                     <p className="font-semibold">Notifications</p>

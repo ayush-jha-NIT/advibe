@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, BadgeCheck, CarFront, LayoutDashboard, Megaphone, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowRight, CarFront, LayoutDashboard, Megaphone, ShieldCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { BrandLogo } from "@/components/brand/brand-logo";
 
