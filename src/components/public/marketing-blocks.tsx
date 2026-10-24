@@ -1,5 +1,5 @@
 import Link from "next/link";
-import {ArrowRight, BadgeCheck, BarChart3, CarFront, Check, Clock3, Headphones, MapPin, Megaphone, MonitorPlay, ShieldCheck, Target, UsersRound, Wallet, Wrench, Zap} from "lucide-react";
+import {ArrowRight, BadgeCheck, BarChart3, CarFront, Check, Clock3, Headphones, MapPin, Megaphone, MonitorPlay, ShieldCheck, Target, UsersRound, Wallet, Wrench} from "lucide-react";
 import type {LucideIcon} from "lucide-react";
 import {HeroScene} from "@/components/landing/hero-scene";
 import {FormatPreviewArt} from "@/components/landing/format-preview-art";
