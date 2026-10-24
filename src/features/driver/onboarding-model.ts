@@ -30,7 +30,7 @@ export function validateDriverStep(step:1|2|3,d:DriverDraft,year=2026):void{
   throw Error("Mark all three sample document categories as ready.");
 }
 export function validateDriverThrough(step:1|2|3,d:DriverDraft,year=2026){
- for(let n=1;n<=step;n++)validateDriverStep(n as 1|2|3,d,year);
+ for(let n=1;n<=step;n++)validateDriverStep(n as 1|2|3|4|5,d,year);
 }
 export function unlockDriverStep(d:DriverDraft,step:1|2|3,year=2026):DriverDraft{
  validateDriverThrough(step,d,year);
@@ -47,4 +47,10 @@ export function sanitizedDriverDraft(d:DriverDraft):DriverDraft{
   modelYear:d.modelYear,ownership:d.ownership,
   checklist:{licence:!!d.checklist.licence,registration:!!d.checklist.registration,insurance:!!d.checklist.insurance},
   highestUnlocked:d.highestUnlocked};
+}
+
+/** Submission is a fictional review request, not a verification or bank onboarding event. */
+export function validateDriverSubmission(d:DriverDraft,hasExistingPreview:boolean,year=2026){
+ validateDriverThrough(5,d,year);
+ if(hasExistingPreview)throw Error("Your demo onboarding request has already been submitted.");
 }

@@ -27,7 +27,8 @@ Client-approved visual reference set: 59 screenshots across Public, Admin, Adver
 - [x] Part 11: Creative metadata library, ad-format comparison and sample-screen location explorer linked to the wizard
 - [x] Part 12: Advertiser billing ledger, non-tax statement previews, reports, notification center, demo profile/preferences and support tickets
 - [x] Part 13: Driver onboarding steps 1–3, sample profile and vehicle details, mock KYC readiness, session persistence and validation
-- [ ] Parts 14–23: Driver screen/bank/agreement steps and modules, Admin, integration and final QA
+- [x] Part 14: Driver onboarding steps 4–5 (mock screen installation, payout-readiness, agreement), guarded demo submission and verification preview
+- [ ] Parts 15–23: Driver operations/earnings/maintenance, Admin modules, integration and final QA
 
 **Part 3 delivers a frontend demo engine, not a backend.** Role switching is public, data is fictional and browser-local, device controls are simulated and no Cashfree checkout occurs. See [DEMO_ENGINE.md](DEMO_ENGINE.md) and [ROUTES.md](ROUTES.md).
 
@@ -44,3 +45,5 @@ Client-approved visual reference set: 59 screenshots across Public, Admin, Adver
 **Part 12:** Billing and statements come only from fictional existing payments, with no Cashfree gateway activation, charge, refund or valid tax invoice. Profile and notifications remain browser-local; tickets do not reach customer service. Reports contain only stored demo totals, not actual delivery metrics.
 
 **Part 13:** Driver onboarding is an explicitly fictional session-only preview. No government IDs, legal names, phone numbers, actual vehicle registration details, bank information or documents are accepted or stored. Steps 4–5 and production KYC verification require trusted backends. The seeded driver and vehicle approval are never overwritten by onboarding preview.
+
+**Part 14:** The five-step wizard now validates sample placement and payout/consent readiness. A final submission creates a separate driverPreviewApplications record and Admin notice, not a KYC approval. Real banking credentials and document uploads are never collected, and seeded approved driver/vehicle/screen records remain intact.

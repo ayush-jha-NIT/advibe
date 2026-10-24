@@ -70,8 +70,8 @@ Campaign detail route /advertiser/campaigns/[id] is implemented in Part 10 with 
 
 Root: /driver. Paths:
 - /driver
-- /driver/onboarding (Part 13 mobile steps 1–3; screen setup and agreement Steps 4–5 in Part 14)
-- /driver/verification
+- /driver/onboarding (Parts 13–14 full five-step responsive demo wizard, review and submission)
+- /driver/verification (Part 14 independent sample request vs seeded application status)
 - /driver/vehicle
 - /driver/assigned-ads
 - /driver/campaigns
@@ -124,3 +124,7 @@ The billing, reports, notifications, support and settings pages are implemented.
 ## Part 13 driver onboarding
 
 The driver landing dashboard links to /driver/onboarding. The first three onboarding previews collect only sample alias, operating city, driving experience/availability, generic vehicle category/model/year/ownership, and three boolean placeholder document-readiness states. They validate each step and persist the allowlisted draft in sessionStorage. No personal KYC identifiers or file bytes are requested. Approval of seeded demo driver and vehicle records remains unchanged, and real KYC, device installation, agreement, banking and submission are reserved for Part 14 and server integrations.
+
+## Part 14 driver screen and payout demo
+
+All five onboarding steps are interactive. Step 4 chooses a display type appropriate for the sample vehicle and confirms illustrative installation/power checks. Step 5 chooses weekly/monthly example payout frequency and requires explicit example agreement/consent acknowledgements; it never accepts account numbers, UPI IDs, IFSC, real identity documents or device tokens. Review submits an isolated, browser-local fictional driver review record and Admin notice. The existing seeded driver and vehicle approvals are unaffected. The separate /driver/verification route distinguishes the demo review request from existing sample verification. See docs/DRIVER_PART_14.md.

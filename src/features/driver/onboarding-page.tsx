@@ -7,14 +7,14 @@ import {DEMO_USERS} from "@/lib/demo-auth";
 import {useDemoAuth} from "@/services/demo-auth-store";
 import {useDemoStore} from "@/services/demo-store";
 import {useDriverOnboarding} from "@/services/driver-onboarding-store";
-import {documentKinds,driverCompletedSteps,driverSeed,unlockDriverStep,validateDriverThrough,type DriverDraft,type DocumentKind} from "./onboarding-model";
+import {documentKinds,driverCompletedSteps,driverSeed,sanitizedDriverDraft,screenOptions,screenLabels,unlockDriverStep,type DriverDraft,type DocumentKind} from "./onboarding-model";
 
 const steps=[
  {title:"Driver Profile",hint:"Sample personal profile",icon:UserRound},
  {title:"Vehicle Details",hint:"Vehicle category and model",icon:CarFront},
  {title:"Document Checklist",hint:"KYC interface preview",icon:FileCheck2},
- {title:"Screen Setup",hint:"Available in Part 14",icon:ClipboardCheck},
- {title:"Agreement & Bank",hint:"Available in Part 14",icon:BadgeCheck}
+ {title:"Screen Setup",hint:"Example installation and placement",icon:ClipboardCheck},
+ {title:"Agreement & Payout",hint:"Readiness, consent and final review",icon:BadgeCheck}
 ] as const;
 const documents:Record<DocumentKind,{name:string;detail:string}>={
  licence:{name:"Driving Licence",detail:"Example driving permit. No licence number or scan is accepted."},
@@ -36,9 +36,9 @@ export function DriverOnboarding(){
  const patchDraft=useDriverOnboarding(s=>s.patch);
  const replaceDraft=useDriverOnboarding(s=>s.replace);
  const clearDraft=useDriverOnboarding(s=>s.clear);
- const draft=saved??driverSeed;
+ const draft=sanitizedDriverDraft(saved??driverSeed);
  const [ready,setReady]=React.useState(false);
- const [step,setStep]=React.useState<1|2|3|4>(1);
+ const [step,setStep]=React.useState<1|2|3|4|5|6>(1);
  const [error,setError]=React.useState(""),[feedback,setFeedback]=React.useState("");
  const errRef=React.useRef<HTMLParagraphElement>(null);
  React.useEffect(()=>{
@@ -51,19 +51,27 @@ export function DriverOnboarding(){
   if(error){const frame=window.requestAnimationFrame(()=>errRef.current?.focus());return ()=>window.cancelAnimationFrame(frame);}
  },[error]);
  function patch(values:Partial<DriverDraft>){patchDraft(accountId,values);setError("");setFeedback("");}
- function toStep(n:1|2|3|4){
+ function toStep(n:1|2|3|4|5){
   if(n>draft.highestUnlocked)return;
   setStep(n);setError("");setFeedback("");
  }
  function next(){
   setError("");setFeedback("");
-  if(step===4)return;
+  if(step===6)return;
   try{
    const updated=unlockDriverStep(draft,step,new Date().getFullYear());
    replaceDraft(accountId,updated);
-   setStep((step+1) as 2|3|4);
-   setFeedback(step===3?"Steps 1–3 complete in this browser. Screen setup and payout agreement continue in Part 14.":"Step "+step+" validated and saved in this browser session.");
+   setStep((step+1) as 2|3|4|5|6);
+   setFeedback(step===5?"All five demo steps validated. Review the sample details and submit your fictional request.":"Step "+step+" validated and saved to this browser session.");
   }catch(e){setError(e instanceof Error?e.message:"Please check these sample fields.");}
+ }
+ function submit(){
+  setError("");setFeedback("");
+  if(!window.confirm("Submit this fictional onboarding preview for demo Admin review? No identity, bank or device verification will occur."))return;
+  try{
+   const id=useDemoStore.getState().submitDriverPreview({role:"driver",accountId},draft);
+   setFeedback("Demo review request "+id+" saved. This does not change your existing approved driver or vehicle status.");
+  }catch(e){setError(e instanceof Error?e.message:"Unable to submit this sample request.");}
  }
  function reset(){
   if(!window.confirm("Reset your sample onboarding progress? This will not change the existing approved demo vehicle or driver account."))return;
@@ -72,29 +80,30 @@ export function DriverOnboarding(){
  const approved=db.driverApplications.find(a=>a.driverId===accountId&&a.status==="approved");
  const existingVehicle=db.vehicles.find(v=>v.driverId===accountId&&v.verification==="approved");
  const completed=driverCompletedSteps(draft,new Date().getFullYear());
+ const submitted=(db.driverPreviewApplications??[]).find(a=>a.driverId===accountId);
  if(!ready)return <p role="status" className="rounded-xl border border-[#dfebf8] bg-white p-6 text-sm text-muted-foreground">Loading driver onboarding preview…</p>;
  if(!provisioned)return <main className="mx-auto max-w-2xl rounded-3xl border border-[#dce7f8] bg-white p-6 sm:p-9"><LockKeyhole className="size-10 text-brand-blue"/><h1 className="mt-3 text-2xl font-extrabold text-brand-navy">Driver preview account required</h1><p className="mt-3 text-sm leading-6 text-muted-foreground">New frontend-only signup identities have no backend driver record. Use the preset Driver demo login to try onboarding without storing real identity information.</p><Link href="/login?role=driver" className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-xl bg-brand-blue px-5 font-bold text-white">Open demo login <ArrowRight className="size-4"/></Link></main>;
  return <main className="mx-auto max-w-6xl space-y-5 pb-10">
   <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-[.16em] text-brand-blue">Driver Partner · Demo onboarding</p><h1 className="mt-1 text-2xl font-extrabold text-brand-navy sm:text-3xl">Become an AdVibe Partner</h1>
-   <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">Preview the first three steps of a five-step driver onboarding journey, optimized for your phone.</p></div>
-   <Badge tone="info">Part 13 · Steps 1–3 of 5</Badge>
+   <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">Complete all five demonstration steps: example profile, vehicle, KYC readiness, screen installation and agreement/payout planning.</p></div>
+   <Badge tone="info">Part 14 · Five-step demo wizard</Badge>
   </div>
-  <div className="flex items-start gap-3 rounded-xl border border-[#f0d6ab] bg-[#fff9eb] p-4 text-xs leading-6 text-[#83592b]"><ShieldAlert className="mt-0.5 size-5 shrink-0"/><p><strong>Demo only: do not enter genuine KYC details.</strong> This preview never asks for Aadhaar, PAN, licence numbers, phone numbers, real registration plates, bank information or scans. Document controls are simulated checklist markers, not uploaded/verified documents. Data stays in this tab&apos;s browser session.</p></div>
+  <div className="flex items-start gap-3 rounded-xl border border-[#f0d6ab] bg-[#fff9eb] p-4 text-xs leading-6 text-[#83592b]"><ShieldAlert className="mt-0.5 size-5 shrink-0"/><p><strong>Demo only: do not enter genuine KYC details.</strong> This preview never asks for Aadhaar, PAN, licence numbers, phone numbers, real registration plates, bank information or scans. Document controls are simulated checklist markers, not uploaded/verified documents. Form data stays in this tab&apos;s browser session. A submitted, non-sensitive demo summary is shared only with the browser-local Admin portal.</p></div>
   {approved&&<div className="flex flex-wrap items-center gap-3 rounded-xl border border-[#b9e4cf] bg-[#effaf3] p-4 text-xs leading-6 text-[#226748]"><CheckCircle2 className="size-5 shrink-0"/><div className="flex-1"><strong>Existing demo account approved.</strong> Your seeded {existingVehicle?.model??"vehicle"} remains approved. Exploring this separate onboarding preview will not reset approval, screen status or vehicle records.</div></div>}
   <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_285px]">
    <div className="min-w-0 space-y-4">
     <Card><CardContent className="pt-5">
-     <div className="mb-4 flex flex-wrap items-center justify-between gap-2"><p className="text-sm font-bold text-brand-navy">Step {Math.min(step,3)} of 5 {step===4?"· Waiting for Part 14":""}</p><span className="text-xs font-semibold text-[#6280a3]">{completed} of first 3 validated</span></div>
+     <div className="mb-4 flex flex-wrap items-center justify-between gap-2"><p className="text-sm font-bold text-brand-navy">{step===6?"Ready for demo submission":"Step "+step+" of 5"}</p><span className="text-xs font-semibold text-[#6280a3]">{completed} of 5 validated</span></div>
      <div role="progressbar" aria-label="Driver onboarding step progress" aria-valuemin={0} aria-valuemax={5} aria-valuenow={completed} className="h-2 overflow-hidden rounded-full bg-[#e1ebf8]"><div className="h-full rounded-full bg-brand-blue transition-[width]" style={{width:completed/5*100+"%"}}/></div>
      <nav aria-label="Driver onboarding steps" className="mt-5 grid grid-cols-3 gap-2 sm:grid-cols-5">{steps.map(({title,icon:Icon},i)=>{
-      const n=i+1,active=step===n,unlocked=n<=draft.highestUnlocked&&n<=4;
-      return <button type="button" key={title} disabled={!unlocked} onClick={()=>toStep(n as 1|2|3|4)} aria-current={active?"step":undefined}
+      const n=i+1,active=step===n,unlocked=n<=draft.highestUnlocked&&n<=5;
+      return <button type="button" key={title} disabled={!unlocked} onClick={()=>toStep(n as 1|2|3|4|5)} aria-current={active?"step":undefined}
        className={"flex min-h-20 flex-col items-center justify-center gap-1.5 rounded-xl border px-1.5 py-3 text-center text-[11px] font-semibold leading-tight transition sm:text-xs "+(active?"border-brand-blue bg-[#ebf4ff] text-brand-blue":unlocked?"border-[#d9e7f8] bg-white text-brand-navy hover:border-brand-blue":"border-[#e4eaf3] bg-[#f7f9fc] text-[#94a5ba]")}>
-       <span className={"grid size-8 place-items-center rounded-full "+(active?"bg-brand-blue text-white":unlocked?"bg-[#eaf3ff] text-brand-blue":"bg-[#e7edf5] text-[#9baac0]")}>{n<=3&&n<draft.highestUnlocked?<Check className="size-4"/>:n>3?<LockKeyhole className="size-4"/>:<Icon className="size-4"/>}</span><span>{title}</span>
+       <span className={"grid size-8 place-items-center rounded-full "+(active?"bg-brand-blue text-white":unlocked?"bg-[#eaf3ff] text-brand-blue":"bg-[#e7edf5] text-[#9baac0]")}>{n<draft.highestUnlocked?<Check className="size-4"/>:!unlocked?<LockKeyhole className="size-4"/>:<Icon className="size-4"/>}</span><span>{title}</span>
       </button>;
      })}</nav>
     </CardContent></Card>
-    <Card><CardHeader><div className="flex flex-wrap items-center justify-between gap-2"><div><p className="text-xs font-bold uppercase tracking-[.13em] text-brand-blue">Step {Math.min(step,3)} {step===4?"complete":"of 5"}</p><CardTitle className="mt-1">{step<=3?steps[step-1].title:"Ready for Screen Setup"}</CardTitle><p className="mt-1 text-sm leading-6 text-muted-foreground">{step<=3?steps[step-1].hint:"Steps 4 and 5 will be implemented in Part 14."}</p></div><span className="grid size-12 place-items-center rounded-xl bg-[#eaf3ff] text-brand-blue">{step===1?<UserRound className="size-6"/>:step===2?<CarFront className="size-6"/>:step===3?<FileText className="size-6"/>:<CheckCircle2 className="size-6"/>}</span></div></CardHeader>
+    <Card><CardHeader><div className="flex flex-wrap items-center justify-between gap-2"><div><p className="text-xs font-bold uppercase tracking-[.13em] text-brand-blue">{step===6?"Review":"Step "+step+" of 5"}</p><CardTitle className="mt-1">{step<=5?steps[step-1].title:"Review & Demo Submission"}</CardTitle><p className="mt-1 text-sm leading-6 text-muted-foreground">{step<=5?steps[step-1].hint:"All five steps validated; no real verification is performed."}</p></div><span className="grid size-12 place-items-center rounded-xl bg-[#eaf3ff] text-brand-blue">{step===1?<UserRound className="size-6"/>:step===2?<CarFront className="size-6"/>:step===3?<FileText className="size-6"/>:step===4?<ClipboardCheck className="size-6"/>:step===5?<BadgeCheck className="size-6"/>:<CheckCircle2 className="size-6"/>}</span></div></CardHeader>
      <CardContent className="space-y-5">
       {step===1&&<div className="space-y-4">
        <div className="grid gap-4 sm:grid-cols-2">
@@ -106,7 +115,7 @@ export function DriverOnboarding(){
        <label className="flex min-h-14 cursor-pointer items-start gap-3 rounded-xl border border-[#dce8f8] bg-[#f8fbff] p-4"><input type="checkbox" className="mt-0.5 size-5 shrink-0 accent-[#0866ff]" checked={draft.adultConfirmed} onChange={e=>patch({adultConfirmed:e.target.checked})}/><span className="text-sm leading-6 text-brand-navy">I confirm this fictional driver profile represents someone aged 18 or older. This is not age verification.</span></label>
       </div>}
       {step===2&&<div className="space-y-4">
-       <fieldset><legend className={label}>Vehicle category *</legend><div className="grid grid-cols-3 gap-2">{(["bike","auto","car"] as const).map(type=><button type="button" key={type} aria-pressed={draft.vehicleType===type} onClick={()=>patch({vehicleType:type})}
+       <fieldset><legend className={label}>Vehicle category *</legend><div className="grid grid-cols-3 gap-2">{(["bike","auto","car"] as const).map(type=><button type="button" key={type} aria-pressed={draft.vehicleType===type} onClick={()=>patch({vehicleType:type,screenChoice:screenOptions[type][0],installationReviewed:false,powerSafetyConfirmed:false})}
         className={"flex min-h-20 flex-col items-center justify-center gap-2 rounded-xl border p-3 text-sm font-semibold capitalize "+(draft.vehicleType===type?"border-brand-blue bg-[#ebf4ff] text-brand-blue":"border-[#dce8f8] bg-white text-[#516a8b]")}><CarFront className="size-5"/>{type}</button>)}</div></fieldset>
        <div className="grid gap-4 sm:grid-cols-2">
         <label><span className={label}>Sample make & model *</span><input className={field} value={draft.vehicleModel} maxLength={70} onChange={e=>patch({vehicleModel:e.target.value})} placeholder="Demo vehicle model" autoComplete="off"/><span className="mt-1 block text-xs text-muted-foreground">Avoid actual vehicle identifiers.</span></label>
@@ -125,16 +134,42 @@ export function DriverOnboarding(){
        <div className="rounded-xl border border-[#f4ddb5] bg-[#fff8ed] p-4 text-xs leading-6 text-[#8a612d]"><strong>Not a KYC submission.</strong> These checkbox states cannot establish identity, validity, eligibility or driver approval. The production backend must securely receive and verify documents after consent.</div>
       </div>}
       {step===4&&<div className="space-y-4">
-       <div className="flex items-center gap-3 rounded-2xl border border-[#aee0c3] bg-[#effaf4] p-5"><CheckCircle2 className="size-10 shrink-0 text-[#159364]"/><div><h3 className="text-lg font-extrabold text-brand-navy">First 3 steps completed</h3><p className="mt-1 text-sm leading-6 text-[#507b62]">Your sample profile, vehicle and document checklist are ready to resume within this browser session.</p></div></div>
-       <div className="grid gap-3 sm:grid-cols-2"><Detail title="Sample driver" value={draft.displayAlias}/><Detail title="Operating city" value={draft.city}/><Detail title="Vehicle" value={draft.vehicleType+" · "+draft.vehicleModel}/><Detail title="Document placeholders" value={documentKinds.filter(key=>draft.checklist[key]).length+" of 3 marked"}/></div>
-       <div className="rounded-xl border border-[#d6e7fb] bg-[#f5f9ff] p-4"><p className="text-sm font-bold text-brand-navy">Next in Part 14</p><p className="mt-2 text-xs leading-6 text-muted-foreground">Step 4: Screen setup and device pairing. Step 5: Bank/agreement setup and final review. Neither step is currently implemented, and no live admin verification or payouts are triggered.</p></div>
+       <div className="rounded-xl border border-[#d0e5fa] bg-[#eff7ff] p-4 text-xs leading-6 text-[#4c6d92]"><strong>Screen installation demo.</strong> Choose where a hypothetical screen would go. There is no device pairing code, Bluetooth connection, real installation certification or hardware control in this browser.</div>
+       <fieldset><legend className={label}>Compatible sample screen placement *</legend><div className="grid gap-3 sm:grid-cols-2">{screenOptions[draft.vehicleType].map(choice=><button type="button" key={choice}
+        onClick={()=>patch({screenChoice:choice,installationReviewed:false,powerSafetyConfirmed:false})} aria-pressed={draft.screenChoice===choice}
+        className={"flex min-h-20 items-center gap-3 rounded-xl border p-4 text-left text-sm font-bold "+(draft.screenChoice===choice?"border-brand-blue bg-[#edf5ff] text-brand-blue":"border-[#dce7f7] bg-white text-brand-navy")}>
+        <ClipboardCheck className="size-6 shrink-0"/>{screenLabels[choice]}</button>)}</div></fieldset>
+       <div className="rounded-xl border border-[#dce8f7] bg-[#f8fbff] p-4"><p className="font-bold text-brand-navy">Mock installation checklist</p><p className="mt-1 text-xs leading-6 text-muted-foreground">These checkboxes show a proposed future verification flow. They do not confirm any real-world installation.</p>
+        <div className="mt-3 space-y-3">
+         <label className="flex min-h-14 cursor-pointer items-start gap-3 rounded-lg border border-[#e1eaf6] bg-white p-3"><input type="checkbox" className="mt-0.5 size-5 shrink-0 accent-[#0866ff]" checked={draft.installationReviewed} onChange={e=>patch({installationReviewed:e.target.checked})}/><span className="text-sm leading-6 text-brand-navy">I reviewed the sample placement and hypothetical mounting checklist. No installer has approved it.</span></label>
+         <label className="flex min-h-14 cursor-pointer items-start gap-3 rounded-lg border border-[#e1eaf6] bg-white p-3"><input type="checkbox" className="mt-0.5 size-5 shrink-0 accent-[#0866ff]" checked={draft.powerSafetyConfirmed} onChange={e=>patch({powerSafetyConfirmed:e.target.checked})}/><span className="text-sm leading-6 text-brand-navy">I acknowledge that real electrical power, road safety and device fitment must be checked by authorized staff before use.</span></label>
+        </div>
+       </div>
+       <div className="rounded-xl border border-[#f4dfae] bg-[#fff9ec] p-4 text-xs leading-6 text-[#8c632d]">Device state: <strong>Not paired</strong>. A green checklist does not mean AdVibe has installed or activated a display.</div>
+      </div>}
+      {step===5&&<div className="space-y-4">
+       <div className="rounded-xl border border-[#d0e5fa] bg-[#eff7ff] p-4 text-xs leading-6 text-[#4c6d92]"><strong>Agreement and payout preview.</strong> Never type real account numbers, IFSC, UPI IDs, PAN, Aadhaar, OTPs, card information or bank credentials here. No real contract or bank mandate is generated.</div>
+       <fieldset><legend className={label}>Example payout frequency *</legend><div className="grid gap-3 sm:grid-cols-2">{(["weekly","monthly"] as const).map(f=><button type="button" key={f} aria-pressed={draft.payoutFrequency===f} onClick={()=>patch({payoutFrequency:f})}
+        className={"min-h-16 rounded-xl border p-4 text-sm font-bold capitalize "+(draft.payoutFrequency===f?"border-brand-blue bg-[#edf5ff] text-brand-blue":"border-[#dce7f7] bg-white text-brand-navy")}>{f}</button>)}</div></fieldset>
+       <div className="space-y-3">{[
+        {key:"simulatedPayoutReady" as const,title:"Payout readiness (simulation)",desc:"I understand that a real payout account will require later secure verification. I am not providing banking details now."},
+        {key:"termsAccepted" as const,title:"Read sample partnership summary",desc:"I reviewed the illustrative terms: device care, content rules, participation and withdrawal. This checkbox is not a signed contract."},
+        {key:"demoConsent" as const,title:"Consent to demo review request",desc:"I agree to share only these fictional sample choices inside AdVibe’s browser-local demo for Admin preview."}
+       ].map(item=><label key={item.key} className="flex min-h-20 cursor-pointer items-start gap-3 rounded-xl border border-[#dce8f7] bg-[#f8fbff] p-4"><input type="checkbox" checked={draft[item.key]} onChange={e=>patch({[item.key]:e.target.checked})} className="mt-0.5 size-5 shrink-0 accent-[#0866ff]"/><span><strong className="text-sm text-brand-navy">{item.title}</strong><span className="mt-1 block text-xs leading-6 text-muted-foreground">{item.desc}</span></span></label>)}</div>
+       <p className="rounded-xl border border-[#f1d6a6] bg-[#fff7e9] p-4 text-xs leading-6 text-[#855726]">No payment destination is collected or connected. Final submission will request a <strong>demo review</strong>, not bank verification, KYC approval, an earnings account or a legally binding agreement.</p>
+      </div>}
+      {step===6&&<div className="space-y-4">
+       <div className="flex items-center gap-3 rounded-2xl border border-[#aee0c3] bg-[#effaf4] p-5"><CheckCircle2 className="size-10 shrink-0 text-[#159364]"/><div><h3 className="text-lg font-extrabold text-brand-navy">All five demo steps validated</h3><p className="mt-1 text-sm leading-6 text-[#507b62]">Review the non-sensitive sample choices below. They are not proof of installation, approval or payment setup.</p></div></div>
+       <dl className="grid gap-3 sm:grid-cols-2"><Detail title="Sample driver alias" value={draft.displayAlias}/><Detail title="Example city" value={draft.city}/><Detail title="Vehicle" value={draft.vehicleType+" · "+draft.vehicleModel}/><Detail title="Sample document readiness" value={documentKinds.filter(key=>draft.checklist[key]).length+" of 3 markers"}/><Detail title="Proposed display" value={screenLabels[draft.screenChoice]}/><Detail title="Example payout cadence" value={draft.payoutFrequency}/></dl>
+       {submitted?<div role="status" className="rounded-xl border border-[#b9dccc] bg-[#effaf5] p-4 text-sm leading-6 text-[#226744]"><strong>Demo review request already submitted.</strong><span className="mt-1 block">Reference: {submitted.id}. This is separate from your existing real-world-independent seeded approval and has no banking or hardware effect.</span></div>
+       :<div className="rounded-xl border border-[#c9dff6] bg-[#f4f9ff] p-4 text-sm leading-6 text-[#516e90]">Submit a fictional request to create an Admin notification and an isolated sample review record. No actual identity, vehicle, screen or bank status will change.</div>}
       </div>}
       {error&&<p role="alert" ref={errRef} tabIndex={-1} className="rounded-xl border border-[#f9baca] bg-[#fff1f4] p-3 text-sm font-semibold text-[#b52642] outline-none focus:ring-2 focus:ring-[#e87893]">{error}</p>}
       {feedback&&<p role="status" className="rounded-xl border border-[#b9e6ce] bg-[#f0fbf6] p-3 text-sm text-[#266c49]">{feedback}</p>}
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#e3ebf7] pt-5">
-       <Button variant="outline" disabled={step===1} onClick={()=>toStep(Math.max(1,step-1) as 1|2|3|4)}><ChevronLeft className="size-4"/>Previous</Button>
+       <Button variant="outline" disabled={step===1} onClick={()=>toStep(Math.max(1,step-1) as 1|2|3|4|5)}><ChevronLeft className="size-4"/>Previous</Button>
        <div className="flex flex-wrap gap-2"><Button variant="outline" onClick={()=>setFeedback("Demo progress is saved automatically in this tab session. No identity documents or vehicle registration details are stored.")}><Save className="size-4"/>Save preview</Button>
-        {step<4?<Button onClick={next}>{step===3?"Complete Step 3":"Continue"} <ArrowRight className="size-4"/></Button>:<Link href="/driver" className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-brand-blue px-4 text-sm font-bold text-white hover:bg-[#0051db]">Driver Dashboard <ArrowRight className="size-4"/></Link>}
+        {step<=5?<Button onClick={next}>{step===5?"Review submission":"Continue"} <ArrowRight className="size-4"/></Button>:submitted?<Link href="/driver" className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-brand-blue px-4 text-sm font-bold text-white hover:bg-[#0051db]">Driver Dashboard <ArrowRight className="size-4"/></Link>:<Button onClick={submit}>Submit demo review request <ArrowRight className="size-4"/></Button>}
        </div>
       </div>
      </CardContent>
@@ -143,8 +178,8 @@ export function DriverOnboarding(){
    </div>
    <aside className="space-y-4"><Card><CardHeader><CardTitle>Onboarding Guide</CardTitle></CardHeader><CardContent className="space-y-4">
     <p className="text-sm leading-6 text-muted-foreground">Five simple steps toward a future verified Driver Partner profile.</p>
-    {steps.map(({title,hint},i)=><div key={title} className="flex items-start gap-3"><span className={"grid size-8 shrink-0 place-items-center rounded-full text-xs font-bold "+(i<3&&i<completed?"bg-[#dff7e9] text-[#14794e]":i>=3?"bg-[#edf2f9] text-[#8da3be]":"bg-[#e8f3ff] text-brand-blue")}>{i<3&&i<completed?<Check className="size-4"/>:i+1}</span><div><p className="text-sm font-semibold text-brand-navy">{title}</p><p className="mt-1 text-xs leading-5 text-muted-foreground">{hint}</p></div></div>)}
-    <div className="rounded-lg bg-[#eef5ff] p-3 text-xs leading-6 text-[#47678e]"><strong>Progress:</strong> {completed} of 5 demo steps are validated. Later steps cannot be completed until Part 14.</div>
+    {steps.map(({title,hint},i)=><div key={title} className="flex items-start gap-3"><span className={"grid size-8 shrink-0 place-items-center rounded-full text-xs font-bold "+(i<completed?"bg-[#dff7e9] text-[#14794e]":i>=draft.highestUnlocked?"bg-[#edf2f9] text-[#8da3be]":"bg-[#e8f3ff] text-brand-blue")}>{i<completed?<Check className="size-4"/>:i+1}</span><div><p className="text-sm font-semibold text-brand-navy">{title}</p><p className="mt-1 text-xs leading-5 text-muted-foreground">{hint}</p></div></div>)}
+    <div className="rounded-lg bg-[#eef5ff] p-3 text-xs leading-6 text-[#47678e]"><strong>Progress:</strong> {completed} of 5 steps validated. Submission creates a fictional review request only.</div>
    </CardContent></Card>
    <Card><CardHeader><CardTitle>Data & Security</CardTitle></CardHeader><CardContent><p className="text-xs leading-6 text-muted-foreground">All fields are fictional and saved in sessionStorage for this tab. No contact information, bank account, government IDs, registration plate or uploaded files are collected. Production verification requires secure server-side access and consent.</p></CardContent></Card>
    </aside>

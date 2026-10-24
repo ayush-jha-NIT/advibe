@@ -20,9 +20,16 @@ export interface Booking{id:ID;campaignId:ID;screenId:ID;startDate:string;endDat
 export interface PricingRule{id:ID;placement:Placement;city:string;rupeesPerScreenDay:number;validFrom:string;validTo:string;active:boolean}
 export interface Payment{id:ID;campaignId:ID;advertiserId:ID;amountPaise:number;status:PaymentStatus;provider:"demo"|"cashfree";providerReference?:string}
 export interface DriverApplication{id:ID;driverId:ID;vehicleId:ID;status:ReviewStatus;completedSteps:number;documentsStatus:ReviewStatus;screenSetupStatus:ReviewStatus}
+/** Isolated fictional onboarding review requests. Never represents actual identity verification. */
+export interface DriverPreviewApplication{
+ id:ID;driverId:ID;submittedAt:string;status:"submitted";
+ alias:string;city:string;vehicleType:"bike"|"auto"|"car";vehicleModel:string;
+ screenChoice:"bike_rear"|"auto_rear"|"auto_side"|"car_rear"|"car_interior";
+ payoutFrequency:"weekly"|"monthly";
+}
 export interface Settlement{id:ID;driverId:ID;campaignId:ID;grossPaise:number;deductionsPaise:number;status:"pending"|"processed"|"failed";periodStart:string;periodEnd:string}
 export interface Notice{id:ID;recipientId:ID;type:"campaign"|"verification"|"device"|"billing"|"settlement"|"support";title:string;message:string;createdAt:string;read:boolean}
 export interface Ticket{id:ID;accountId:ID;subject:string;status:"open"|"in_progress"|"resolved";createdAt:string;category?:"campaign"|"billing"|"creative"|"technical"|"other";description?:string;campaignId?:ID}
 export interface AuditEvent{id:ID;actorId:ID;entity:string;entityId:ID;action:string;createdAt:string}
-export interface DemoDatabase{accounts:Account[];locations:Location[];vehicles:Vehicle[];screens:Screen[];creatives:Creative[];campaigns:Campaign[];bookings:Booking[];pricingRules:PricingRule[];payments:Payment[];driverApplications:DriverApplication[];settlements:Settlement[];notices:Notice[];tickets:Ticket[];auditEvents:AuditEvent[]}
+export interface DemoDatabase{accounts:Account[];locations:Location[];vehicles:Vehicle[];screens:Screen[];creatives:Creative[];campaigns:Campaign[];bookings:Booking[];pricingRules:PricingRule[];payments:Payment[];driverApplications:DriverApplication[];driverPreviewApplications?:DriverPreviewApplication[];settlements:Settlement[];notices:Notice[];tickets:Ticket[];auditEvents:AuditEvent[]}
 export interface Actor{role:Role;accountId:ID}

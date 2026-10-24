@@ -9,6 +9,7 @@ import {validateWizardAll,wizardQuote,localToday,type WizardDraft} from "../feat
 import {assertAdvertiserManagement,type CampaignManagementAction} from "../features/advertiser/campaign-detail-model";
 import {assertCreativeEdit,validateCreativeDraft,type CreativeDraft} from "../features/advertiser/library-model";
 import {validateAccountProfile,validateTicketDraft,type AccountProfileDraft,type TicketDraft} from "../features/advertiser/account-model";
+import {validateDriverSubmission,type DriverDraft} from "../features/driver/onboarding-model";
 
 export type DemoStore={
  db:DemoDatabase;
@@ -23,6 +24,7 @@ export type DemoStore={
  reviewCampaign:(actor:Actor,id:string,status:"under_review"|"approved"|"changes_requested"|"rejected")=>void;
  reserveScreens:(actor:Actor,id:string,screenIds:string[])=>void;
  setLive:(actor:Actor,id:string)=>void;
+ submitDriverPreview:(actor:Actor,draft:DriverDraft)=>string;
  reviewDriver:(actor:Actor,applicationId:string)=>void;
  setScreenStatus:(actor:Actor,id:string,status:Screen["status"])=>void;
  markNoticeRead:(actor:Actor,id:string)=>void;
@@ -207,6 +209,29 @@ export const useDemoStore=create<DemoStore>()(persist<DemoStore,[],[],Persisted>
   if(!row||!canGoLive(row,s.db))throw Error("Scheduled campaign must have confirmed screen reservations and payment");
   return {db:audit({...s.db,campaigns:s.db.campaigns.map(c=>c.id===id?{...c,status:"live"}:c)},actor,"campaign",id,"live")};
  }),
+ submitDriverPreview:(actor,draft)=>{
+  if(actor.role!=="driver"||actor.accountId==="not-provisioned"||
+     !get().db.accounts.some(a=>a.id===actor.accountId&&a.role==="driver"))
+   throw Error("Only a provisioned demo driver can submit an onboarding preview.");
+  const db=get().db;
+  validateDriverSubmission(draft,(db.driverPreviewApplications??[]).some(a=>a.driverId===actor.accountId),new Date().getFullYear());
+  const id=makeId("preview"),now=stamp();
+  set(s=>{
+   if((s.db.driverPreviewApplications??[]).some(a=>a.driverId===actor.accountId))
+    throw Error("Your demo onboarding request has already been submitted.");
+   const next:DemoDatabase={...s.db,driverPreviewApplications:[...(s.db.driverPreviewApplications??[]),{
+    id,driverId:actor.accountId,submittedAt:now,status:"submitted" as const,
+    alias:draft.displayAlias.trim(),city:draft.city.trim(),vehicleType:draft.vehicleType,
+    vehicleModel:draft.vehicleModel.trim(),screenChoice:draft.screenChoice,payoutFrequency:draft.payoutFrequency
+   }]};
+   let updated=audit(next,actor,"driverPreviewApplication",id,"demo_submitted");
+   updated=notice(updated,DEMO_ACTORS.admin.accountId,"verification","New driver onboarding preview",
+    "A fictional driver onboarding review request was submitted. No KYC files, bank credentials, or physical pairing were provided.");
+   return {db:notice(updated,actor.accountId,"verification","Demo onboarding request submitted",
+    "Your sample request was saved for future Admin preview review. Your existing driver and vehicle approvals are unchanged.")};
+  });
+  return id;
+ },
  reviewDriver:(actor,applicationId)=>set(s=>{
   requireAction(actor,"reviewDriver");
   const application=s.db.driverApplications.find(a=>a.id===applicationId);
