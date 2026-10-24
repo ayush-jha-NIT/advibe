@@ -26,7 +26,7 @@ export function SectionPlaceholder({role,item}:{role:PortalRole;item:NavItem}) {
         </div>
         <div className="rounded-2xl border border-line bg-white p-5 sm:p-6">
           <div className="flex items-center gap-2 font-semibold"><ShieldAlert className="size-5 text-[#ff7913]" aria-hidden />No fabricated records</div>
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">This shell does not simulate completed payments, verification or device control. Shared demo records arrive in Part 3.</p>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">This shell does not simulate completed payments, verification or device control. Shared fictional records are available on the three portal dashboard previews; this module remains scheduled for a later part.</p>
         </div>
       </div>
       <Link className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-brand-blue hover:underline" href={"/"+role}>

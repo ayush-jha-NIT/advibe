@@ -240,7 +240,7 @@ export function PortalShell({role,children}:{role:PortalRole;children:React.Reac
           <div className="flex min-h-0 flex-1 flex-col">
             <div className="flex items-start gap-2 border-b border-[#d6e9ff] bg-[#f0f7ff] px-4 py-2.5 text-xs text-[#3d6597] sm:px-6 lg:px-8">
               <CircleHelp className="mt-0.5 size-3.5 shrink-0" aria-hidden/>
-              <p><strong>Part 2 shell preview.</strong> Routes and navigation work. This is not authenticated access; actual portal workflows and shared data will be added later.</p>
+              <p><strong>Part 3 frontend foundation.</strong> Navigation and dashboard demo data are functional. Role switching is not authentication; module screens, payment and hardware integrations remain pending.</p>
             </div>
             <main id="portal-main" tabIndex={-1} className="min-w-0 flex-1 px-4 py-6 outline-none sm:px-6 lg:px-8 lg:py-8">
               {children}

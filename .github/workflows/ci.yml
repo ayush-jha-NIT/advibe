@@ -27,5 +27,7 @@ jobs:
         run: npm run lint
       - name: TypeScript
         run: npm run typecheck
+      - name: Demo domain tests
+        run: npm run test:demo
       - name: Production build
         run: npm run build
