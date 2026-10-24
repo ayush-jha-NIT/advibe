@@ -21,7 +21,8 @@ Client-approved visual reference set: 59 screenshots across Public, Admin, Adver
 - [x] Part 5: Public pages, creative formats, cities, pricing calculator, support search, email contact
 - [x] Part 6: Responsive demo login, role signup, OTP, recovery and local session access gates
 - [x] Part 7: Advertiser dashboard and My Campaigns listing, KPIs, visualizations, filtering, CSV and allowed demo draft submissions
-- [ ] Parts 8–23: Campaign wizard, remaining advertiser modules, driver/admin workflows, integrations and mobile QA
+- [x] Part 8: Six-step advertiser campaign wizard with persistent drafts, media preview, screen targeting, weekday quote and review submission
+- [ ] Parts 9–23: Remaining advertiser modules, driver/admin workflows, integrations and mobile QA
 
 **Part 3 delivers a frontend demo engine, not a backend.** Role switching is public, data is fictional and browser-local, device controls are simulated and no Cashfree checkout occurs. See [DEMO_ENGINE.md](DEMO_ENGINE.md) and [ROUTES.md](ROUTES.md).
 

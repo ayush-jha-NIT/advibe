@@ -17,8 +17,18 @@ export function overlap(a:string,b:string,c:string,d:string):boolean{
  return utcDay(a)<=utcDay(d)&&utcDay(c)<=utcDay(b);
 }
 export type Quote={lines:{screenId:string;placement:Placement;rateRupeesPerDay:number;days:number;amountPaise:number}[];subtotalPaise:number;discountPaise:number;taxPaise:number;totalPaise:number;currency:"INR";gstPercent:18};
-export function quoteCampaign(input:{screens:Screen[];locations:Location[];rules:PricingRule[];startDate:string;endDate:string;discountPercent?:number}):Quote{
- const days=inclusiveDays(input.startDate,input.endDate),discount=input.discountPercent??0;
+export function countScheduledDays(start:string,end:string,weekdays:number[]):number{
+ inclusiveDays(start,end);
+ if(!weekdays.length||weekdays.some(n=>!Number.isInteger(n)||n<0||n>6)||new Set(weekdays).size!==weekdays.length)
+  throw Error("Select valid unique delivery weekdays");
+ const first=utcDay(start),last=utcDay(end),chosen=new Set(weekdays);
+ let count=0;
+ for(let d=first;d<=last;d++)if(chosen.has(new Date(d*DAY_MS).getUTCDay()))count++;
+ if(count===0)throw Error("Your chosen weekdays do not occur in this date range");
+ return count;
+}
+export function quoteCampaign(input:{screens:Screen[];locations:Location[];rules:PricingRule[];startDate:string;endDate:string;discountPercent?:number;weekdays?:number[]}):Quote{
+ const days=input.weekdays?countScheduledDays(input.startDate,input.endDate,input.weekdays):inclusiveDays(input.startDate,input.endDate),discount=input.discountPercent??0;
  if(!Number.isInteger(discount)||discount<0||discount>100)throw Error("Discount must be between 0 and 100");
  const unique=new Set<string>();
  const lines=input.screens.map(screen=>{

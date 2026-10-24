@@ -4,11 +4,14 @@ import {create} from "zustand";
 import {createJSONStorage,persist} from "zustand/middleware";
 import {createDemoSeed,DEMO_ACTORS} from "../data/demo-seed";
 import {assertCampaignTransition,assertDriverApproval,canGoLive,canPerform,validateBooking,inclusiveDays} from "../lib/demo-rules";
-import type {Actor,Campaign,CampaignStatus,DemoDatabase,Screen} from "../types/domain";
+import type {Actor,Campaign,CampaignStatus,DemoDatabase,Screen,Creative} from "../types/domain";
+import {validateWizardAll,wizardQuote,type WizardDraft} from "../features/advertiser/wizard-model";
 
 export type DemoStore={
  db:DemoDatabase;
  createDraft:(actor:Actor,params:Pick<Campaign,"title"|"creativeId"|"objective"|"startDate"|"endDate">)=>string;
+ saveWizardDraft:(actor:Actor,draft:WizardDraft)=>string;
+ submitWizardDraft:(actor:Actor,draft:WizardDraft)=>string;
  submitCampaign:(actor:Actor,id:string)=>void;
  reviewCampaign:(actor:Actor,id:string,status:"under_review"|"approved"|"changes_requested"|"rejected")=>void;
  reserveScreens:(actor:Actor,id:string,screenIds:string[])=>void;
@@ -31,8 +34,70 @@ function notice(db:DemoDatabase,recipientId:string,type:DemoDatabase["notices"][
  return {...db,notices:[{id:makeId("not"),recipientId,type,title,message,createdAt:stamp(),read:false},...db.notices]};
 }
 
+/** Save an incomplete wizard without claiming a reservation, payment or delivery. */
+function upsertWizard(db:DemoDatabase,actor:Actor,draft:WizardDraft,submit:boolean){
+ requireAction(actor,"createCampaign",actor.accountId);
+ if(actor.accountId==="not-provisioned"||!db.accounts.some(a=>a.id===actor.accountId&&a.role==="advertiser"))
+  throw Error("Use the preset advertiser demo identity; new demo signups have no account record");
+ if(draft.title.trim().length<3||draft.title.length>120)throw Error("Enter a campaign name of 3–120 characters before saving");
+ const prior=draft.campaignId?db.campaigns.find(c=>c.id===draft.campaignId):undefined;
+ if(draft.campaignId&&!prior)throw Error("Saved campaign not found");
+ if(prior&&(prior.advertiserId!==actor.accountId||!["draft","changes_requested"].includes(prior.status)))
+  throw Error("Only your editable draft or changes-requested campaign can be updated");
+ let quote:number|undefined;
+ if(submit)quote=validateWizardAll(draft,db,actor.accountId).totalPaise;
+ else{
+  try{quote=wizardQuote(draft,db).totalPaise;}
+  catch{quote=undefined;}
+ }
+ let creatives=[...db.creatives];
+ let creativeId=draft.creativeMode==="existing"?draft.creativeId:"";
+ if(draft.creativeMode==="existing"&&creativeId){
+  const own=creatives.find(c=>c.id===creativeId&&c.advertiserId===actor.accountId&&c.placement===draft.placement);
+  if(!own&&submit)throw Error("Choose your own creative for this placement");
+  if(!own)creativeId="";
+ }else if(draft.creativeMode==="preview"&&draft.creativeTitle.trim()&&draft.placement){
+  const old=prior&&creatives.find(c=>c.id===prior.creativeId&&c.advertiserId===actor.accountId&&c.approval==="pending");
+  const id=old?.id??makeId("crt");
+  const creative:Creative={id,advertiserId:actor.accountId,title:draft.creativeTitle.trim().slice(0,100),
+   format:draft.creativeFormat,placement:draft.placement,approval:"pending"};
+  creatives=old?creatives.map(c=>c.id===id?creative:c):[...creatives,creative];
+  creativeId=id;
+ }
+ const id=prior?.id??makeId("cmp");
+ const base:Campaign={
+  id,advertiserId:actor.accountId,title:draft.title.trim(),creativeId,
+  objective:draft.objective,startDate:draft.startDate,endDate:draft.endDate,
+  screenIds:[], // Never assign or reserve screens from this browser wizard.
+  plannedScreenIds:[...draft.selectedScreenIds],quoteEstimatePaise:quote,
+  wizardDetails:draft.placement?{
+   business:draft.business.trim(),industry:draft.industry.trim(),description:draft.description.trim(),
+   format:draft.placement,weekdays:[...draft.weekdays],startTime:draft.startTime,
+   endTime:draft.endTime,playsPerDay:draft.playsPerDay,
+  }:undefined,
+  status:submit?"submitted":"draft",paymentStatus:"unpaid",
+  createdAt:prior?.createdAt??stamp().slice(0,10),impressions:prior?.impressions??0,
+ };
+ let next:DemoDatabase={...db,creatives,
+  campaigns:prior?db.campaigns.map(c=>c.id===id?base:c):[...db.campaigns,base]};
+ if(submit){
+  if(prior)assertCampaignTransition(prior.status,"submitted");
+  next=notice(next,DEMO_ACTORS.admin.accountId,"campaign",
+   "Campaign awaiting review",base.title+" was submitted from the demo wizard.");
+ }
+ return {db:audit(next,actor,"campaign",id,submit?"wizard_submitted":"wizard_saved"),id};
+}
+
 export const useDemoStore=create<DemoStore>()(persist<DemoStore,[],[],Persisted>((set,get)=>({
  db:createDemoSeed(),
+ saveWizardDraft:(actor,draft)=>{
+  const {db,id}=upsertWizard(get().db,actor,draft,false);
+  set({db});return id;
+ },
+ submitWizardDraft:(actor,draft)=>{
+  const {db,id}=upsertWizard(get().db,actor,draft,true);
+  set({db});return id;
+ },
  createDraft:(actor,params)=>{
   requireAction(actor,"createCampaign",actor.accountId);
   if(!params.title.trim()||params.title.length>120)throw Error("Campaign title must be 1–120 characters");

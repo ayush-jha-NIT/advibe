@@ -4,7 +4,7 @@ Responsive four-portal frontend for AdVibe: Public Website, Advertiser Portal, D
 
 ## Status
 
-**Parts 0–7 complete:** Official approved logo; role-aware UI component library; responsive public navbar/footer; admin, advertiser and driver navigation shells; live route switching, mobile drawer and navigation search.
+**Parts 0–8 complete:** Official approved logo; role-aware UI component library; responsive public navbar/footer; admin, advertiser and driver navigation shells; live route switching, mobile drawer and navigation search.
 
 **Part 3 adds:** typed fictional data for accounts, campaigns, creatives, screens, vehicles, locations, bookings, payments and settlements; owner-aware selectors; persisted Zustand store; pricing and availability validations; and cross-portal interactive dashboard previews.
 
@@ -15,6 +15,8 @@ Responsive four-portal frontend for AdVibe: Public Website, Advertiser Portal, D
 **Part 6 adds:** Responsive demo login, advertiser and driver signup, mock six-digit OTP, password recovery screens, role-based browser-session preview gates and sign-out. Demo credentials and OTP are intentionally public; signup does not create a server account or save entered passwords.
 
 **Part 7 adds:** A responsive advertiser dashboard with owner-scoped KPIs and Recharts charts; a mobile card/desktop table campaign directory with search, status tabs, date filters, sorting, pagination, a record-details modal, CSV export, and demo draft submission.
+
+**Part 8 adds:** Six-step advertiser campaign wizard, local creative preview, provisional location/screen selection, date and weekday schedule checks, integer-paise price and 18% illustrative GST, persistent local draft/resume, and submit-for-Admin-review only. No Cashfree checkout, file transfer or screen reservation occurs.
 
 **Not implemented:** Real login/authorization, OTP, campaign wizard, Cashfree payments, actual payouts, KYC or device telemetry. Module routes remain labeled placeholders. Demo role switching is not security; no real personal or payment data should be stored here.
 
@@ -74,3 +76,5 @@ CI executes these on pushes and pull requests.
 The supplied megaphone artwork is the sole approved AdVibe logo. Cashfree requires backend order creation and verification; secret keys must never enter NEXT_PUBLIC environment variables.
 
 - [Part 7 advertiser UI and data boundaries](docs/ADVERTISER_PART_7.md)
+
+- [Part 8 six-step advertiser wizard and data safety](docs/ADVERTISER_PART_8.md)
