@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {ArrowRight,CheckCircle2,FileImage,Film,Image as ImageIcon,Info,Plus,Search,ShieldAlert,Trash2,UploadCloud,X} from "lucide-react";
 import {Badge,Button,Card,CardContent,CardHeader,CardTitle,Dialog} from "@/components/ui";
 import {FormatPreviewArt} from "@/components/landing/format-preview-art";
@@ -128,7 +129,7 @@ export function CreativeLibrary(){
     <label className="flex min-h-32 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-[#9fc5fa] bg-[#f7faff] p-4 text-center hover:bg-[#f0f7ff]"><UploadCloud className="mb-2 size-7 text-brand-blue"/><span className="text-sm font-bold text-brand-navy">{checking?"Inspecting media…":"Choose file for local preview"}</span><span className="mt-1 text-xs text-muted-foreground">PNG, JPEG, GIF or MP4 · 10 MB max · 320–4096 px · Video 1–60 sec</span>
      <input type="file" className="sr-only" disabled={checking} accept=".png,.jpg,.jpeg,.gif,.mp4,image/png,image/jpeg,image/gif,video/mp4" onChange={e=>{const f=e.target.files?.[0]??null;e.target.value="";void chooseFile(f);}}/></label>
     {inspection&&<div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-[#eefaf4] p-3 text-xs text-[#245f42]"><span className="break-words">{file?.name} · {inspection}</span><Button size="sm" variant="outline" onClick={dispose}><X className="size-4"/>Remove preview</Button></div>}
-    {previewUrl&&file&&(file.type==="video/mp4"?<video controls preload="metadata" className="max-h-56 w-full rounded-lg bg-[#06142c] object-contain" src={previewUrl}/>:<img src={previewUrl} className="max-h-56 w-full rounded-lg bg-[#edf4ff] object-contain" alt="Local creative preview, not uploaded"/>)}
+    {previewUrl&&file&&(file.type==="video/mp4"?<video controls preload="metadata" className="max-h-56 w-full rounded-lg bg-[#06142c] object-contain" src={previewUrl}/>:<Image src={previewUrl} width={680} height={380} unoptimized className="max-h-56 w-full rounded-lg bg-[#edf4ff] object-contain" alt="Local creative preview, not uploaded"/>)}
     {error&&<p role="alert" className="rounded-lg bg-[#fff1f3] p-3 text-sm text-[#ab263a]">{error}</p>}
     <p className="flex items-start gap-2 rounded-lg bg-[#fff8eb] p-3 text-xs leading-5 text-[#795825]"><Info className="mt-0.5 size-4 shrink-0"/>Saving will retain only the creative title, format and placement. The image/video is never uploaded. Admin moderation and actual approval are not available in Part 11.</p>
     <div className="flex flex-wrap justify-end gap-2"><Button type="button" variant="outline" onClick={close}>Cancel</Button><Button type="submit" disabled={checking}><CheckCircle2 className="size-4"/>Save metadata only</Button></div>

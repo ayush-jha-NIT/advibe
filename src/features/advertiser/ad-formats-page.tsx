@@ -13,7 +13,7 @@ import type {Placement} from "@/types/domain";
 
 export function AdvertiserAdFormats(){
  const {db,accountId,hydrated}=useAdvertiserData();
- const {ready,useInWizard}=usePlanNavigation(accountId);
+ const {ready,applyToWizard}=usePlanNavigation(accountId);
  const [group,setGroup]=React.useState<FormatGroup>("all");
  const [search,setSearch]=React.useState("");
  const [city,setCity]=React.useState("Prayagraj");
@@ -69,7 +69,7 @@ export function AdvertiserAdFormats(){
        ["Creative approval","Admin workflow pending"]
       ].map(([k,v])=><div key={k} className="flex justify-between gap-3 border-b border-[#dfeafa] pb-2 last:border-0"><dt className="text-muted-foreground">{k}</dt><dd className="max-w-[60%] text-right font-semibold text-brand-navy">{v}</dd></div>)}</dl>
      </div>
-     <Button type="button" className="w-full" disabled={!ready||accountId==="not-provisioned"} onClick={()=>useInWizard({placement:selected})}><CheckCircle2 className="size-4"/>Use this format in wizard</Button>
+     <Button type="button" className="w-full" disabled={!ready||accountId==="not-provisioned"} onClick={()=>applyToWizard({placement:selected})}><CheckCircle2 className="size-4"/>Use this format in wizard</Button>
      <Link href={"/advertiser/locations?format="+encodeURIComponent(selected)} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-[#9fc4f9] text-sm font-bold text-brand-blue hover:bg-[#f0f6ff]">Explore eligible screens <ArrowRight className="size-4"/></Link>
      <p className="flex items-start gap-2 text-xs leading-5 text-muted-foreground"><Info className="mt-0.5 size-4 shrink-0"/>Applying the format requires confirmation before overwriting another unsaved wizard selection. It does not submit or book a campaign.</p>
     </CardContent></Card>

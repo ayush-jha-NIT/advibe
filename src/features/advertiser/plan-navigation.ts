@@ -14,7 +14,7 @@ export function usePlanNavigation(accountId:string){
   void Promise.resolve(useWizardStore.persist.rehydrate()).then(()=>{if(active)setReady(true);});
   return ()=>{active=false;};
  },[]);
- function useInWizard(input:{placement:Placement;screenIds?:string[];startDate?:string;endDate?:string}):boolean{
+ function applyToWizard(input:{placement:Placement;screenIds?:string[];startDate?:string;endDate?:string}):boolean{
   if(!ready||accountId==="not-provisioned")return false;
   const original=useWizardStore.getState().drafts[accountId];
   if(original&&(original.title||original.business||original.campaignId||original.selectedScreenIds.length)&&
@@ -28,5 +28,5 @@ export function usePlanNavigation(accountId:string){
   router.push("/advertiser/create-campaign?step=1");
   return true;
  }
- return {ready,useInWizard};
+ return {ready,applyToWizard};
 }

@@ -19,7 +19,7 @@ const field="min-h-11 w-full min-w-0 rounded-xl border border-[#ccdbf0] bg-white
 export function AdvertiserLocations(){
  const params=useSearchParams();
  const {db,accountId,hydrated}=useAdvertiserData();
- const {ready,useInWizard}=usePlanNavigation(accountId);
+ const {ready,applyToWizard}=usePlanNavigation(accountId);
  const initial=params.get("format");
  const [placement,setPlacement]=React.useState<Placement>(()=>placements.includes(initial as Placement)?initial as Placement:"auto_side");
  const [city,setCity]=React.useState("All cities");
@@ -44,7 +44,6 @@ export function AdvertiserLocations(){
  const validIds=new Set(eligible.map(x=>x.id));
  const stale=selected.filter(id=>!validIds.has(id));
  const selection=selected.filter(id=>validIds.has(id));
- const rateCities=[...new Set(selection.map(id=>db.locations.find(l=>l.id===db.screens.find(s=>s.id===id)?.locationId)?.city).filter((x):x is string=>!!x))];
  const rates=selection.map(id=>{
   const screen=db.screens.find(s=>s.id===id)!;
   const c=db.locations.find(l=>l.id===screen.locationId)?.city??"";
@@ -58,7 +57,7 @@ export function AdvertiserLocations(){
   setFeedback("");
   if(dateError){setFeedback(dateError);return;}
   if(!selection.length){setFeedback("Select at least one eligible demonstration screen first.");return;}
-  const result=useInWizard({placement,screenIds:selection,startDate:periodStart,endDate:periodEnd});
+  const result=applyToWizard({placement,screenIds:selection,startDate:periodStart,endDate:periodEnd});
   if(!result&&accountId==="not-provisioned")setFeedback("Use the preset Advertiser demo identity to save campaign planning choices.");
  }
  if(!hydrated)return <div role="status" className="p-8 text-sm text-muted-foreground">Loading demo screen locations…</div>;
