@@ -45,7 +45,7 @@ export function DemoDashboard({role}:{role:Role}){
  function createDraft(){
   run(()=>{
    const id=useDemoStore.getState().createDraft(actor,{title:"Sample Campaign "+new Date().toLocaleDateString("en-IN"),
-    creativeId:"crt-1",objective:"awareness",startDate,endDate:end});
+    creativeId:"crt-1",objective:"awareness",startDate:start,endDate:end});
    setFeedback("Created draft "+id+". You can submit it using the button below.");
   },"Draft created");
  }
