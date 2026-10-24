@@ -4,7 +4,7 @@ Responsive four-portal frontend for AdVibe: Public Website, Advertiser Portal, D
 
 ## Status
 
-**Parts 0–14 complete:** Official approved logo; role-aware UI component library; responsive public navbar/footer; admin, advertiser and driver navigation shells; live route switching, mobile drawer and navigation search.
+**Parts 0–15 complete:** Official approved logo; role-aware UI component library; responsive public navbar/footer; admin, advertiser and driver navigation shells; live route switching, mobile drawer and navigation search.
 
 **Part 3 adds:** typed fictional data for accounts, campaigns, creatives, screens, vehicles, locations, bookings, payments and settlements; owner-aware selectors; persisted Zustand store; pricing and availability validations; and cross-portal interactive dashboard previews.
 
@@ -29,6 +29,8 @@ Responsive four-portal frontend for AdVibe: Public Website, Advertiser Portal, D
 **Part 13 adds:** Mobile-responsive five-step Driver Onboarding shell with working Steps 1–3 (sample profile, vehicle details, and simulated document checklist), validation and tab-session draft restoration. Approval records remain untouched; real uploads are not accepted.
 
 **Part 14 adds:** Full driver onboarding Steps 4–5 (sample screen placement, installation/safety acknowledgements, payout cadence and consent), final review and guarded demo submission to a separate request record, plus a driver verification status view. No real pairing, bank accounts, contracts or verification are completed.
+
+**Part 15 adds:** Responsive Driver Dashboard with fictional metrics and notices, owned vehicle and read-only display records, an Asia/Kolkata date-aware Assigned Ads calendar, and a searchable driver campaign directory restricted to confirmed bookings. No hardware control or live route/playback telemetry is claimed.
 
 **Not implemented:** Real backend login/authorization, live OTP, production creative uploads and moderation, Cashfree payments, actual payouts, KYC or device telemetry. Many operational module routes remain placeholders. Demo role switching is not security; no real personal or payment data should be stored here.
 
@@ -106,3 +108,5 @@ The supplied megaphone artwork is the sole approved AdVibe logo. Cashfree requir
 - [Part 13 driver onboarding and safety boundaries](docs/DRIVER_PART_13.md)
 
 - [Part 14 driver screen/payout demo and review submission](docs/DRIVER_PART_14.md)
+
+- [Part 15 driver dashboard, assigned campaigns and schedule](docs/DRIVER_PART_15.md)

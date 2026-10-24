@@ -69,12 +69,12 @@ Campaign detail route /advertiser/campaigns/[id] is implemented in Part 10 with 
 ## Driver Partner Portal
 
 Root: /driver. Paths:
-- /driver
+- /driver (Part 15 driver operations dashboard)
 - /driver/onboarding (Parts 13–14 full five-step responsive demo wizard, review and submission)
 - /driver/verification (Part 14 independent sample request vs seeded application status)
-- /driver/vehicle
-- /driver/assigned-ads
-- /driver/campaigns
+- /driver/vehicle (Part 15 vehicle & sample device inventory)
+- /driver/assigned-ads (Part 15 date-based confirmed assignment planner)
+- /driver/campaigns (Part 15 owned, confirmed-booking campaign listing)
 - /driver/earnings
 - /driver/payouts
 - /driver/delivery
@@ -128,3 +128,7 @@ The driver landing dashboard links to /driver/onboarding. The first three onboar
 ## Part 14 driver screen and payout demo
 
 All five onboarding steps are interactive. Step 4 chooses a display type appropriate for the sample vehicle and confirms illustrative installation/power checks. Step 5 chooses weekly/monthly example payout frequency and requires explicit example agreement/consent acknowledgements; it never accepts account numbers, UPI IDs, IFSC, real identity documents or device tokens. Review submits an isolated, browser-local fictional driver review record and Admin notice. The existing seeded driver and vehicle approvals are unaffected. The separate /driver/verification route distinguishes the demo review request from existing sample verification. See docs/DRIVER_PART_14.md.
+
+## Part 15 driver operations
+
+The dashboard and three operational pages replace the Part 2 placeholders, with samples sourced from the shared Part 3 browser-local database. Only a screen owned by this driver and referenced by a **confirmed booking** and campaign screen assignment can appear in assigned campaigns. Tentative targeting does not count. Paused and cancelled campaigns never show as scheduled daily playback. An Asia/Kolkata local-date picker and weekday-aware schedule work without fabricated routes or delivery timestamps. The vehicle/screen display is read-only; no real pairing, maintenance controls or GPS. See docs/DRIVER_PART_15.md.

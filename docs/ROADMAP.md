@@ -28,7 +28,8 @@ Client-approved visual reference set: 59 screenshots across Public, Admin, Adver
 - [x] Part 12: Advertiser billing ledger, non-tax statement previews, reports, notification center, demo profile/preferences and support tickets
 - [x] Part 13: Driver onboarding steps 1–3, sample profile and vehicle details, mock KYC readiness, session persistence and validation
 - [x] Part 14: Driver onboarding steps 4–5 (mock screen installation, payout-readiness, agreement), guarded demo submission and verification preview
-- [ ] Parts 15–23: Driver operations/earnings/maintenance, Admin modules, integration and final QA
+- [x] Part 15: Driver dashboard, vehicle and screen inventory, confirmed assigned campaigns, and IST daily scheduling
+- [ ] Parts 16–23: Driver earnings/maintenance, Admin modules, integration and final QA
 
 **Part 3 delivers a frontend demo engine, not a backend.** Role switching is public, data is fictional and browser-local, device controls are simulated and no Cashfree checkout occurs. See [DEMO_ENGINE.md](DEMO_ENGINE.md) and [ROUTES.md](ROUTES.md).
 
@@ -47,3 +48,5 @@ Client-approved visual reference set: 59 screenshots across Public, Admin, Adver
 **Part 13:** Driver onboarding is an explicitly fictional session-only preview. No government IDs, legal names, phone numbers, actual vehicle registration details, bank information or documents are accepted or stored. Steps 4–5 and production KYC verification require trusted backends. The seeded driver and vehicle approval are never overwritten by onboarding preview.
 
 **Part 14:** The five-step wizard now validates sample placement and payout/consent readiness. A final submission creates a separate driverPreviewApplications record and Admin notice, not a KYC approval. Real banking credentials and document uploads are never collected, and seeded approved driver/vehicle/screen records remain intact.
+
+**Part 15:** The dashboard, vehicle/screens, assigned ads and campaign pages derive sample data from driver-owned screens and confirmed bookings. The calendar uses Asia/Kolkata civil dates and stored campaign weekday/time preferences. No GPS, actual ad playback, driver trips, physical screen controls or telemetry are claimed. Existing driver and advertiser state mutations remain unchanged.
