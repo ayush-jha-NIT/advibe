@@ -12,11 +12,10 @@ function describeDate(date:string):string{
 }
 export function DriverAssignedAds(){
  const {db,accountId,hydrated}=useDriverOperationsData();
- const [date,setDate]=React.useState("");
+ const [date,setDate]=React.useState(()=>dateInIndia(new Date()));
  const [search,setSearch]=React.useState("");
  const [screen,setScreen]=React.useState("all");
  const [showOnlyOnline,setShowOnlyOnline]=React.useState(false);
- React.useEffect(()=>{setDate(dateInIndia(new Date()));},[]);
  const assigned=React.useMemo(()=>driverAssignments(db,accountId),[db,accountId]);
  const todayRows=React.useMemo(()=>driverDailySchedule(assigned,date),[assigned,date]);
  const display=todayRows.filter(row=>(screen==="all"||screen===row.screen.id)

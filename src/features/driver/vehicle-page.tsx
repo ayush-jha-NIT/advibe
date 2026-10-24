@@ -2,7 +2,7 @@
 import * as React from "react";
 import Link from "next/link";
 import {ArrowRight,CarFront,ClipboardCheck,MapPin,Monitor,ShieldCheck,WifiOff,Wrench} from "lucide-react";
-import {Badge,Card,CardContent,CardHeader,CardTitle} from "@/components/ui";
+import {Badge,Card,CardContent} from "@/components/ui";
 import {DriverAccess,DriverDemoWarning,ScreenState,useDriverOperationsData} from "./operations-shared";
 import {driverAssignments,ownedDriverScreens,ownedDriverVehicles} from "./operations-model";
 import type {Screen} from "@/types/domain";
