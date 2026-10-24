@@ -95,7 +95,7 @@ export function canRead(actor:Actor,table:keyof DemoDatabase,record:unknown):boo
  if(table==="screens")return true; // Public demo inventory only, no real GPS or driver details.
  if(table==="accounts")return row.id===actor.accountId;
  if(table==="creatives"||table==="campaigns"||table==="payments")return actor.role==="advertiser"&&row.advertiserId===actor.accountId;
- if(table==="vehicles"||table==="driverApplications"||table==="settlements")return actor.role==="driver"&&row.driverId===actor.accountId;
+ if(table==="vehicles"||table==="driverApplications"||table==="driverPreviewApplications"||table==="settlements")return actor.role==="driver"&&row.driverId===actor.accountId;
  if(table==="notices")return row.recipientId===actor.accountId;
  if(table==="tickets")return row.accountId===actor.accountId;
  return false;

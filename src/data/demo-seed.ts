@@ -42,6 +42,7 @@ export function createDemoSeed():DemoDatabase{return {
   {id:"rate-6",placement:"helmet",city:"Prayagraj",rupeesPerScreenDay:100,validFrom:"2026-01-01",validTo:"2027-12-31",active:true},
   {id:"rate-7",placement:"auto_side",city:"Lucknow",rupeesPerScreenDay:240,validFrom:"2026-01-01",validTo:"2027-12-31",active:true}],
  payments:[{id:"pay-1",campaignId:"cmp-1",advertiserId:"adv-1",amountPaise:188800,status:"paid",provider:"demo",providerReference:"DEMO-ONLY-001"}],
+ driverPreviewApplications:[],
  driverApplications:[
   {id:"app-1",driverId:"drv-1",vehicleId:"veh-1",status:"approved",completedSteps:5,documentsStatus:"approved",screenSetupStatus:"approved"},
   {id:"app-2",driverId:"drv-2",vehicleId:"veh-2",status:"under_review",completedSteps:3,documentsStatus:"under_review",screenSetupStatus:"pending"}],
