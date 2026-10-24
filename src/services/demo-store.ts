@@ -6,6 +6,7 @@ import {createDemoSeed,DEMO_ACTORS} from "../data/demo-seed";
 import {assertCampaignTransition,assertDriverApproval,canGoLive,canPerform,validateBooking,inclusiveDays} from "../lib/demo-rules";
 import type {Actor,Campaign,CampaignStatus,DemoDatabase,Screen,Creative} from "../types/domain";
 import {validateWizardAll,wizardQuote,localToday,type WizardDraft} from "../features/advertiser/wizard-model";
+import {assertAdvertiserManagement,type CampaignManagementAction} from "../features/advertiser/campaign-detail-model";
 
 export type DemoStore={
  db:DemoDatabase;
@@ -13,6 +14,7 @@ export type DemoStore={
  saveWizardDraft:(actor:Actor,draft:WizardDraft)=>string;
  submitWizardDraft:(actor:Actor,draft:WizardDraft)=>string;
  submitCampaign:(actor:Actor,id:string)=>void;
+ manageCampaign:(actor:Actor,id:string,action:CampaignManagementAction)=>void;
  reviewCampaign:(actor:Actor,id:string,status:"under_review"|"approved"|"changes_requested"|"rejected")=>void;
  reserveScreens:(actor:Actor,id:string,screenIds:string[])=>void;
  setLive:(actor:Actor,id:string)=>void;
@@ -120,6 +122,29 @@ export const useDemoStore=create<DemoStore>()(persist<DemoStore,[],[],Persisted>
   assertCampaignTransition(row.status,"submitted");
   const updated=audit({...s.db,campaigns:s.db.campaigns.map(c=>c.id===id?{...c,status:"submitted"}:c)},actor,"campaign",id,"submitted");
   return {db:notice(updated,DEMO_ACTORS.admin.accountId,"campaign","Campaign awaiting review",row.title+" has been submitted.")};
+ }),
+ manageCampaign:(actor,id,action)=>set(s=>{
+  const row=s.db.campaigns.find(c=>c.id===id);
+  if(!row)throw Error("Campaign not found");
+  requireAction(actor,"manageCampaign",row.advertiserId);
+  assertAdvertiserManagement(s.db,actor,row,action);
+  const nextStatus=action==="pause"?"paused":action==="resume"?"live":"cancelled";
+  const affected=s.db.bookings.filter(b=>b.campaignId===id&&b.status!=="cancelled");
+  const changed:DemoDatabase={...s.db,
+   campaigns:s.db.campaigns.map(c=>c.id===id?{...c,status:nextStatus}:c),
+   bookings:action==="cancel"?s.db.bookings.map(b=>b.campaignId===id?{...b,status:"cancelled" as const}:b):s.db.bookings,
+  };
+  let updated=audit(changed,actor,"campaign",id,action==="resume"?"resumed":nextStatus);
+  updated=notice(updated,actor.accountId,"campaign",
+   "Demo campaign "+nextStatus,row.title+" status changed to "+nextStatus+". No real device commands or payment transactions were sent.");
+  if(action==="cancel"&&affected.length){
+   const affectedDrivers=new Set(affected.map(b=>s.db.screens.find(sc=>sc.id===b.screenId)?.driverId).filter((x):x is string=>Boolean(x)));
+   for(const driverId of affectedDrivers){
+    updated=notice(updated,driverId,"campaign","Demo booking cancelled",
+     row.title+" demo booking was cancelled. This does not change physical devices.");
+   }
+  }
+  return {db:updated};
  }),
  reviewCampaign:(actor,id,status)=>set(s=>{
   requireAction(actor,"reviewCampaign");

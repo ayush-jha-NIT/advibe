@@ -100,11 +100,11 @@ export function canRead(actor:Actor,table:keyof DemoDatabase,record:unknown):boo
  if(table==="tickets")return row.accountId===actor.accountId;
  return false;
 }
-export type DemoAction="createCampaign"|"submitCampaign"|"reviewCampaign"|"reserveScreens"|"toggleScreen"|"reviewDriver"|"markNotice"|"resetDemo";
+export type DemoAction="manageCampaign"|"createCampaign"|"submitCampaign"|"reviewCampaign"|"reserveScreens"|"toggleScreen"|"reviewDriver"|"markNotice"|"resetDemo";
 export function canPerform(actor:Actor,action:DemoAction,owner?:string):boolean{
  if(action==="resetDemo"||action==="reviewCampaign"||action==="reviewDriver"||action==="toggleScreen")return actor.role==="admin";
  if(action==="markNotice")return owner===actor.accountId;
- if(action==="createCampaign"||action==="submitCampaign"||action==="reserveScreens")return actor.role==="advertiser"&&owner===actor.accountId;
+ if(action==="manageCampaign"||action==="createCampaign"||action==="submitCampaign"||action==="reserveScreens")return actor.role==="advertiser"&&owner===actor.accountId;
  return false;
 }
 export function moneyINR(paise:number):string{

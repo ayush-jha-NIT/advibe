@@ -64,7 +64,7 @@ Root: /advertiser. Paths:
 - /advertiser/support
 - /advertiser/settings
 
-Campaign detail routes will be added in Part 10.
+Campaign detail route /advertiser/campaigns/[id] is implemented in Part 10 with owner-scoped demo record details, local audit history, billing metadata and permitted status actions. No real device or payment operations are issued.
 
 ## Driver Partner Portal
 

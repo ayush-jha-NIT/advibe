@@ -23,7 +23,8 @@ Client-approved visual reference set: 59 screenshots across Public, Admin, Adver
 - [x] Part 7: Advertiser dashboard and My Campaigns listing, KPIs, visualizations, filtering, CSV and allowed demo draft submissions
 - [x] Part 8: Six-step advertiser campaign wizard with persistent drafts, media preview, screen targeting, weekday quote and review submission
 - [x] Part 9: Wizard creative-file inspection, zone targeting, schedule warnings, mobile step controls and regression tests
-- [ ] Parts 10–23: Remaining advertiser modules, driver/admin workflows, integrations and mobile QA
+- [x] Part 10: Advertiser-owned campaign detail pages, metadata tabs, audit timeline, demo pause/resume/cancel and linked billing records
+- [ ] Parts 11–23: Remaining advertiser modules, driver/admin workflows, integrations and mobile QA
 
 **Part 3 delivers a frontend demo engine, not a backend.** Role switching is public, data is fictional and browser-local, device controls are simulated and no Cashfree checkout occurs. See [DEMO_ENGINE.md](DEMO_ENGINE.md) and [ROUTES.md](ROUTES.md).
 
@@ -32,3 +33,5 @@ Client-approved visual reference set: 59 screenshots across Public, Admin, Adver
 **Part 7:** dashboard statistics and charts only summarize fictional, owner-scoped campaign data; there is no verified reach, time-series, production accounting or billing. The campaign wizard and detail pages are reserved for later phases.
 
 **Part 9:** The wizard checks local preview media headers and dimensions, detects stale/incompatible screen targets, rechecks future dates, and has compact phone navigation. These are frontend demo safeguards, not production asset validation or reservation.
+
+**Part 10:** Details show only stored campaign metrics, creative metadata, demo screen assignments, real recorded audit entries in the local dataset, and demo payment records. Cancellation does not refund Cashfree; pause/resume do not send hardware commands. Owner check is a local demo UI rule, not server authorization.

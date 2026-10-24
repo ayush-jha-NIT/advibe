@@ -3,7 +3,7 @@ import * as React from "react";
 import Link from "next/link";
 import {useSearchParams} from "next/navigation";
 import {ArrowDownToLine,ArrowLeft,CalendarDays,ChevronLeft,ChevronRight,Eye,Search,Send,SlidersHorizontal,X} from "lucide-react";
-import {Button,Card,CardContent,CardHeader,CardTitle,Dialog} from "@/components/ui";
+import {Button,Card,CardContent,CardHeader,CardTitle} from "@/components/ui";
 import {useDemoStore} from "@/services/demo-store";
 import {campaignsCSV,campaignBucket,filterCampaigns,paginateCampaigns,selectAdvertiserCampaigns,type CampaignBucket,type CampaignSort} from "./analytics";
 import {CampaignStatusBadge,DemoDataNotice,EmptyAdvertiser,PartSevenHeader,useAdvertiserData} from "./shared";
@@ -26,12 +26,10 @@ export function AdvertiserCampaignList(){
  const [sort,setSort]=React.useState<CampaignSort>("newest");
  const [from,setFrom]=React.useState(""),[to,setTo]=React.useState("");
  const [page,setPage]=React.useState(1),[perPage,setPerPage]=React.useState(5);
- const [selected,setSelected]=React.useState<string|null>(null);
  const [feedback,setFeedback]=React.useState("");
  const campaigns=React.useMemo(()=>selectAdvertiserCampaigns(db,accountId),[db,accountId]);
  const filtered=React.useMemo(()=>filterCampaigns(campaigns,{search,bucket:status,sort,from,to}),[campaigns,search,status,sort,from,to]);
  const paging=React.useMemo(()=>paginateCampaigns(filtered,page,perPage),[filtered,page,perPage]);
- const picked=campaigns.find(c=>c.id===selected)??null;
  const counts=React.useMemo(()=>Object.fromEntries(statuses.map(s=>[s.value,s.value==="all"?campaigns.length:campaigns.filter(c=>campaignBucket(c.status)===s.value).length])) as Record<CampaignBucket,number>,[campaigns]);
  function submitDraft(c:Campaign){
   setFeedback("");
@@ -71,7 +69,7 @@ export function AdvertiserCampaignList(){
     {paging.rows.length?<><div className="grid gap-3 md:hidden">{paging.rows.map(c=><article key={c.id} className="rounded-xl border border-[#dbe7f8] p-4">
      <div className="flex flex-wrap items-start justify-between gap-2"><div className="min-w-0 flex-1"><h3 className="break-words text-sm font-bold text-brand-navy">{c.title}</h3><p className="mt-1 text-xs text-muted-foreground">{c.id}</p></div><CampaignStatusBadge status={c.status}/></div>
      <dl className="mt-4 grid grid-cols-2 gap-3 text-xs">{[["Schedule",c.startDate+" – "+c.endDate],["Impressions",c.impressions.toLocaleString("en-IN")],["Creative",db.creatives.find(x=>x.id===c.creativeId)?.title??"Unknown"],["Payment",c.paymentStatus]].map(([k,v])=><div key={k}><dt className="text-muted-foreground">{k}</dt><dd className="mt-1 break-words font-semibold text-brand-navy">{v}</dd></div>)}</dl>
-     <div className="mt-4 flex flex-wrap gap-2"><Button type="button" size="sm" variant="outline" onClick={()=>setSelected(c.id)}><Eye className="size-4"/>Details</Button>{(c.status==="draft"||c.status==="changes_requested")&&<Link href={"/advertiser/create-campaign?campaign="+encodeURIComponent(c.id)} className="inline-flex min-h-9 items-center rounded-lg border border-[#a8c6f1] px-3 text-xs font-bold text-brand-blue">Resume wizard</Link>}{(c.status==="draft"||c.status==="changes_requested")&&<Button size="sm" onClick={()=>submitDraft(c)}><Send className="size-4"/>Submit for review</Button>}</div>
+     <div className="mt-4 flex flex-wrap gap-2"><Link href={"/advertiser/campaigns/"+encodeURIComponent(c.id)} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-[#b9cdf1] bg-white px-3 text-xs font-semibold text-brand-blue hover:bg-[#f0f6ff]"><Eye className="size-4"/>View details</Link>{(c.status==="draft"||c.status==="changes_requested")&&<Link href={"/advertiser/create-campaign?campaign="+encodeURIComponent(c.id)} className="inline-flex min-h-9 items-center rounded-lg border border-[#a8c6f1] px-3 text-xs font-bold text-brand-blue">Resume wizard</Link>}{(c.status==="draft"||c.status==="changes_requested")&&<Button size="sm" onClick={()=>submitDraft(c)}><Send className="size-4"/>Submit for review</Button>}</div>
     </article>)}</div>
     <div className="hidden min-w-0 overflow-x-auto rounded-xl border border-[#dce6f4] md:block" role="region" tabIndex={0} aria-label="Campaign results table">
      <table className="w-full min-w-[850px] text-left text-sm"><thead className="bg-[#eff5fd] text-xs font-semibold text-[#4a6486]"><tr><th className="p-3">Campaign</th><th className="p-3">Creative</th><th className="p-3">Schedule</th><th className="p-3">Status</th><th className="p-3 text-right">Impressions</th><th className="p-3">Actions</th></tr></thead>
@@ -80,7 +78,7 @@ export function AdvertiserCampaignList(){
        <td className="p-3 text-xs">{db.creatives.find(x=>x.id===c.creativeId)?.title??"Unknown"}</td>
        <td className="p-3 text-xs">{c.startDate}<span className="block text-muted-foreground">to {c.endDate}</span></td>
        <td className="p-3"><CampaignStatusBadge status={c.status}/></td><td className="p-3 text-right font-semibold tabular-nums">{c.impressions.toLocaleString("en-IN")}</td>
-       <td className="p-3"><div className="flex flex-wrap gap-2"><Button size="sm" variant="outline" onClick={()=>setSelected(c.id)}><Eye className="size-4"/>Details</Button>{(c.status==="draft"||c.status==="changes_requested")&&<Link href={"/advertiser/create-campaign?campaign="+encodeURIComponent(c.id)} className="inline-flex min-h-9 items-center rounded-lg border border-[#a8c6f1] px-3 text-xs font-bold text-brand-blue">Resume</Link>}{(c.status==="draft"||c.status==="changes_requested")&&<Button size="sm" onClick={()=>submitDraft(c)}><Send className="size-4"/>Submit</Button>}</div></td>
+       <td className="p-3"><div className="flex flex-wrap gap-2"><Link href={"/advertiser/campaigns/"+encodeURIComponent(c.id)} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-[#b9cdf1] bg-white px-3 text-xs font-semibold text-brand-blue hover:bg-[#f0f6ff]"><Eye className="size-4"/>View</Link>{(c.status==="draft"||c.status==="changes_requested")&&<Link href={"/advertiser/create-campaign?campaign="+encodeURIComponent(c.id)} className="inline-flex min-h-9 items-center rounded-lg border border-[#a8c6f1] px-3 text-xs font-bold text-brand-blue">Resume</Link>}{(c.status==="draft"||c.status==="changes_requested")&&<Button size="sm" onClick={()=>submitDraft(c)}><Send className="size-4"/>Submit</Button>}</div></td>
       </tr>)}</tbody></table>
     </div></>:<EmptyAdvertiser filtered={campaigns.length>0}/>}
     <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-[#e5edf8] pt-4">
@@ -90,12 +88,6 @@ export function AdvertiserCampaignList(){
    </CardContent>
   </Card>
   <Link href="/advertiser" className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-brand-blue hover:underline"><ArrowLeft className="size-4"/>Back to dashboard</Link>
-  <Dialog open={!!picked} onOpenChange={v=>{if(!v)setSelected(null);}} title={picked?.title??"Campaign details"} description="Fictional campaign. Detailed tracking is scheduled for Part 10.">
-   {picked&&<><CampaignStatusBadge status={picked.status}/><dl className="mt-4 divide-y divide-[#e4ecf8]">{[
-    ["Campaign ID",picked.id],["Objective",picked.objective],["Creative",db.creatives.find(x=>x.id===picked.creativeId)?.title??"Unknown"],
-    ["Start",picked.startDate],["End",picked.endDate],["Screens",picked.screenIds.join(", ")||"Not assigned"],
-    ["Demo impressions",picked.impressions.toLocaleString("en-IN")],["Payment flag",picked.paymentStatus]
-   ].map(([k,v])=><div key={k} className="flex flex-wrap justify-between gap-2 py-3 text-sm"><dt className="text-muted-foreground">{k}</dt><dd className="max-w-full break-words text-right font-semibold text-brand-navy">{v}</dd></div>)}</dl></>}
-  </Dialog>
+
  </div>;
 }
