@@ -1,12 +1,12 @@
-# AdVibe Part 2 routing inventory
+# AdVibe routing inventory
 
-**Current status:** Routes load as explicit, labeled **placeholders** so all links are usable and the shared layouts can be tested. Auth, campaign management, driver onboarding, admin actions and all other domain workflows are NOT implemented yet. Do not misrepresent this phase as production-ready.
+**Current status:** The public homepage is implemented as of Part 4. Public subpages, auth flows and operational module pages remain labeled placeholders. Portal dashboards contain fictional Part 3 demo data.
 
 ## Public website
 
 | URL | Approved screenshot concept | Implementation phase |
 | --- | --- | --- |
-| / | Landing/home + public navigation | Part 4 |
+| / | Landing/home + public navigation | Completed in Part 4 |
 | /for-advertisers | Advertiser marketing page | Part 5 |
 | /for-drivers | Driver marketing page | Part 5 |
 | /ad-formats | Public ad formats | Part 5 |

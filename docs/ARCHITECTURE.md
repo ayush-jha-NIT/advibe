@@ -1,6 +1,6 @@
 # AdVibe frontend architecture
 
-## Implemented foundation (Parts 0–3)
+## Implemented foundation (Parts 0–4)
 
 - Next.js 16 App Router and TypeScript for route groups, layouts and typed components.
 - CSS role tokens in globals.css: public orange, admin purple, advertiser/driver blue.
@@ -14,6 +14,7 @@
 - src/services/demo-store.ts persists sanitized demo data in browser storage (not for secrets), and src/services/demo-selectors.ts defines cross-portal views.
 - src/lib/demo-rules.ts handles date, allocation, pricing, campaign and driver-approval rules; tests run in CI.
 - The three portal dashboards provide live cross-portal demo data previews, while individual business modules remain placeholders.
+- The landing page is server rendered with SVG/CSS animation; only its illustrative city explorer uses client state. Reduced motion keeps the scene static. See LANDING.md.
 - src/components/shared contains placeholder pages until each business feature is implemented.
 
 See ROUTES.md for full path inventory and status.

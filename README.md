@@ -4,9 +4,11 @@ Responsive four-portal frontend for AdVibe: Public Website, Advertiser Portal, D
 
 ## Status
 
-**Parts 0–3 complete:** Official approved logo; role-aware UI component library; responsive public navbar/footer; admin, advertiser and driver navigation shells; live route switching, mobile drawer and navigation search.
+**Parts 0–4 complete:** Official approved logo; role-aware UI component library; responsive public navbar/footer; admin, advertiser and driver navigation shells; live route switching, mobile drawer and navigation search.
 
 **Part 3 adds:** typed fictional data for accounts, campaigns, creatives, screens, vehicles, locations, bookings, payments and settlements; owner-aware selectors; persisted Zustand store; pricing and availability validations; and cross-portal interactive dashboard previews.
+
+**Part 4 adds:** The mobile-first landing page, 9.6-second CSS/SVG cinematic animation, role-specific signup CTAs, format cards, campaign walkthrough and illustrative interactive city explorer.
 
 **Not implemented:** Real login/authorization, OTP, campaign wizard, Cashfree payments, actual payouts, KYC or device telemetry. Module routes remain labeled placeholders. Demo role switching is not security; no real personal or payment data should be stored here.
 
@@ -30,7 +32,7 @@ Open http://localhost:3000.
 
 ## Route previews
 
-- / : Public website shell preview
+- / : Implemented public landing page
 - /design-system : Part 1 component showcase
 - /admin : Admin shell
 - /advertiser : Advertiser shell
@@ -57,5 +59,6 @@ CI executes these on pushes and pull requests.
 - [Demo data engine and payment boundaries](docs/DEMO_ENGINE.md)
 - [Design system](docs/DESIGN_SYSTEM.md)
 - [Brand rules](docs/BRAND.md)
+- [Landing implementation notes](docs/LANDING.md)
 
 The supplied megaphone artwork is the sole approved AdVibe logo. Cashfree requires backend order creation and verification; secret keys must never enter NEXT_PUBLIC environment variables.
