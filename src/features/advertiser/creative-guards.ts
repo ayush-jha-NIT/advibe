@@ -35,6 +35,12 @@ export function matchesMagicBytes(bytes:Uint8Array,kind:CreativeKind,extension:s
  if(kind==="image"&&extension==="png")return bytes.length>=8&&[137,80,78,71,13,10,26,10].every((n,i)=>bytes[i]===n);
  if(kind==="image"&&(extension==="jpg"||extension==="jpeg"))return bytes.length>=3&&bytes[0]===255&&bytes[1]===216&&bytes[2]===255;
  if(kind==="gif")return bytes.length>=6&&String.fromCharCode(...bytes.slice(0,6)).match(/^GIF8[79]a$/)!==null;
- if(kind==="video")return bytes.length>=12&&bytes[4]===102&&bytes[5]===116&&bytes[6]===121&&bytes[7]===112;
+ if(kind==="video"){
+  if(bytes.length<12)return false;
+  // ISO BMFF starts with a plausible box length followed by ASCII "ftyp".
+  const boxLength=bytes[0]*16777216+bytes[1]*65536+bytes[2]*256+bytes[3];
+  return boxLength>=12&&boxLength<=1048576&&
+   bytes[4]===102&&bytes[5]===116&&bytes[6]===121&&bytes[7]===112;
+ }
  return false;
 }
