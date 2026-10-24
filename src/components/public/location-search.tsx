@@ -14,8 +14,15 @@ export function LocationSearch(){
  const [view,setView]=React.useState<"map"|"list">("map");
  const [selected,setSelected]=React.useState<string|null>("loc-1");
  React.useEffect(()=>{
-  const raw=new URLSearchParams(window.location.search).get("city");
-  if(raw&&cities.some(c=>c.toLowerCase()===raw.toLowerCase())){const found=cities.find(c=>c.toLowerCase()===raw.toLowerCase())!;setCity(found);setSelected(null);}
+  const frame=window.requestAnimationFrame(()=>{
+   const raw=new URLSearchParams(window.location.search).get("city");
+   if(raw&&cities.some(c=>c.toLowerCase()===raw.toLowerCase())){
+    const found=cities.find(c=>c.toLowerCase()===raw.toLowerCase())!;
+    setCity(found);
+    setSelected(null);
+   }
+  });
+  return ()=>window.cancelAnimationFrame(frame);
  },[]);
  const records=seed.locations.filter(l=>l.city===city&&(!query||[l.name,l.zone,l.city].some(v=>v.toLowerCase().includes(query.trim().toLowerCase()))));
  const selection=records.find(l=>l.id===selected)??records[0];
