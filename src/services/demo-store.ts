@@ -10,6 +10,7 @@ import {assertAdvertiserManagement,type CampaignManagementAction} from "../featu
 import {assertCreativeEdit,validateCreativeDraft,type CreativeDraft} from "../features/advertiser/library-model";
 import {validateAccountProfile,validateTicketDraft,type AccountProfileDraft,type TicketDraft} from "../features/advertiser/account-model";
 import {validateDriverSubmission,type DriverDraft} from "../features/driver/onboarding-model";
+import {assertCreativeMetadataReview} from "../features/admin/admin-rules";
 import {assertProvisionedDriver,validateDriverIssue,validateDriverSupport,type DriverIssueDraft,type DriverSupportDraft} from "../features/driver/service-model";
 
 export type DemoStore={
@@ -23,6 +24,7 @@ export type DemoStore={
  updateCreativeMetadata:(actor:Actor,id:string,input:CreativeDraft)=>void;
  deleteCreativeMetadata:(actor:Actor,id:string)=>void;
  reviewCampaign:(actor:Actor,id:string,status:"under_review"|"approved"|"changes_requested"|"rejected")=>void;
+ reviewCreative:(actor:Actor,id:string,status:"approved"|"rejected")=>void;
  reserveScreens:(actor:Actor,id:string,screenIds:string[])=>void;
  setLive:(actor:Actor,id:string)=>void;
  submitDriverPreview:(actor:Actor,draft:DriverDraft)=>string;
@@ -180,6 +182,14 @@ export const useDemoStore=create<DemoStore>()(persist<DemoStore,[],[],Persisted>
      row.title+" demo booking was cancelled. This does not change physical devices.");
    }
   }
+  return {db:updated};
+ }),
+ reviewCreative:(actor,id,status)=>set(s=>{
+  requireAction(actor,"reviewCampaign");
+  const creative=s.db.creatives.find(c=>c.id===id);
+  assertCreativeMetadataReview(actor,creative,status);
+  let updated=audit({...s.db,creatives:s.db.creatives.map(c=>c.id===id?{...c,approval:status}:c)},actor,"creative",id,"review_"+status);
+  updated=notice(updated,creative.advertiserId,"campaign","Creative demo review "+status,creative.title+" metadata marked "+status+". No uploaded media was reviewed.");
   return {db:updated};
  }),
  reviewCampaign:(actor,id,status)=>set(s=>{
