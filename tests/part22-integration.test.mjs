@@ -21,7 +21,7 @@ test("public nav links resolve to implemented site pages",()=>{
  const nav=config.slice(config.indexOf("export const publicNavigation"),config.indexOf("export function activePortalItem"));
  const urls=[...nav.matchAll(/href:"(\/[^"]+)"/g)].map(x=>x[1].split("?")[0]);
  for(const route of urls){
-  const p=route==="/"? "src/app/(site)/page.tsx":"src/app/(site)"+route+"/page.tsx";
+  const p=route==="/"? "src/app/(site)/page.tsx":route==="/signup"?"src/app/(auth)/signup/page.tsx":"src/app/(site)"+route+"/page.tsx";
   assert.equal(fs.existsSync(path.join(process.cwd(),p)),true,"Missing public route "+route);
  }
 });

@@ -7,6 +7,7 @@ import { ArrowRight, ChevronDown, MapPin, Menu, X } from "lucide-react";
 import { BrandLogo } from "@/components/brand/brand-logo";
 import { publicNavigation } from "@/config/navigation";
 import { cn } from "@/lib/utils";
+import {trapOverlayTab} from "@/lib/overlay-focus";
 
 export function PublicShell({children}:{children:React.ReactNode}) {
   const pathname=usePathname();
@@ -34,17 +35,7 @@ export function PublicShell({children}:{children:React.ReactNode}) {
         window.requestAnimationFrame(()=>openButton.current?.focus());
         return;
       }
-      if(e.key!=="Tab"||!mobilePanel.current)return;
-      const focusable=Array.from(mobilePanel.current.querySelectorAll<HTMLElement>(
-        'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
-      )).filter(el=>el.getClientRects().length>0);
-      if(!focusable.length){e.preventDefault();return;}
-      const first=focusable[0],last=focusable[focusable.length-1];
-      if(e.shiftKey&&(document.activeElement===first||!mobilePanel.current.contains(document.activeElement))){
-        e.preventDefault();last.focus();
-      }else if(!e.shiftKey&&(document.activeElement===last||!mobilePanel.current.contains(document.activeElement))){
-        e.preventDefault();first.focus();
-      }
+      trapOverlayTab(mobilePanel.current,e);
     }
     document.addEventListener("keydown",key);
     return ()=>{document.body.style.overflow=before;document.removeEventListener("keydown",key);};
@@ -74,7 +65,7 @@ export function PublicShell({children}:{children:React.ReactNode}) {
   return (
     <div data-portal="public" className="min-h-screen bg-background">
       <a href="#public-main" className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[100] focus:rounded-lg focus:bg-white focus:px-4 focus:py-3">Skip to main content</a>
-      <header className="sticky top-0 z-50 bg-brand-navy text-white shadow-[0_3px_16px_#00000018]">
+      <header inert={mobileOpen} aria-hidden={mobileOpen?true:undefined} className="sticky top-0 z-50 bg-brand-navy text-white shadow-[0_3px_16px_#00000018]">
         <div className="mx-auto flex min-h-[72px] max-w-[1560px] items-center justify-between gap-3 px-4 sm:px-6 xl:gap-4 xl:px-8">
           <BrandLogo priority className="w-[153px] sm:w-[170px]" width={183}/>
           <nav aria-label="Public website" className="hidden flex-1 items-center justify-center gap-0.5 xl:flex">{nav}</nav>
@@ -86,8 +77,8 @@ export function PublicShell({children}:{children:React.ReactNode}) {
             className="inline-flex size-11 items-center justify-center rounded-xl border border-white/15 hover:bg-white/10 xl:hidden"><Menu className="size-6" aria-hidden/></button>
         </div>
       </header>
-      <main id="public-main" tabIndex={-1} className="min-h-[55dvh] outline-none">{children}</main>
-      <footer className="bg-brand-navy text-white">
+      <main inert={mobileOpen} aria-hidden={mobileOpen?true:undefined} id="public-main" tabIndex={-1} className="min-h-[55dvh] outline-none">{children}</main>
+      <footer inert={mobileOpen} aria-hidden={mobileOpen?true:undefined} className="bg-brand-navy text-white">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:grid-cols-2 sm:px-6 lg:grid-cols-[1.4fr_1fr_1fr_1fr] lg:py-14">
           <div className="space-y-4">
             <BrandLogo width={200} className="w-[180px]"/>
@@ -113,7 +104,7 @@ export function PublicShell({children}:{children:React.ReactNode}) {
 
       {mobileOpen&&<div className="fixed inset-0 z-[90] xl:hidden">
         <button type="button" onClick={()=>{setMobileOpen(false);window.requestAnimationFrame(()=>openButton.current?.focus());}} aria-label="Close navigation overlay" className="absolute inset-0 w-full bg-[#02152bcb]"/>
-        <div id="advibe-public-navigation" ref={mobilePanel} role="dialog" aria-modal="true" aria-label="Public navigation menu" className="absolute inset-y-0 right-0 flex w-[min(90vw,360px)] flex-col overflow-hidden bg-brand-navy text-white shadow-2xl">
+        <div id="advibe-public-navigation" ref={mobilePanel} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Public navigation menu" className="absolute inset-y-0 right-0 flex w-[min(90vw,360px)] flex-col overflow-hidden bg-brand-navy text-white shadow-2xl">
           <div className="flex shrink-0 items-center justify-between border-b border-white/10 p-4">
             <BrandLogo className="w-[156px]" width={174}/>
             <button ref={mobileClose} type="button" onClick={()=>{setMobileOpen(false);window.requestAnimationFrame(()=>openButton.current?.focus());}} aria-label="Close menu"
