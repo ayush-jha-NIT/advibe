@@ -1,2 +1,4 @@
-import { PublicPlaceholder } from "@/components/shared/public-placeholder";
-export default function Page(){return <PublicPlaceholder title="Forgot Password" description="Account recovery requires backend-issued tokens and is scheduled for Part 6." phase="auth"/>;}
+import type {Metadata} from "next";
+import {ForgotPasswordScreen} from "@/components/auth/recovery-screens";
+export const metadata:Metadata={title:"Demo Account Recovery",robots:{index:false,follow:false}};
+export default function Page(){return <ForgotPasswordScreen/>;}

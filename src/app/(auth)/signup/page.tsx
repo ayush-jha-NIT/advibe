@@ -1,2 +1,5 @@
-import { PublicPlaceholder } from "@/components/shared/public-placeholder";
-export default function Page(){return <PublicPlaceholder title="Create an AdVibe Account" description="Choose advertiser or driver partner registration. Role-specific signup is scheduled for Part 6." phase="auth"/>;}
+import type {Metadata} from "next";
+import {Suspense} from "react";
+import {SignupScreen} from "@/components/auth/signup-screen";
+export const metadata:Metadata={title:"Demo Registration",robots:{index:false,follow:false}};
+export default function Page(){return <Suspense fallback={<p role="status">Loading signup…</p>}><SignupScreen/></Suspense>;}

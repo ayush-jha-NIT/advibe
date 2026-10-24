@@ -1,2 +1,4 @@
-import { PublicPlaceholder } from "@/components/shared/public-placeholder";
-export default function Page(){return <PublicPlaceholder title="Verify Your Account" description="Email and phone verification will be implemented in the authentication phase." phase="auth"/>;}
+import type {Metadata} from "next";
+import {VerifyScreen} from "@/components/auth/verify-screen";
+export const metadata:Metadata={title:"Demo Verification",robots:{index:false,follow:false}};
+export default function Page(){return <VerifyScreen/>;}

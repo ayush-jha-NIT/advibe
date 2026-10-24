@@ -1,2 +1,4 @@
-import { PublicPlaceholder } from "@/components/shared/public-placeholder";
-export default function Page(){return <PublicPlaceholder title="Reset Password" description="Secure password recovery is scheduled for Part 6." phase="auth"/>;}
+import type {Metadata} from "next";
+import {ResetPasswordScreen} from "@/components/auth/recovery-screens";
+export const metadata:Metadata={title:"Demo Password Reset",robots:{index:false,follow:false}};
+export default function Page(){return <ResetPasswordScreen/>;}

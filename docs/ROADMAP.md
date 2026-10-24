@@ -19,6 +19,9 @@ Client-approved visual reference set: 59 screenshots across Public, Admin, Adver
 - [x] Part 3: Shared demo repositories, Zustand persistence, business rules, linked domain records, tests and role-aware data
 - [x] Part 4: Mobile-first landing page, animated hero, advertiser/driver CTAs, formats and city explorer
 - [x] Part 5: Public pages, creative formats, cities, pricing calculator, support search, email contact
-- [ ] Parts 6–23: Authentication, portals, integrations and mobile QA
+- [x] Part 6: Responsive demo login, role signup, OTP, recovery and local session access gates
+- [ ] Parts 7–23: Advertiser, driver, admin workflows, real backend and mobile QA
 
 **Part 3 delivers a frontend demo engine, not a backend.** Role switching is public, data is fictional and browser-local, device controls are simulated and no Cashfree checkout occurs. See [DEMO_ENGINE.md](DEMO_ENGINE.md) and [ROUTES.md](ROUTES.md).
+
+**Authentication boundary:** Part 6 is a sessionStorage demo, not secure login. Demo OTP 123456 and preset credentials are intentionally visible. Real identity verification, email/SMS, sessions, password resets, rate limiting and server-side RBAC require the backend.

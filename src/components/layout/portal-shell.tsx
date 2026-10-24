@@ -5,8 +5,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { ArrowRight, Bell, ChevronDown, ChevronRight, CircleHelp,
-  LogIn, Menu, PanelLeftClose, PanelLeftOpen, Search, Settings, X } from "lucide-react";
+  LogOut, Menu, PanelLeftClose, PanelLeftOpen, Search, Settings, X } from "lucide-react";
 import { BrandLogo } from "@/components/brand/brand-logo";
+import {useDemoAuth} from "@/services/demo-auth-store";
 import { cn } from "@/lib/utils";
 import { activePortalItem, portalNavigation, portalNames, portalPeople,
   type PortalRole, type NavItem } from "@/config/navigation";
@@ -157,6 +158,9 @@ function NavSearch({role}:{role:PortalRole}) {
 
 export function PortalShell({role,children}:{role:PortalRole;children:React.ReactNode}) {
   const pathname=usePathname();
+  const router=useRouter();
+  const session=useDemoAuth(s=>s.session);
+  const logout=useDemoAuth(s=>s.logout);
   const [mobileOpen,setMobileOpen] = React.useState(false);
   const [collapsed,setCollapsed] = React.useState(false);
   const [showNotifications,setShowNotifications] = React.useState(false);
@@ -164,7 +168,8 @@ export function PortalShell({role,children}:{role:PortalRole;children:React.Reac
   const drawerCloseRef=React.useRef<HTMLButtonElement>(null);
   const menuButtonRef=React.useRef<HTMLButtonElement>(null);
   const active=activePortalItem(role,pathname);
-  const person=portalPeople[role];
+  const person=session?.role===role?{name:session.displayName,subtitle:portalPeople[role].subtitle,initials:session.displayName.trim().split(/\s+/).slice(0,2).map(part=>part[0]??"").join("").toUpperCase()}:portalPeople[role];
+  function signOut(){logout();setShowAccount(false);router.replace("/login?role="+role);}
 
   React.useEffect(()=>{
     const frame = window.requestAnimationFrame(() => {
@@ -229,7 +234,7 @@ export function PortalShell({role,children}:{role:PortalRole;children:React.Reac
                     {(["admin","advertiser","driver"] as const).map(r=><Link key={r} role="menuitem" href={"/"+r} onClick={()=>setShowAccount(false)} className="flex min-h-10 items-center rounded-lg px-3 text-sm hover:bg-surface-alt">{portalNames[r]}{r===role?" ✓":""}</Link>)}
                     <div className="my-1 border-t border-line"/>
                     <Link role="menuitem" href={accountHref} onClick={()=>setShowAccount(false)} className="flex min-h-10 items-center gap-2 rounded-lg px-3 text-sm hover:bg-surface-alt"><Settings className="size-4"/>Account settings</Link>
-                    <Link role="menuitem" href="/login" onClick={()=>setShowAccount(false)} className="flex min-h-10 items-center gap-2 rounded-lg px-3 text-sm hover:bg-surface-alt"><LogIn className="size-4"/>Authentication preview</Link>
+                    <button type="button" role="menuitem" onClick={signOut} className="flex min-h-10 w-full items-center gap-2 rounded-lg px-3 text-left text-sm hover:bg-surface-alt"><LogOut className="size-4"/>Sign out of demo</button>
                   </div>}
                 </div>
               </div>
@@ -240,7 +245,7 @@ export function PortalShell({role,children}:{role:PortalRole;children:React.Reac
           <div className="flex min-h-0 flex-1 flex-col">
             <div className="flex items-start gap-2 border-b border-[#d6e9ff] bg-[#f0f7ff] px-4 py-2.5 text-xs text-[#3d6597] sm:px-6 lg:px-8">
               <CircleHelp className="mt-0.5 size-3.5 shrink-0" aria-hidden/>
-              <p><strong>Part 3 frontend foundation.</strong> Navigation and dashboard demo data are functional. Role switching is not authentication; module screens, payment and hardware integrations remain pending.</p>
+              <p><strong>Part 6 demo sessions.</strong> Local role switching and signup/OTP previews do not provide real authentication. Backend identity, payments and device services are still pending.</p>
             </div>
             <main id="portal-main" tabIndex={-1} className="min-w-0 flex-1 px-4 py-6 outline-none sm:px-6 lg:px-8 lg:py-8">
               {children}

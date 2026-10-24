@@ -4,13 +4,15 @@ Responsive four-portal frontend for AdVibe: Public Website, Advertiser Portal, D
 
 ## Status
 
-**Parts 0–5 complete:** Official approved logo; role-aware UI component library; responsive public navbar/footer; admin, advertiser and driver navigation shells; live route switching, mobile drawer and navigation search.
+**Parts 0–6 complete:** Official approved logo; role-aware UI component library; responsive public navbar/footer; admin, advertiser and driver navigation shells; live route switching, mobile drawer and navigation search.
 
 **Part 3 adds:** typed fictional data for accounts, campaigns, creatives, screens, vehicles, locations, bookings, payments and settlements; owner-aware selectors; persisted Zustand store; pricing and availability validations; and cross-portal interactive dashboard previews.
 
 **Part 4 adds:** The mobile-first landing page, 9.6-second CSS/SVG cinematic animation, role-specific signup CTAs, format cards, campaign walkthrough and illustrative interactive city explorer.
 
 **Part 5 adds:** Eight responsive marketing pages (advertisers, drivers, ad formats, locations, pricing, about, contact and help), demo format selection, city filtering, FAQs, price estimator and email-client enquiry preparation. These do not provide live inventory, binding prices or contact API submissions.
+
+**Part 6 adds:** Responsive demo login, advertiser and driver signup, mock six-digit OTP, password recovery screens, role-based browser-session preview gates and sign-out. Demo credentials and OTP are intentionally public; signup does not create a server account or save entered passwords.
 
 **Not implemented:** Real login/authorization, OTP, campaign wizard, Cashfree payments, actual payouts, KYC or device telemetry. Module routes remain labeled placeholders. Demo role switching is not security; no real personal or payment data should be stored here.
 
@@ -40,7 +42,7 @@ Open http://localhost:3000.
 - /admin : Admin shell
 - /advertiser : Advertiser shell
 - /driver : Driver Partner shell
-- /login and /signup : Authentication placeholders
+- /login, /signup, /verify, /forgot-password, /reset-password : Interactive demonstration-only account flows
 
 Full route map: [docs/ROUTES.md](docs/ROUTES.md)
 
@@ -64,5 +66,6 @@ CI executes these on pushes and pull requests.
 - [Brand rules](docs/BRAND.md)
 - [Landing implementation notes](docs/LANDING.md)
 - [Part 5 public page notes](docs/PUBLIC_PART_5.md)
+- [Part 6 demo authentication and limitations](docs/AUTH_PART_6.md)
 
 The supplied megaphone artwork is the sole approved AdVibe logo. Cashfree requires backend order creation and verification; secret keys must never enter NEXT_PUBLIC environment variables.

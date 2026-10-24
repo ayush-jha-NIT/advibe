@@ -1,6 +1,6 @@
 # AdVibe routing inventory
 
-**Current status:** Part 4 homepage and eight Part 5 marketing pages implemented. Legal policy routes await reviewed source text, auth and operational modules remain separate future stages. Portal dashboards contain fictional Part 3 demo data.
+**Current status:** Part 4 homepage and eight Part 5 marketing pages implemented. Legal policy routes await reviewed source text, production auth and operational modules remain separate future stages. Portal dashboards contain fictional Part 3 demo data.
 
 ## Public website
 
@@ -17,11 +17,11 @@
 | /help-center | Public FAQ/help hub | Completed in Part 5 |
 | /privacy | Privacy | Part 5 |
 | /terms | Terms | Part 5 |
-| /login | Auth login, password and OTP | Part 6 |
-| /signup | Advertiser/driver registration | Part 6 |
-| /verify | Email/phone account verification | Part 6 |
-| /forgot-password | Password recovery | Part 6 |
-| /reset-password | Password reset | Part 6 |
+| /login | Auth login, password and OTP | Part 6 demo implemented |
+| /signup | Advertiser/driver registration | Part 6 demo implemented |
+| /verify | Email/phone account verification | Part 6 demo implemented |
+| /forgot-password | Password recovery | Part 6 demo implemented |
+| /reset-password | Password reset | Part 6 demo implemented |
 | /design-system | Part 1 interactive UI specimen | Complete |
 
 ## Admin Portal
@@ -91,7 +91,7 @@ Root: /driver. Paths:
 - Mobile: accessible menu trigger, overlay close, Escape support, body-scroll lock, vertically scrolling sidebar, search below compact toolbar.
 - Screens below tablet width use single-column layouts. Shell content can horizontally shrink without causing document-wide overflow. Individual future data tables must implement their own intentional scrolling.
 - Search searches **navigation descriptions and labels only** until real data is available.
-- Portal switching is **demonstration only**. There is no authentication, permission check, session, identity, notification count or real data security in Part 2.
+- Portal switching is **demonstration only**. Part 6 adds browser-session role gates and sign-out, which are UX aids, **not authorization or identity security**. Production sessions and server-side checks do not exist.
 - Unknown /admin/[section], /advertiser/[section], /driver/[section] slugs return Next.js 404 (not generic success placeholders).
 
 ## Source mapping
@@ -107,4 +107,4 @@ Root: /driver. Paths:
 
 ## Later-phase upgrade path
 
-Replace each placeholder route with its actual feature page. Keep the route paths stable and source menu definitions from src/config/navigation.ts. In Part 6 add real session verification and server-side role gates, and do not rely on purely client-side navigation hiding for permission enforcement.
+Replace each placeholder route with its actual feature page. Keep the route paths stable and source menu definitions from src/config/navigation.ts. Production backend integration must implement real session verification, HTTP-only cookies and server-side role and ownership checks. Client role gates do not secure any data.
