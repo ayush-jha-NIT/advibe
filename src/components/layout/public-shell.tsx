@@ -12,6 +12,7 @@ export function PublicShell({children}:{children:React.ReactNode}) {
   const pathname=usePathname();
   const [mobileOpen,setMobileOpen]=React.useState(false);
   const mobileClose=React.useRef<HTMLButtonElement>(null);
+  const mobilePanel=React.useRef<HTMLDivElement>(null);
   const openButton=React.useRef<HTMLButtonElement>(null);
 
   React.useEffect(()=>{
@@ -19,7 +20,25 @@ export function PublicShell({children}:{children:React.ReactNode}) {
     const before=document.body.style.overflow;
     document.body.style.overflow="hidden";
     mobileClose.current?.focus();
-    function key(e:KeyboardEvent){if(e.key==="Escape")setMobileOpen(false);}
+    function key(e:KeyboardEvent){
+      if(e.key==="Escape"){
+        e.preventDefault();
+        setMobileOpen(false);
+        openButton.current?.focus();
+        return;
+      }
+      if(e.key!=="Tab"||!mobilePanel.current)return;
+      const focusable=Array.from(mobilePanel.current.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      )).filter(el=>el.getClientRects().length>0);
+      if(!focusable.length){e.preventDefault();return;}
+      const first=focusable[0],last=focusable[focusable.length-1];
+      if(e.shiftKey&&(document.activeElement===first||!mobilePanel.current.contains(document.activeElement))){
+        e.preventDefault();last.focus();
+      }else if(!e.shiftKey&&(document.activeElement===last||!mobilePanel.current.contains(document.activeElement))){
+        e.preventDefault();first.focus();
+      }
+    }
     document.addEventListener("keydown",key);
     return ()=>{document.body.style.overflow=before;document.removeEventListener("keydown",key);};
   },[mobileOpen]);
@@ -56,7 +75,7 @@ export function PublicShell({children}:{children:React.ReactNode}) {
             <Link href="/login" className="inline-flex min-h-11 items-center justify-center rounded-xl border border-[#9baccf] px-4 text-sm font-semibold text-white transition-colors hover:bg-white/10">Login</Link>
             <Link href="/signup" className="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand-orange px-5 text-sm font-semibold text-white transition-colors hover:bg-[#e95d00]">Sign Up</Link>
           </div>
-          <button ref={openButton} type="button" aria-expanded={mobileOpen} aria-label="Open public navigation" onClick={()=>setMobileOpen(true)}
+          <button ref={openButton} type="button" aria-expanded={mobileOpen} aria-controls="advibe-public-navigation" aria-label="Open public navigation" onClick={()=>setMobileOpen(true)}
             className="inline-flex size-11 items-center justify-center rounded-xl border border-white/15 hover:bg-white/10 xl:hidden"><Menu className="size-6" aria-hidden/></button>
         </div>
       </header>
@@ -87,7 +106,7 @@ export function PublicShell({children}:{children:React.ReactNode}) {
 
       {mobileOpen&&<div className="fixed inset-0 z-[90] xl:hidden">
         <button type="button" onClick={()=>{setMobileOpen(false);openButton.current?.focus();}} aria-label="Close navigation overlay" className="absolute inset-0 w-full bg-[#02152bcb]"/>
-        <div role="dialog" aria-modal="true" aria-label="Public navigation menu" className="absolute inset-y-0 right-0 flex w-[min(90vw,360px)] flex-col overflow-hidden bg-brand-navy text-white shadow-2xl">
+        <div id="advibe-public-navigation" ref={mobilePanel} role="dialog" aria-modal="true" aria-label="Public navigation menu" className="absolute inset-y-0 right-0 flex w-[min(90vw,360px)] flex-col overflow-hidden bg-brand-navy text-white shadow-2xl">
           <div className="flex shrink-0 items-center justify-between border-b border-white/10 p-4">
             <BrandLogo className="w-[156px]" width={174}/>
             <button ref={mobileClose} type="button" onClick={()=>{setMobileOpen(false);openButton.current?.focus();}} aria-label="Close menu"
