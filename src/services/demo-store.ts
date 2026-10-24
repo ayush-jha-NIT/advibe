@@ -10,7 +10,8 @@ import {assertAdvertiserManagement,type CampaignManagementAction} from "../featu
 import {assertCreativeEdit,validateCreativeDraft,type CreativeDraft} from "../features/advertiser/library-model";
 import {validateAccountProfile,validateTicketDraft,type AccountProfileDraft,type TicketDraft} from "../features/advertiser/account-model";
 import {validateDriverSubmission,type DriverDraft} from "../features/driver/onboarding-model";
-import {assertCreativeMetadataReview} from "../features/admin/admin-rules";
+import {assertDemoAdmin,assertCreativeMetadataReview} from "../features/admin/admin-rules";
+import {validatePricingUpdate,validateSettlementTransition} from "../features/admin/admin-finance-rules";
 import {assertProvisionedDriver,validateDriverIssue,validateDriverSupport,type DriverIssueDraft,type DriverSupportDraft} from "../features/driver/service-model";
 
 export type DemoStore={
@@ -30,6 +31,9 @@ export type DemoStore={
  submitDriverPreview:(actor:Actor,draft:DriverDraft)=>string;
  reviewDriver:(actor:Actor,applicationId:string)=>void;
  updateDriverReview:(actor:Actor,id:string,patch:Partial<Pick<DemoDatabase["driverApplications"][number],"completedSteps"|"documentsStatus"|"screenSetupStatus">>)=>void;
+ adminUpdateRate:(actor:Actor,id:string,patch:Pick<DemoDatabase["pricingRules"][number],"rupeesPerScreenDay"|"active"|"validFrom"|"validTo">)=>void;
+ adminMarkSettlement:(actor:Actor,id:string,status:"processed"|"failed")=>void;
+ adminScheduleCampaign:(actor:Actor,id:string,screenIds:string[])=>void;
  setScreenStatus:(actor:Actor,id:string,status:Screen["status"])=>void;
  markNoticeRead:(actor:Actor,id:string)=>void;
  markAllNoticesRead:(actor:Actor)=>void;
@@ -247,6 +251,33 @@ export const useDemoStore=create<DemoStore>()(persist<DemoStore,[],[],Persisted>
   });
   return id;
  },
+ adminScheduleCampaign:(actor,id,screenIds)=>set(s=>{
+  assertDemoAdmin(actor);
+  const row=s.db.campaigns.find(c=>c.id===id);
+  if(!row)throw Error("Campaign not found.");
+  if(row.status!=="approved"||row.paymentStatus!=="paid")throw Error("A demo campaign must be approved and paid before scheduling.");
+  validateBooking(s.db,row,screenIds);
+  const db:DemoDatabase={...s.db,
+   campaigns:s.db.campaigns.map(c=>c.id===id?{...c,status:"scheduled",screenIds:[...screenIds]}:c),
+   bookings:[...s.db.bookings,...screenIds.map(screenId=>({id:makeId("bkg"),campaignId:id,screenId,startDate:row.startDate,endDate:row.endDate,status:"confirmed" as const}))]
+  };
+  let next=audit(db,actor,"campaign",id,"demo_admin_scheduled");
+  next=notice(next,row.advertiserId,"campaign","Demo campaign scheduled",row.title+" was scheduled on confirmed fictional screens.");
+  for(const driverId of new Set(screenIds.map(screenId=>s.db.screens.find(sc=>sc.id===screenId)?.driverId).filter((id):id is string=>Boolean(id))))
+   next=notice(next,driverId,"campaign","Demo campaign assigned",row.title+" added to your fictional confirmed bookings.");
+  return {db:next};
+ }),
+ adminUpdateRate:(actor,id,patch)=>set(s=>{
+  const next=validatePricingUpdate(s.db,actor,id,patch);
+  return {db:audit({...s.db,pricingRules:s.db.pricingRules.map(r=>r.id===id?next:r)},actor,"pricingRule",id,"demo_rate_updated")};
+ }),
+ adminMarkSettlement:(actor,id,status)=>set(s=>{
+  const row=validateSettlementTransition(s.db,actor,id,status);
+  let next=audit({...s.db,settlements:s.db.settlements.map(r=>r.id===id?{...r,status}:r)},actor,"settlement",id,"demo_"+status);
+  next=notice(next,row.driverId,"settlement","Demo settlement marked "+status,
+   "Fictional settlement "+id+" was marked "+status+". No bank payout or provider API request occurred.");
+  return {db:next};
+ }),
  updateDriverReview:(actor,id,patch)=>set(s=>{
   requireAction(actor,"reviewDriver");
   const app=s.db.driverApplications.find(a=>a.id===id);
