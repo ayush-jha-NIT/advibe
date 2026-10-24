@@ -3,7 +3,7 @@ import * as React from "react";
 import {CalendarDays,Monitor,Paintbrush} from "lucide-react";
 import {Card,CardContent,CardHeader,CardTitle} from "@/components/ui";
 import {useDemoStore} from "@/services/demo-store";
-import type {Campaign,ReviewStatus} from "@/types/domain";
+import type {Campaign} from "@/types/domain";
 import {AdminAccess,AdminAction,AdminHeading,AdminNavLink,AdminNotice,AdminWarning,control,demoAdmin,adminSummary,MiniStat,StatusPill,useAdminData} from "./admin-shared";
 
 function useAction(){
@@ -83,7 +83,7 @@ export function AdminApprovals(){
  const {db,ready,admin}=useAdminData(),{message,error,run}=useAction();
  const campaigns=db.campaigns.filter(c=>["submitted","under_review"].includes(c.status));
  const creatives=db.creatives.filter(c=>c.approval==="pending"||c.approval==="under_review");
- function reviewCreative(id:string,to:ReviewStatus){
+ function reviewCreative(id:string,to:"approved"|"rejected"){
   if(!window.confirm("Set sample creative "+id+" to "+to+"?"))return;
   run(()=>useDemoStore.getState().reviewCreative(demoAdmin,id,to),"Creative "+id);
  }
