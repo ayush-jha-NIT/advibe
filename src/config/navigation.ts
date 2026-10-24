@@ -72,7 +72,7 @@ export const publicNavigation = [
   ]},
   {label:"For Drivers",href:"/for-drivers",children:[
     {label:"Drive with AdVibe",href:"/for-drivers"},
-    {label:"Driver Sign Up",href:"/signup"},
+    {label:"Driver Sign Up",href:"/signup?role=driver"},
     {label:"Help Center",href:"/help-center"},
   ]},
   {label:"Ad Formats",href:"/ad-formats"},
