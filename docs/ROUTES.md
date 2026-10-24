@@ -1,20 +1,20 @@
 # AdVibe routing inventory
 
-**Current status:** The public homepage is implemented as of Part 4. Public subpages, auth flows and operational module pages remain labeled placeholders. Portal dashboards contain fictional Part 3 demo data.
+**Current status:** Part 4 homepage and eight Part 5 marketing pages implemented. Legal policy routes await reviewed source text, auth and operational modules remain separate future stages. Portal dashboards contain fictional Part 3 demo data.
 
 ## Public website
 
 | URL | Approved screenshot concept | Implementation phase |
 | --- | --- | --- |
 | / | Landing/home + public navigation | Completed in Part 4 |
-| /for-advertisers | Advertiser marketing page | Part 5 |
-| /for-drivers | Driver marketing page | Part 5 |
-| /ad-formats | Public ad formats | Part 5 |
-| /locations | Public locations | Part 5 |
-| /pricing | Cost calculator and formats | Part 5 |
-| /about | About AdVibe | Part 5 |
-| /contact | Support contacts and enquiry | Part 5 |
-| /help-center | Public FAQ/help hub | Part 5 |
+| /for-advertisers | Advertiser marketing page | Completed in Part 5 |
+| /for-drivers | Driver marketing page | Completed in Part 5 |
+| /ad-formats | Public ad formats | Completed in Part 5 |
+| /locations | Public locations | Completed in Part 5 |
+| /pricing | Cost calculator and formats | Completed in Part 5 |
+| /about | About AdVibe | Completed in Part 5 |
+| /contact | Support contacts and enquiry | Completed in Part 5 |
+| /help-center | Public FAQ/help hub | Completed in Part 5 |
 | /privacy | Privacy | Part 5 |
 | /terms | Terms | Part 5 |
 | /login | Auth login, password and OTP | Part 6 |
