@@ -29,6 +29,7 @@ export type DemoStore={
  setLive:(actor:Actor,id:string)=>void;
  submitDriverPreview:(actor:Actor,draft:DriverDraft)=>string;
  reviewDriver:(actor:Actor,applicationId:string)=>void;
+ updateDriverReview:(actor:Actor,id:string,patch:Partial<Pick<DemoDatabase["driverApplications"][number],"completedSteps"|"documentsStatus"|"screenSetupStatus">>)=>void;
  setScreenStatus:(actor:Actor,id:string,status:Screen["status"])=>void;
  markNoticeRead:(actor:Actor,id:string)=>void;
  markAllNoticesRead:(actor:Actor)=>void;
@@ -246,12 +247,26 @@ export const useDemoStore=create<DemoStore>()(persist<DemoStore,[],[],Persisted>
   });
   return id;
  },
+ updateDriverReview:(actor,id,patch)=>set(s=>{
+  requireAction(actor,"reviewDriver");
+  const app=s.db.driverApplications.find(a=>a.id===id);
+  if(!app)throw Error("Driver application not found");
+  if(app.status==="approved"||app.status==="rejected")throw Error("Finalized applications cannot be altered.");
+  if(patch.completedSteps!==undefined&&(!Number.isInteger(patch.completedSteps)||patch.completedSteps<0||patch.completedSteps>5))
+   throw Error("Sample step completion must be an integer from 0 to 5.");
+  const allowed=["pending","under_review","approved","rejected"];
+  if(patch.documentsStatus!==undefined&&!allowed.includes(patch.documentsStatus))throw Error("Invalid document review flag.");
+  if(patch.screenSetupStatus!==undefined&&!allowed.includes(patch.screenSetupStatus))throw Error("Invalid device setup review flag.");
+  if(!Object.keys(patch).length)throw Error("Choose a demo review change.");
+  let next=audit({...s.db,driverApplications:s.db.driverApplications.map(a=>a.id===id?{...a,...patch}:a)},actor,"driverApplication",id,"demo_checklist_updated");
+  return {db:notice(next,app.driverId,"verification","Demo driver checklist updated","Example onboarding review markers were updated. No identity files or devices were verified.")};
+ }),
  reviewDriver:(actor,applicationId)=>set(s=>{
   requireAction(actor,"reviewDriver");
   const application=s.db.driverApplications.find(a=>a.id===applicationId);
   if(!application)throw Error("Application not found");
   assertDriverApproval(application);
-  const updated:DemoDatabase={...s.db,driverApplications:s.db.driverApplications.map(a=>a.id===applicationId?{...a,status:"approved"}:a)};
+  const updated:DemoDatabase={...s.db,driverApplications:s.db.driverApplications.map(a=>a.id===applicationId?{...a,status:"approved"}:a),vehicles:s.db.vehicles.map(v=>v.id===application.vehicleId&&v.driverId===application.driverId?{...v,verification:"approved" as const}:v)};
   const logged=audit(updated,actor,"driverApplication",applicationId,"approved");
   return {db:notice(logged,application.driverId,"verification","Driver verification approved","Your demo onboarding was approved.")};
  }),
