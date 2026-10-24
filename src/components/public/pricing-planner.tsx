@@ -4,7 +4,6 @@ import Link from "next/link";
 import {ArrowRight, Calculator, CheckCircle2, IndianRupee, Info, Monitor, ShieldCheck} from "lucide-react";
 import {FormatPreviewArt} from "@/components/landing/format-preview-art";
 import {formatCards,InfoNote,primaryButton} from "./marketing-blocks";
-import type {Placement} from "@/types/domain";
 
 const base:Record<"bike_rear"|"auto_rear"|"car_interior"|"helmet",number>={bike_rear:150,auto_rear:200,car_interior:300,helmet:100};
 type Choice=keyof typeof base;
@@ -18,8 +17,11 @@ export function PricingPlanner(){
  const [plays,setPlays]=React.useState(100);
  const [compare,setCompare]=React.useState(false);
  React.useEffect(()=>{
-  const param=new URLSearchParams(window.location.search).get("format");
-  if(param&&Object.hasOwn(base,param))setChoice(param as Choice);
+  const frame=window.requestAnimationFrame(()=>{
+   const param=new URLSearchParams(window.location.search).get("format");
+   if(param&&Object.hasOwn(base,param))setChoice(param as Choice);
+  });
+  return ()=>window.cancelAnimationFrame(frame);
  },[]);
  const format=formatCards.find(x=>x.type===choice)??formatCards[0];
  const daily=Math.round(base[choice]*(seconds/10)*(plays/100));
