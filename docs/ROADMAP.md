@@ -36,7 +36,7 @@ Client-approved visual reference set: 59 screenshots across Public, Admin, Adver
 - [x] Part 20: Admin sample pricing, bookings, payments and driver settlements
 - [x] Part 21: Admin reports, accounts, tickets, notifications, settings and audit
 - [x] Part 22: Cross-portal navigation, mobile focus/accessibility fixes, contrast, route regression checks and QA checklist
-- [ ] Part 23: Final real-device/browser QA, deployment checks and handoff
+- [x] Part 23 (frontend release engineering): Automated Chromium cross-portal smoke, static release checks, HTTPS health probe, Vercel handoff and manual QA checklist. Live deploy/physical-device sign-off remain pending.
 
 **Part 3 delivers a frontend demo engine, not a backend.** Role switching is public, data is fictional and browser-local, device controls are simulated and no Cashfree checkout occurs. See [DEMO_ENGINE.md](DEMO_ENGINE.md) and [ROUTES.md](ROUTES.md).
 
@@ -65,3 +65,5 @@ Client-approved visual reference set: 59 screenshots across Public, Admin, Adver
 **Parts 18–21:** All Admin navigation routes now lead to dedicated views and operations. Actions are protected by seeded demo role/transition guards, create local audit records and notices, and never claim real money movement, KYC, hardware telemetry or production user access control. See docs/ADMIN_PART_18.md through docs/ADMIN_PART_21.md.
 
 **Part 22:** Shared public and portal drawers trap keyboard focus and restore it, portal search ID collisions are removed, route main landmarks and skip links are improved, misleading preview copy is corrected, orange CTAs have more legible navy labels, and accessibility/route tests are added. See docs/PART_22_QA.md. Real browser/device accessibility testing remains Part 23.
+
+**Part 23 handoff:** The approved 24-part frontend-demo roadmap is code-complete and CI-gated, with an actual Chromium browser test of the built app. No matching AdVibe Vercel project was found under the currently connected accounts when checked, so production URL, deployment and physical-device manual sign-off cannot be marked verified. Production backend, KYC, payments, devices, legal terms and account security remain launch blockers. See docs/PART_23_RELEASE.md and docs/PRODUCTION_READINESS.md.

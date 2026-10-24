@@ -4,7 +4,7 @@ Responsive four-portal frontend for AdVibe: Public Website, Advertiser Portal, D
 
 ## Status
 
-**Parts 0–22 implemented:** Official approved logo; role-aware UI component library; responsive public navbar/footer; admin, advertiser and driver navigation shells; live route switching, mobile drawer and navigation search.
+**All roadmap implementation phases (Parts 0–23) delivered for the frontend demo:** Official approved logo; role-aware UI component library; responsive public navbar/footer; admin, advertiser and driver navigation shells; live route switching, mobile drawer and navigation search.
 
 **Part 3 adds:** typed fictional data for accounts, campaigns, creatives, screens, vehicles, locations, bookings, payments and settlements; owner-aware selectors; persisted Zustand store; pricing and availability validations; and cross-portal interactive dashboard previews.
 
@@ -46,7 +46,9 @@ Responsive four-portal frontend for AdVibe: Public Website, Advertiser Portal, D
 
 **Part 22 adds:** Shared accessible mobile-drawer keyboard focus trapping, Escape/focus restoration, search results with unique IDs, client-route main-landmark focus, auth skip link, truthful account-scoped demo notices, accurate selector semantics, stronger mobile reflow, reduced motion/high contrast support, and navy-on-orange action contrast. Includes regression tests and an explicit remaining manual QA matrix.
 
-**Not implemented:** Real backend login/authorization, live OTP, production creative uploads and moderation, Cashfree payments, actual payouts, KYC or device telemetry. The Admin operational routes remain frontend placeholders. Demo role switching is not security; no real personal or payment data should be stored here.
+**Part 23 adds:** Chromium smoke tests against the production Next.js build (public/auth/portal routes, mobile nav, cross-role demo consistency), static release tests, a frontend-only health endpoint, gated robots/sitemap, read-only HTTPS deployment health script, and a formal release handover. Physical-device accessibility/visual testing and a live Vercel deployment remain unverified.
+
+**Not implemented:** Real backend login/authorization, live OTP, production creative uploads and moderation, Cashfree payments, actual payouts, KYC or device telemetry. All planned Admin routes have dedicated demo pages. Demo role switching is not security; no real personal or payment data should be stored here.
 
 ## Stack
 
@@ -92,7 +94,22 @@ npm run test:demo
 npm run build
 ~~~
 
-CI executes these on pushes and pull requests.
+GitHub CI executes these on pushes and pull requests, followed by a Chromium browser-smoke job that serves a built Next.js production bundle.
+
+To execute browser tests locally after installing browsers:
+```bash
+npx playwright install chromium
+npm run build
+npm run start -- --port 3100
+# In another terminal:
+BASE_URL=http://127.0.0.1:3100 npm run test:browser
+```
+
+To check an **already deployed** HTTPS preview or production URL:
+```bash
+npm run health:deployment -- https://your-deployment.vercel.app
+```
+This checks HTTP routes and the explicitly demo-only health payload; it does not validate hardware or payment integrations.
 
 ## Implementation references
 
@@ -133,3 +150,7 @@ The supplied megaphone artwork is the sole approved AdVibe logo. Cashfree requir
 - [Admin Part 21: analytics, accounts and governance](docs/ADMIN_PART_21.md)
 
 - [Part 22 responsive, accessible navigation and QA matrix](docs/PART_22_QA.md)
+
+- [Part 23 release checks, manual QA matrix and Vercel setup](docs/PART_23_RELEASE.md)
+- [Frontend project handover](docs/HANDOVER.md)
+- [Production integration blockers and launch checklist](docs/PRODUCTION_READINESS.md)

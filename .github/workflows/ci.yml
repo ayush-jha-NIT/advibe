@@ -31,3 +31,54 @@ jobs:
         run: npm run test:demo
       - name: Production build
         run: npm run build
+
+  browser-smoke:
+    name: Chromium release smoke
+    runs-on: ubuntu-latest
+    needs: verify
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      NEXT_PUBLIC_DEMO_MODE: "true"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Install Chromium and system libraries
+        run: npx playwright install --with-deps chromium
+      - name: Production build
+        run: npm run build
+      - name: Serve build and run browser smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run start -- --port 3100 > /tmp/advibe-next.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
+          ready=0
+          for i in $(seq 1 45); do
+            if curl --silent --fail --output /dev/null http://127.0.0.1:3100; then
+              ready=1
+              break
+            fi
+            sleep 2
+          done
+          if [ "$ready" -ne 1 ]; then
+            cat /tmp/advibe-next.log
+            exit 1
+          fi
+          BASE_URL=http://127.0.0.1:3100 npm run test:browser
+      - name: Save browser failure screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: part23-browser-failures
+          path: test-results/
+          if-no-files-found: ignore

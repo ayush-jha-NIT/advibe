@@ -145,3 +145,11 @@ Part 18 introduces sample KPI dashboard, advertiser campaign transitions and cre
 ## Part 22 integrated navigation accessibility
 
 The shared public, auth and three portal layouts include improved skip navigation, in-dialog mobile keyboard focus, unique search listbox IDs and route focus management. All sidebar destinations are checked against explicit pages by automated tests. Browser-based WCAG verification remains pending in Part 23; these are static and unit checks rather than real-device results. See docs/PART_22_QA.md.
+
+## Part 23 release endpoints
+
+- `/api/health` — deliberately demo-only JSON availability response; not backend, Cashfree, bank or device health.
+- `/robots.txt` — no-index by default until SITE_INDEXING_ENABLED=true after launch review.
+- `/sitemap.xml` — public-only HTTPS URLs when indexing is deliberately enabled and NEXT_PUBLIC_APP_URL is valid; empty while demo-indexing gate is closed.
+
+A read-only HTTPS site check is available through `npm run health:deployment -- https://deployed-origin.example`. Full Chromium checks are in scripts/release-smoke.mjs and GitHub Actions.
