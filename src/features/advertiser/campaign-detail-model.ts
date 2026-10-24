@@ -1,5 +1,5 @@
 import type {Actor,AuditEvent,Booking,Campaign,Creative,DemoDatabase,Payment,Screen} from "../../types/domain";
-import {assertCampaignTransition} from "../../lib/demo-rules";
+import {assertCampaignTransition} from "../../lib/demo-rules.ts";
 
 export type CampaignManagementAction="pause"|"resume"|"cancel";
 export const lifecycleLabels:Record<CampaignManagementAction,string>={
