@@ -121,7 +121,9 @@ export function createKycRouter(config: AppConfig, auth: AuthDependencies,
     if (doc.status !== "PENDING_UPLOAD" || doc.uploadExpiresAt<=new Date()) {
       throw new HttpError(409,"UPLOAD_INTENT_EXPIRED","Create a new private upload intent");
     }
-    const signed = await storage.presignPut(doc.storageKey,doc.contentType,doc.sizeBytes);
+    const remainingSeconds = Math.floor((doc.uploadExpiresAt.getTime() - Date.now()) / 1000);
+    if (remainingSeconds < 1) throw new HttpError(409,"UPLOAD_INTENT_EXPIRED","Upload window expired");
+    const signed = await storage.presignPut(doc.storageKey,doc.contentType,doc.sizeBytes,remainingSeconds);
     res.status(201).json({data:{assetId:doc.id,uploadUrl:signed.url,
       expiresAt:doc.uploadExpiresAt.toISOString(), requiredHeaders:signed.headers}});
   }));
@@ -133,7 +135,7 @@ export function createKycRouter(config: AppConfig, auth: AuthDependencies,
     if (!doc) throw new HttpError(404,"NOT_FOUND","Document not found");
     if (doc.status!=="PENDING_UPLOAD") throw new HttpError(409,"DOCUMENT_LOCKED","Document already finalized");
     const head = await storage.head(doc.storageKey);
-    if (head.sizeBytes!==doc.sizeBytes || head.contentType!==doc.contentType || !head.versionId)
+    if (head.sizeBytes!==doc.sizeBytes || head.contentType!==doc.contentType || !head.versionId || head.versionId==="null")
       throw new HttpError(422,"UPLOAD_MISMATCH","Uploaded private object metadata does not match");
     const changed = await db.driverDocument.updateMany({
       where:{id,driverUserId:p.userId,status:"PENDING_UPLOAD"},
