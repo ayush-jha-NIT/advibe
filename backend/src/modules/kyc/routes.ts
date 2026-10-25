@@ -304,7 +304,7 @@ export function createKycRouter(config: AppConfig, auth: AuthDependencies,
           a.templateSha256===pol.agreementSha256 && a.privacyVersion===pol.privacyVersion &&
           a.templateVersion===app.agreementTemplateVersion);
         if(input.decision==="approved" &&
-          (!accepted || !["LICENCE","REGISTRATION","INSURANCE"].every(kind=>kinds.has(kind))))
+          (!accepted || !(["LICENCE","REGISTRATION","INSURANCE"] as const).every(kind=>kinds.has(kind))))
           throw new HttpError(422,"EVIDENCE_INCOMPLETE","Verified documents and current agreement required");
         const newState=input.decision.toUpperCase() as "APPROVED"|"REJECTED"|"CHANGES_REQUESTED";
         const changed=await tx.driverApplication.updateMany({where:{id,state:app.state},
