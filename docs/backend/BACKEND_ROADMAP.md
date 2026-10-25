@@ -1,6 +1,6 @@
 # AdVibe production backend implementation roadmap (B0–B23)
 
-The 24 frontend parts remain a browser-only demonstration. B0 specification, B1 isolated Express runtime and B2 Prisma/PostgreSQL foundation are implemented; B3–B23 remain pending. Do not confuse health endpoints with production business functionality.
+The 24 frontend parts remain a browser-only demonstration. B0–B3 implemented: B3 now provides database-backed user signup, email verification, sessions, login/logout and password resets; B4–B23 remain pending. Production domains, Neon and Resend provisioning are not complete. Do not confuse health endpoints with production business functionality.
 
 | Part | Scope | Acceptance evidence |
 | --- | --- | --- |

@@ -2,10 +2,13 @@ import { createApp } from "./app.js";
 import { loadConfig } from "./config/env.js";
 import { assertDatabaseReady, createDatabase } from "./db/client.js";
 import { createLogger } from "./lib/logger.js";
+import { createResendSender } from "./modules/auth/email.js";
+import { loadAuthSettings } from "./modules/auth/settings.js";
 
 async function main(): Promise<void> {
   const config = loadConfig();
   const logger = createLogger(config);
+  const authSettings = loadAuthSettings(process.env, config);
   const db = createDatabase();
   try {
     // Fail closed before opening an HTTP port if the database is unreachable.
@@ -16,7 +19,9 @@ async function main(): Promise<void> {
     throw new Error("Database is unavailable or misconfigured");
   }
 
-  const app = createApp(config, logger, () => assertDatabaseReady(db));
+  const app = createApp(config, logger, () => assertDatabaseReady(db), {
+    db, settings: authSettings, sender: createResendSender(authSettings),
+  });
   const server = app.listen(config.port, config.host, () => {
     logger.info({ host: config.host, port: config.port, environment: config.nodeEnv },
       "AdVibe B2 database-backed API listening");

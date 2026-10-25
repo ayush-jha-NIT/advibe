@@ -35,7 +35,7 @@ jobs:
         run: npm run build
 
   backend-verify:
-    name: Express B2 PostgreSQL checks
+    name: Express B3 authentication and PostgreSQL checks
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -56,6 +56,7 @@ jobs:
     env:
       NODE_ENV: test
       DB_TEST_ALLOWED: "true"
+      AUTH_SECRET: ci_only_dev_test_auth_secret_32_characters_long_value
       DATABASE_URL: postgresql://advibe_ci:ci_only_password@localhost:5432/advibe_ci?schema=public
       DIRECT_URL: postgresql://advibe_ci:ci_only_password@localhost:5432/advibe_ci?schema=public
     steps:

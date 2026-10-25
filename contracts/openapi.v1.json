@@ -3,7 +3,7 @@
   "info": {
     "title": "AdVibe Backend API",
     "version": "0.1.0-b0",
-    "description": "B0–B2 contract. Only GET /health and GET /ready implemented. B2 readiness verifies PostgreSQL connectivity and foundation migration. Most business endpoints are NOT deployed or implemented."
+    "description": "B0–B3 contract. B3 implements public advertiser/driver registration, email verification, login, email recovery, cookie sessions and logout. Admin MFA, RBAC, business/driver APIs, money and devices remain disabled. Most unfinished APIs are NOT deployed or implemented."
   },
   "servers": [
     {
@@ -207,7 +207,8 @@
         "required": [
           "userId",
           "role",
-          "expiresAt"
+          "expiresAt",
+          "csrfToken"
         ],
         "properties": {
           "userId": {
@@ -229,6 +230,11 @@
           "accountId": {
             "type": "string",
             "format": "uuid"
+          },
+          "csrfToken": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "Session-bound CSRF token returned only to authenticated browser callers. Supply as X-CSRF-Token for authenticated mutations."
           }
         },
         "additionalProperties": false
@@ -2075,6 +2081,25 @@
             "description": "Audited operator note; never overrides payment/KYC or availability requirements"
           }
         }
+      },
+      "RegistrationReceipt": {
+        "type": "object",
+        "required": [
+          "message",
+          "challengeId"
+        ],
+        "properties": {
+          "message": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "challengeId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "additionalProperties": false
       }
     },
     "responses": {
@@ -2230,7 +2255,7 @@
         ],
         "operationId": "register",
         "summary": "Create pending advertiser/driver identity",
-        "description": "Registration is unverified until an OTP/email challenge succeeds. Admin self-registration forbidden. B0 contract only; no runtime handler exists yet.",
+        "description": "Create pending advertiser/driver identity; implemented against Prisma/PostgreSQL in B3. All credentials validated server-side; no demo login.",
         "x-backend-phase": "B3",
         "x-access-roles": [
           "public"
@@ -2249,7 +2274,7 @@
                   ],
                   "properties": {
                     "data": {
-                      "$ref": "#/components/schemas/PublicMessage"
+                      "$ref": "#/components/schemas/RegistrationReceipt"
                     }
                   },
                   "additionalProperties": false
@@ -2291,7 +2316,8 @@
               }
             }
           }
-        }
+        },
+        "x-implementation-status": "implemented-b3"
       }
     },
     "/auth/verify": {
@@ -2301,7 +2327,7 @@
         ],
         "operationId": "verifyAuthChallenge",
         "summary": "Verify pending email/phone challenge",
-        "description": "Verify pending email/phone challenge B0 contract only; no runtime handler exists yet.",
+        "description": "Verify pending email/phone challenge; implemented against Prisma/PostgreSQL in B3. All credentials validated server-side; no demo login.",
         "x-backend-phase": "B3",
         "x-access-roles": [
           "public"
@@ -2362,7 +2388,8 @@
               }
             }
           }
-        }
+        },
+        "x-implementation-status": "implemented-b3"
       }
     },
     "/auth/login": {
@@ -2372,7 +2399,7 @@
         ],
         "operationId": "login",
         "summary": "Log in with credentials",
-        "description": "Origin/CSRF hardening and anti-bruteforce required even before session creation. B0 contract only; no runtime handler exists yet.",
+        "description": "Log in with credentials; implemented against Prisma/PostgreSQL in B3. All credentials validated server-side; no demo login.",
         "x-backend-phase": "B3",
         "x-access-roles": [
           "public"
@@ -2433,7 +2460,8 @@
               }
             }
           }
-        }
+        },
+        "x-implementation-status": "implemented-b3"
       }
     },
     "/auth/logout": {
@@ -2443,7 +2471,7 @@
         ],
         "operationId": "logout",
         "summary": "Revoke current session",
-        "description": "Revoke current session B0 contract only; no runtime handler exists yet.",
+        "description": "Revoke current session; implemented against Prisma/PostgreSQL in B3. All credentials validated server-side; no demo login.",
         "x-backend-phase": "B3",
         "x-access-roles": [
           "advertiser",
@@ -2506,7 +2534,8 @@
           {
             "$ref": "#/components/parameters/CsrfToken"
           }
-        ]
+        ],
+        "x-implementation-status": "implemented-b3"
       }
     },
     "/auth/session": {
@@ -2516,7 +2545,7 @@
         ],
         "operationId": "getSession",
         "summary": "Inspect current server session",
-        "description": "Inspect current server session B0 contract only; no runtime handler exists yet.",
+        "description": "Inspect current server session; implemented against Prisma/PostgreSQL in B3. All credentials validated server-side; no demo login.",
         "x-backend-phase": "B3",
         "x-access-roles": [
           "advertiser",
@@ -2573,7 +2602,8 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        }
+        },
+        "x-implementation-status": "implemented-b3"
       }
     },
     "/auth/forgot-password": {
@@ -2583,7 +2613,7 @@
         ],
         "operationId": "requestPasswordReset",
         "summary": "Request recovery email",
-        "description": "Always return non-enumerating result; rate limit by identifier and IP. B0 contract only; no runtime handler exists yet.",
+        "description": "Request recovery email; implemented against Prisma/PostgreSQL in B3. All credentials validated server-side; no demo login.",
         "x-backend-phase": "B3",
         "x-access-roles": [
           "public"
@@ -2644,7 +2674,8 @@
               }
             }
           }
-        }
+        },
+        "x-implementation-status": "implemented-b3"
       }
     },
     "/auth/reset-password": {
@@ -2654,7 +2685,7 @@
         ],
         "operationId": "resetPassword",
         "summary": "Consume one-time reset token",
-        "description": "Consume one-time reset token B0 contract only; no runtime handler exists yet.",
+        "description": "Consume one-time reset token; implemented against Prisma/PostgreSQL in B3. All credentials validated server-side; no demo login.",
         "x-backend-phase": "B3",
         "x-access-roles": [
           "public"
@@ -2715,7 +2746,8 @@
               }
             }
           }
-        }
+        },
+        "x-implementation-status": "implemented-b3"
       }
     },
     "/me": {
@@ -8566,6 +8598,152 @@
           }
         },
         "x-implementation-status": "implemented-b2"
+      }
+    },
+    "/auth/resend-verification": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "operationId": "resendVerification",
+        "summary": "Resend pending verification email",
+        "description": "Generic non-enumerating acknowledgement. Challenge ID and OTP are only sent via email.",
+        "x-backend-phase": "B3",
+        "x-access-roles": [
+          "public"
+        ],
+        "x-trust-boundary": "public",
+        "security": [],
+        "responses": {
+          "201": {
+            "description": "Successful authoritative response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/PublicMessage"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailInput"
+              }
+            }
+          }
+        },
+        "x-implementation-status": "implemented-b3"
+      }
+    },
+    "/auth/logout-all": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "operationId": "logoutAllSessions",
+        "summary": "Revoke all server sessions",
+        "description": "Requires HttpOnly cookie, valid session and X-CSRF-Token.",
+        "x-backend-phase": "B3",
+        "x-access-roles": [
+          "advertiser",
+          "driver",
+          "admin"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful authoritative response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/PublicMessage"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "x-csrf-required": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "x-implementation-status": "implemented-b3"
       }
     }
   }

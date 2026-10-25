@@ -10,7 +10,8 @@ const port = 43000 + process.pid % 1000;
 const child = spawn(process.execPath, ["dist/server.js"], {
   cwd,
   env: { ...process.env, NODE_ENV: "test", HOST: "127.0.0.1", PORT: String(port),
-    CORS_ORIGINS: "http://localhost:3000", LOG_LEVEL: "silent" },
+    CORS_ORIGINS: "http://localhost:3000", LOG_LEVEL: "silent",
+    AUTH_SECRET: "ci_only_dev_test_auth_secret_32_characters_long_value" },
   stdio: ["ignore", "pipe", "pipe"],
 });
 let stderr = "";

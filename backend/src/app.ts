@@ -6,10 +6,11 @@ import type { AppConfig } from "./config/env.js";
 import { HttpError } from "./lib/http-error.js";
 import { errorHandler, notFound } from "./middleware/error-handler.js";
 import { requestContext } from "./middleware/request-context.js";
+import { createAuthRouter, type AuthDependencies } from "./modules/auth/routes.js";
 
 /** Every live API server supplies a database probe; omitted probes fail closed. */
 export function createApp(
-  config: AppConfig, logger: Logger, checkDatabase?: () => Promise<void>,
+  config: AppConfig, logger: Logger, checkDatabase?: () => Promise<void>, auth?: AuthDependencies,
 ): Express {
   const app = express();
   app.disable("x-powered-by");
@@ -39,7 +40,8 @@ export function createApp(
     catch { throw new HttpError(503, "NOT_READY", "API or database is unavailable"); }
     res.status(200).json({ data: { message: "ready" } });
   });
-  // B3-B23 add secured business routes; never turn demo routes into real successes.
+  if (auth) app.use("/api/v1/auth", createAuthRouter(config, auth));
+  // B4-B23 add scoped business routes; never turn demo routes into real successes.
   app.use(notFound);
   app.use(errorHandler(logger));
   return app;

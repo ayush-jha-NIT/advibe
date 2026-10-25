@@ -14,13 +14,14 @@
     "lint": "eslint src tests",
     "test": "node --import tsx --test tests/app.test.ts tests/env.test.ts",
     "smoke": "node scripts/smoke.mjs",
-    "check": "npm run lint && npm run typecheck && npm run test && npm run test:db && npm run build && npm run smoke",
+    "check": "npm run lint && npm run typecheck && npm run test && npm run test:db && npm run test:auth && npm run build && npm run smoke",
     "postinstall": "prisma generate --schema prisma/schema.prisma",
     "db:validate": "prisma validate --schema prisma/schema.prisma",
     "db:migrate:deploy": "prisma migrate deploy --schema prisma/schema.prisma",
     "db:migrate:dev": "prisma migrate dev --schema prisma/schema.prisma",
     "db:seed:dev": "tsx prisma/seed.ts",
-    "test:db": "node --import tsx --test tests/db.integration.test.ts"
+    "test:db": "node --import tsx --test tests/db.integration.test.ts",
+    "test:auth": "node --import tsx --test tests/auth.integration.test.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",
@@ -28,7 +29,8 @@
     "helmet": "^8.1.0",
     "pino": "^9.9.0",
     "zod": "^4.1.0",
-    "@prisma/client": "6.19.0"
+    "@prisma/client": "6.19.0",
+    "argon2": "^0.44.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",

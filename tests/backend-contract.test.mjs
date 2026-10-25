@@ -107,7 +107,7 @@ test("existing portal navigation is completely covered by frontend-to-API migrat
  for(const path of ["/login","/signup","/verify","/forgot-password","/reset-password","/contact","/pricing"])
   assert.ok(map.includes("| "+path+" |"),"Missing public/auth mapping: "+path);
 });
-test("B0–B2 documentation preserves production safety gates",()=>{
+test("B0–B3 documentation preserves production safety gates",()=>{
  const docs=["B0_ARCHITECTURE.md","B0_DATABASE.md","B0_API_MAPPING.md","B0_DECISIONS.md","BACKEND_ROADMAP.md","B0_CONTRACT_RULES.md"];
  for(const filename of docs){
   const content=read("docs/backend/"+filename);
@@ -117,9 +117,13 @@ test("B0–B2 documentation preserves production safety gates",()=>{
  for(const topic of ["idempotency","exclusion","private","webhook","retention","settlement"])
   assert.match(blueprint,new RegExp(topic,"i"),"Missing DB risk topic "+topic);
  const runtime=read("backend/README.md");
- assert.match(runtime,/B2 database foundation are implemented/,"B2 DB runtime must be documented");
- assert.match(runtime,/No production accounts, authentication, KYC, payment/i,"B2 must disclose missing integrations");
+ assert.match(runtime,/B3 authentication endpoints are implemented/,"B3 runtime must be documented");
+ assert.match(runtime,/Admin login returns 403 until B4 MFA/,"B3 must keep Admin blocked");
  const b2Doc=read("docs/backend/B2_IMPLEMENTATION.md");
+ const b3Doc=read("docs/backend/B3_IMPLEMENTATION.md");
+ assert.match(b3Doc,/Argon2id/i);
+ assert.match(b3Doc,/CSRF/i);
+ assert.equal(spec.paths["/auth/login"].post["x-implementation-status"],"implemented-b3");
  assert.match(b2Doc,/serializable transaction/i);
  assert.match(b2Doc,/restore/i);
  const migration=read("backend/prisma/migrations/20261025220000_b2_foundation/migration.sql");

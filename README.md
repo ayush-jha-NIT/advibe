@@ -1,10 +1,10 @@
 # AdVibe Frontend
 
-## Backend implementation status (B2)
+## Backend implementation status (B3)
 
-**B0–B2 implemented.** B2 adds PostgreSQL/Neon Prisma models, SQL migrations, transactional repositories, constrained identity and tenant tables, development seed safeguards and database-backed readiness checks. See [B2 implementation](docs/backend/B2_IMPLEMENTATION.md) and [backend setup](backend/README.md).
+**B0–B3 implemented.** B3 adds Argon2id password hashing, verified email/OTP, secure session cookies, signup/login/logout, password recovery, and PostgreSQL-backed auth throttling. See [B3 implementation](docs/backend/B3_IMPLEMENTATION.md), [B2 database](docs/backend/B2_IMPLEMENTATION.md) and [backend setup](backend/README.md).
 
-**Not production-ready:** Prisma/PostgreSQL is tested using disposable PostgreSQL in CI, but no dedicated AdVibe Neon project has been provisioned. Authentication, payments, KYC, payouts and devices are not implemented. Vercel frontend is still a separate demo. B3–B23 remain pending.
+**Not production-ready:** B3 auth endpoints are implemented and tested against disposable PostgreSQL in CI but are not connected to the deployed frontend. No dedicated AdVibe Neon project or verified Resend sender has been provisioned. Admin MFA/authorization, payments, KYC, payouts and devices are pending B4–B23. Demo credentials are not accepted by this backend.
 
 Backend checks require an isolated migrated test PostgreSQL DB; CI provisions it automatically. Frontend checks: `npm run check`.
 

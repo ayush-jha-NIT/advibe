@@ -1,14 +1,10 @@
-# AdVibe B2 — PostgreSQL / Neon + Prisma backend
+# AdVibe backend B3: Identity & authentication
 
-B0 contracts, B1 Express, and B2 database foundation are implemented. The server **requires reachable PostgreSQL before listening**; `/api/v1/ready` checks DB connectivity. `/api/v1/health` is process liveness only.
+B0 API contracts, B1 Express runtime, B2 Prisma/PostgreSQL and B3 authentication endpoints are implemented. Production deployment requires an AdVibe-specific Neon PostgreSQL project, a configured verified Resend sender, a 32+ character AUTH_SECRET, HTTPS and a reviewed same-site cookie domain strategy.
 
-**No production accounts, authentication, KYC, payment, bookings, payouts or physical devices exist yet.** The Next.js portals remain browser-local demos. No dedicated AdVibe Neon project was found in the connected account, so GitHub Actions verifies this against isolated PostgreSQL 16, not production Neon.
+## Start locally
 
-## Configuration and setup (Node 22+)
-
-1. Provision a new AdVibe-specific Neon project or PostgreSQL 16+ locally. Obtain runtime pooled `DATABASE_URL` and unpooled migration `DIRECT_URL`.
-2. Copy `backend/.env.example` to `backend/.env`. Set **private** URLs. Production requires `sslmode=require` or stronger and approved HTTPS CORS. Never put secrets into `NEXT_PUBLIC_`.
-3. From repository root:
+Copy `backend/.env.example` to `backend/.env`. Set `DATABASE_URL`, `DIRECT_URL`, `AUTH_SECRET` (32+ cryptographically random characters), `AUTH_WEB_ORIGIN`, `CORS_ORIGINS`, and email transport. Do not commit live secrets.
 
 ```bash
 npm install --prefix backend
@@ -17,26 +13,28 @@ npm --prefix backend run db:migrate:deploy
 npm --prefix backend run dev
 ```
 
-For PowerShell: `Copy-Item backend/.env.example backend/.env`. Prisma CLI loads `backend/.env` for migrations; the B1 Node dev command also loads it. Hosted `npm --prefix backend start` requires injected env vars (it does not read .env automatically).
+Without Resend config in development, email-based signup/recovery cannot deliver messages (fail closed). For CI, the auth tests inject a fake in-memory mail sender; no fixed OTP, mock login credential or console OTP exposure exists.
 
-Release deploy order: migration with restricted `DIRECT_URL`, then start API using `DATABASE_URL`. Never use `prisma db push` or `prisma migrate reset` in staging/production.
+### Implemented endpoints under /api/v1/auth
 
-## CI and integration tests
+| Method | Route | Behavior |
+| --- | --- | --- |
+| POST | /register | Advertiser/driver signup, Argon2id hash, pending user, one-time emailed 6-digit code and challenge ID |
+| POST | /resend-verification | Generic response, new email challenge for pending user |
+| POST | /verify | Single-use bounded-attempt email challenge, activates pending user |
+| POST | /login | Verified active account, Argon2id check, secure server-held session/cookie |
+| GET | /session | Validates DB session, returns user ID/role/expiry and CSRF token |
+| POST | /logout | CSRF-protected current session revocation |
+| POST | /logout-all | CSRF-protected all-session revocation |
+| POST | /forgot-password | Non-enumerating reset email with 256-bit secret |
+| POST | /reset-password | Single-use reset, Argon2id rehash, invalidate all sessions |
 
-The `backend-verify` GitHub Actions job starts disposable PostgreSQL 16, validates the Prisma schema, runs `migrate deploy`, then executes:
+No B3 endpoint accepts role=admin registration or bypasses verification. **Admin login returns 403 until B4 MFA is in place**. Human sessions use HTTP-only Secure `__Host-advibe_session` cookies in production; localhost uses an explicitly named nonsecure dev cookie only. CSRF protection is mandatory on authenticated writes. Public auth writes require JSON, allowed Origin and anti-abuse throttling. No session JWT or password is stored in localStorage.
 
-```bash
-npm --prefix backend run check
-```
+## Important restrictions
 
-This includes lint, TypeScript, Node HTTP tests, real DB constraint/transaction tests, build and compiled server smoke. To run locally set `NODE_ENV=test DB_TEST_ALLOWED=true` and use a LOCAL database whose name includes `_test` or `_ci`. Tests create immutable audit rows, so use a disposable DB and do not reuse production data.
+The Next.js Vercel frontend still has separate demo auth and is not connected to these endpoints. This milestone must not be considered a live site launch. Configure a first-party same-site domain/proxy before using cross-origin authenticated browser flows. OTP and reset emails use Resend over server-to-server HTTPS; verify domain and provider approval in staging.
 
-Development fixtures require `NODE_ENV=development`, `DEV_SEED_ACK=true`, a LOCAL database and an explicit manual invocation of `npm --prefix backend run db:seed:dev`. Sample records cannot log in, contain no actual people or banking data and are never seeded automatically.
+Run `npm --prefix backend run check` against a disposable migrated local PostgreSQL test DB with NODE_ENV=test and DB_TEST_ALLOWED=true. See [B3 security and test runbook](../docs/backend/B3_IMPLEMENTATION.md).
 
-## Relational scope and boundaries
-
-B2 models: User, Session, OtpChallenge, Business, BusinessMembership, AuditEvent, IdempotencyRecord, OutboxEvent. PostgreSQL enforces UUID keys, foreign keys, unique email/member/idempotency scopes, canonical emails, safe checks and append-only audit events. The internal business repository writes owner membership, audit and outbox in one serializable transaction.
-
-B3/B4: real authentication, OTP, sessions, RBAC and MFA. B5: authenticated business endpoints. B6–B21: approved driver/hardware/ads/financial tables through additional forward-only migrations.
-
-Documentation and backup runbook: `../docs/backend/B2_IMPLEMENTATION.md`.
+B4 implements Admin MFA, full RBAC/ownership enforcement and stronger operational session policies. B5 integrates real account profile APIs.
