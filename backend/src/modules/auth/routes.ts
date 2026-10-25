@@ -51,17 +51,15 @@ function publicMutationGuard(config: AppConfig) {
 }
 
 async function getSession(req: Request, db: PrismaClient, settings: AuthSettings) {
-  const token = readSessionCookie(req, settings);
-  if (!token) throw new HttpError(401, "UNAUTHENTICATED", "Authentication required");
-  const session = await db.session.findUnique({
-    where: { tokenHash: hashToken(token) }, include: { user: true },
-  });
-  if (!session || session.revokedAt || session.expiresAt <= new Date() ||
-      session.user.status !== "ACTIVE" || !session.user.emailVerifiedAt ||
-      !session.user.passwordHash || session.user.role === "ADMIN") {
-    throw new HttpError(401, "UNAUTHENTICATED", "Authentication required");
-  }
-  return { session, csrfToken: mac(settings, "csrf", session.tokenHash) };
+  const principal = await resolvePrincipal(req, db, settings);
+  return {
+    session: {
+      id: principal.sessionId, userId: principal.userId,
+      expiresAt: principal.expiresAt,
+      user: { id: principal.userId, role: principal.role },
+    },
+    csrfToken: mac(settings, "csrf", principal.tokenHash),
+  };
 }
 
 async function ensureCsrf(req: Request, db: PrismaClient, settings: AuthSettings) {

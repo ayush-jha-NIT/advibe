@@ -16,3 +16,9 @@ export const resetSchema = z.strictObject({
   resetToken: z.string().regex(/^[a-f0-9-]{36}\.[A-Za-z0-9_-]{43}$/i),
   newPassword: password,
 });
+
+export const mfaVerifySchema = z.strictObject({
+  challengeId: z.uuid(),
+  ticket: z.string().regex(/^[A-Za-z0-9_-]{43}$/),
+  code: z.string().regex(/^[0-9]{6}$/),
+});

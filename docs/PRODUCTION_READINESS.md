@@ -1,6 +1,6 @@
 # AdVibe Production Readiness — Mandatory Backend and Launch Work
 
-**Status: frontend demonstration only, NOT production-ready. B0–B3 implemented in GitHub CI, including PostgreSQL-backed authentication. B4–B23 pending. No AdVibe Neon production database or verified email sender is provisioned, Admin MFA is blocked, and the deployed frontend still uses demo authentication.**
+**Status: frontend demonstration only, NOT production-ready. B0–B4 implemented in GitHub CI, including PostgreSQL-backed authentication and Admin TOTP MFA. B5–B23 pending. No AdVibe Neon production database or verified email sender is provisioned. Admin authenticator must be operator-enrolled, and the deployed frontend still uses demo authentication.**
 
 Backend baseline: [B0 architecture](backend/B0_ARCHITECTURE.md), [database](backend/B0_DATABASE.md), [API migration map](backend/B0_API_MAPPING.md), [decisions](backend/B0_DECISIONS.md), and [versioned OpenAPI](../contracts/openapi.v1.json).
 

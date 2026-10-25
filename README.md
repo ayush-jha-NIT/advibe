@@ -1,10 +1,10 @@
 # AdVibe Frontend
 
-## Backend implementation status (B3)
+## Backend implementation status (B4)
 
-**B0–B3 implemented.** B3 adds Argon2id password hashing, verified email/OTP, secure session cookies, signup/login/logout, password recovery, and PostgreSQL-backed auth throttling. See [B3 implementation](docs/backend/B3_IMPLEMENTATION.md), [B2 database](docs/backend/B2_IMPLEMENTATION.md) and [backend setup](backend/README.md).
+**B0–B4 implemented.** B4 adds Admin TOTP MFA with encrypted secrets and replay protection, server-enforced RBAC and scoped business membership queries, role-change session guards, and PostgreSQL-backed negative authorization tests. See [B4 implementation](docs/backend/B4_IMPLEMENTATION.md), [backend setup](backend/README.md).
 
-**Not production-ready:** B3 auth endpoints are implemented and tested against disposable PostgreSQL in CI but are not connected to the deployed frontend. No dedicated AdVibe Neon project or verified Resend sender has been provisioned. Admin MFA/authorization, payments, KYC, payouts and devices are pending B4–B23. Demo credentials are not accepted by this backend.
+**Not production-ready:** B3 auth endpoints are implemented and tested against disposable PostgreSQL in CI but are not connected to the deployed frontend. No dedicated AdVibe Neon project or verified Resend sender has been provisioned. Business APIs, payments, KYC, payouts and devices are pending B5–B23. Production Admin MFA requires operator provisioning and validated configuration. Demo credentials are not accepted by this backend.
 
 Backend checks require an isolated migrated test PostgreSQL DB; CI provisions it automatically. Frontend checks: `npm run check`.
 

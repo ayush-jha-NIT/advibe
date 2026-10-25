@@ -3,7 +3,7 @@
   "info": {
     "title": "AdVibe Backend API",
     "version": "0.1.0-b0",
-    "description": "B0–B3 contract. B3 implements public advertiser/driver registration, email verification, login, email recovery, cookie sessions and logout. Admin MFA, RBAC, business/driver APIs, money and devices remain disabled. Most unfinished APIs are NOT deployed or implemented."
+    "description": "B0–B4 contract: implemented liveness, DB readiness, B3 email login and B4 MFA + server-scoped permission inspection. Financial, KYC, hardware and most business APIs remain NOT deployed or implemented."
   },
   "servers": [
     {
@@ -2100,6 +2100,121 @@
           }
         },
         "additionalProperties": false
+      },
+      "MfaPendingLogin": {
+        "type": "object",
+        "required": [
+          "challengeId",
+          "ticket",
+          "message"
+        ],
+        "properties": {
+          "challengeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "ticket": {
+            "type": "string",
+            "minLength": 43,
+            "maxLength": 43,
+            "writeOnly": true
+          },
+          "message": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          }
+        },
+        "additionalProperties": false
+      },
+      "MfaLoginInput": {
+        "type": "object",
+        "required": [
+          "challengeId",
+          "ticket",
+          "code"
+        ],
+        "properties": {
+          "challengeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "ticket": {
+            "type": "string",
+            "minLength": 43,
+            "maxLength": 43,
+            "writeOnly": true
+          },
+          "code": {
+            "type": "string",
+            "pattern": "^[0-9]{6}$",
+            "writeOnly": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BusinessAccess": {
+        "type": "object",
+        "required": [
+          "businessId",
+          "role"
+        ],
+        "properties": {
+          "businessId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "owner",
+              "manager",
+              "viewer"
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "PermissionSnapshot": {
+        "type": "object",
+        "required": [
+          "role",
+          "businesses"
+        ],
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "advertiser",
+              "driver",
+              "admin"
+            ]
+          },
+          "businesses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BusinessAccess"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "AdminSecurityState": {
+        "type": "object",
+        "required": [
+          "userId",
+          "mfaVerified"
+        ],
+        "properties": {
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "mfaVerified": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
       }
     },
     "responses": {
@@ -2399,7 +2514,7 @@
         ],
         "operationId": "login",
         "summary": "Log in with credentials",
-        "description": "Log in with credentials; implemented against Prisma/PostgreSQL in B3. All credentials validated server-side; no demo login.",
+        "description": "Password verification creates a session for verified advertiser/driver accounts; enrolled Admins receive a short-lived MFA ticket (202), NOT a session. Unenrolled Admins are blocked.",
         "x-backend-phase": "B3",
         "x-access-roles": [
           "public"
@@ -2419,6 +2534,25 @@
                   "properties": {
                     "data": {
                       "$ref": "#/components/schemas/AuthSession"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Successful authoritative response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/MfaPendingLogin"
                     }
                   },
                   "additionalProperties": false
@@ -8092,19 +8226,15 @@
         "tags": [
           "Auth"
         ],
-        "operationId": "verifyAdminMfa",
-        "summary": "Finish Admin MFA challenge",
-        "description": "Second factor required for high-privilege session; server stores MFA verification. B0 contract only.",
+        "operationId": "completeAdminMfaLogin",
+        "summary": "Complete password-authenticated Admin login using TOTP",
+        "description": "Consumes an unexpired, one-time ticket plus non-replayed TOTP. Issues MFA-verified HttpOnly session and audits login.",
         "x-backend-phase": "B4",
         "x-access-roles": [
-          "admin"
+          "public"
         ],
-        "x-trust-boundary": "session",
-        "security": [
-          {
-            "sessionCookie": []
-          }
-        ],
+        "x-trust-boundary": "public",
+        "security": [],
         "responses": {
           "201": {
             "description": "Successful authoritative response",
@@ -8117,7 +8247,7 @@
                   ],
                   "properties": {
                     "data": {
-                      "$ref": "#/components/schemas/PublicMessage"
+                      "$ref": "#/components/schemas/AuthSession"
                     }
                   },
                   "additionalProperties": false
@@ -8155,17 +8285,12 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/MfaInput"
+                "$ref": "#/components/schemas/MfaLoginInput"
               }
             }
           }
         },
-        "x-csrf-required": true,
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/CsrfToken"
-          }
-        ]
+        "x-implementation-status": "implemented-b4"
       }
     },
     "/admin/locations": {
@@ -8744,6 +8869,221 @@
           }
         ],
         "x-implementation-status": "implemented-b3"
+      }
+    },
+    "/auth/permissions": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "operationId": "getCurrentPermissions",
+        "summary": "Inspect own effective business memberships",
+        "description": "B4 database-enforced server session role, fresh membership and Admin MFA checks.",
+        "x-backend-phase": "B4",
+        "x-access-roles": [
+          "advertiser",
+          "driver",
+          "admin"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful authoritative response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/PermissionSnapshot"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "x-implementation-status": "implemented-b4"
+      }
+    },
+    "/auth/permissions/businesses/{businessId}": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "operationId": "getBusinessPermission",
+        "summary": "Verify current principal belongs to this business",
+        "description": "B4 database-enforced server session role, fresh membership and Admin MFA checks.",
+        "x-backend-phase": "B4",
+        "x-access-roles": [
+          "advertiser",
+          "driver",
+          "admin"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful authoritative response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/BusinessAccess"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "x-implementation-status": "implemented-b4",
+        "parameters": [
+          {
+            "name": "businessId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/auth/admin-security": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "operationId": "getAdminSecurity",
+        "summary": "Inspect verified Admin MFA security state",
+        "description": "B4 database-enforced server session role, fresh membership and Admin MFA checks.",
+        "x-backend-phase": "B4",
+        "x-access-roles": [
+          "advertiser",
+          "driver",
+          "admin"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful authoritative response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/AdminSecurityState"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "x-implementation-status": "implemented-b4"
       }
     }
   }

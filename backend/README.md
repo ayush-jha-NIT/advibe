@@ -1,10 +1,10 @@
-# AdVibe backend B3: Identity & authentication
+# AdVibe backend B4: MFA and authorization
 
-B0 API contracts, B1 Express runtime, B2 Prisma/PostgreSQL and B3 authentication endpoints are implemented. Production deployment requires an AdVibe-specific Neon PostgreSQL project, a configured verified Resend sender, a 32+ character AUTH_SECRET, HTTPS and a reviewed same-site cookie domain strategy.
+The backend repository implements B0–B4. B4 adds AES-256-GCM encrypted Admin TOTP MFA, one-time MFA login tickets, atomic code replay prevention, fresh database-backed role checks and tenant membership enforcement. Production endpoints are NOT deployed; Vercel frontend retains browser demo login.
 
-## Start locally
+## Environment and startup
 
-Copy `backend/.env.example` to `backend/.env`. Set `DATABASE_URL`, `DIRECT_URL`, `AUTH_SECRET` (32+ cryptographically random characters), `AUTH_WEB_ORIGIN`, `CORS_ORIGINS`, and email transport. Do not commit live secrets.
+Node 22+, PostgreSQL 16+, private pooled DATABASE_URL and direct DIRECT_URL, a 32+ character AUTH_SECRET, independent 32-byte hex MFA_ENCRYPTION_KEY (64 hex chars), approved CORS_ORIGINS, AUTH_WEB_ORIGIN and verified Resend credentials for production.
 
 ```bash
 npm install --prefix backend
@@ -13,28 +13,34 @@ npm --prefix backend run db:migrate:deploy
 npm --prefix backend run dev
 ```
 
-Without Resend config in development, email-based signup/recovery cannot deliver messages (fail closed). For CI, the auth tests inject a fake in-memory mail sender; no fixed OTP, mock login credential or console OTP exposure exists.
+B4 migration `20261025235500_b4_admin_mfa` adds AdminMfaCredential and MfaLoginChallenge, and a nullable MFA verification timestamp on sessions. It does not modify production data until a privileged operator runs migrations against the correct database.
 
-### Implemented endpoints under /api/v1/auth
+### Admin authenticator enrollment: trusted operator only
 
-| Method | Route | Behavior |
-| --- | --- | --- |
-| POST | /register | Advertiser/driver signup, Argon2id hash, pending user, one-time emailed 6-digit code and challenge ID |
-| POST | /resend-verification | Generic response, new email challenge for pending user |
-| POST | /verify | Single-use bounded-attempt email challenge, activates pending user |
-| POST | /login | Verified active account, Argon2id check, secure server-held session/cookie |
-| GET | /session | Validates DB session, returns user ID/role/expiry and CSRF token |
-| POST | /logout | CSRF-protected current session revocation |
-| POST | /logout-all | CSRF-protected all-session revocation |
-| POST | /forgot-password | Non-enumerating reset email with 256-bit secret |
-| POST | /reset-password | Single-use reset, Argon2id rehash, invalidate all sessions |
+No API can self-register an Admin or disable MFA. Provision a preapproved, active, email-verified ADMIN user by approved internal identity administration. From a trusted terminal with authenticated operator access:
 
-No B3 endpoint accepts role=admin registration or bypasses verification. **Admin login returns 403 until B4 MFA is in place**. Human sessions use HTTP-only Secure `__Host-advibe_session` cookies in production; localhost uses an explicitly named nonsecure dev cookie only. CSRF protection is mandatory on authenticated writes. Public auth writes require JSON, allowed Origin and anti-abuse throttling. No session JWT or password is stored in localStorage.
+```bash
+# Set ADMIN_MFA_USER_ID to an approved existing Admin UUID.
+# Set ADMIN_MFA_OPERATOR_APPROVAL=verified-admin-identity (explicit operator gate).
+npm --prefix backend run admin:mfa -- enroll
+# Scan the one-time displayed otpauth URI with the Admin's authenticator.
+# Set ADMIN_MFA_CODE to a current TOTP code and run:
+npm --prefix backend run admin:mfa -- activate
+```
 
-## Important restrictions
+Operator CLI uses the same injected application database and secret environment as the backend. Protect terminal access and never include the URI, MFA code or key in logs or commits. The secret is AES-256-GCM-encrypted at rest with per-user authenticated associated data. CLI refuses overwriting active MFA enrollment. Enrollment is not enabled until the operator proves possession of the authenticator. MFA reset after loss requires an independently reviewed recovery process; do not delete or replace active MFA credentials via public HTTP.
 
-The Next.js Vercel frontend still has separate demo auth and is not connected to these endpoints. This milestone must not be considered a live site launch. Configure a first-party same-site domain/proxy before using cross-origin authenticated browser flows. OTP and reset emails use Resend over server-to-server HTTPS; verify domain and provider approval in staging.
+### Login and permissions
 
-Run `npm --prefix backend run check` against a disposable migrated local PostgreSQL test DB with NODE_ENV=test and DB_TEST_ALLOWED=true. See [B3 security and test runbook](../docs/backend/B3_IMPLEMENTATION.md).
+- `POST /api/v1/auth/login`: verified advertiser/driver login returns 201 and HttpOnly session. Password-valid enrolled Admin returns **202 with a short-lived MFA challenge ticket, no cookie**; unconfigured Admin is denied.
+- `POST /api/v1/auth/mfa/verify`: validates challenge ticket and 6-digit authenticator code, enforces attempt limits and monotonic TOTP counters in a PostgreSQL transaction, then issues an MFA-verified session.
+- `GET /api/v1/auth/admin-security`: requires current server-verified ADMIN plus recent-enough MFA-backed session.
+- `GET /api/v1/auth/permissions`: current user's role and active business memberships from server database, no caller-supplied userId.
+- `GET /api/v1/auth/permissions/businesses/:businessId`: requires active membership and returns 404 for missing/foreign business, including from Admin sessions. No admin blanket access to tenant data.
+- `/auth/session`, `/auth/logout`, `/auth/logout-all` use the same central server principal validation. Authenticated mutations still require a session-bound CSRF token.
 
-B4 implements Admin MFA, full RBAC/ownership enforcement and stronger operational session policies. B5 integrates real account profile APIs.
+**Cross-business access is denied** even with a valid session or spoofed role header. Revoked memberships are checked fresh. Promotion from advertiser to Admin does not upgrade an existing session, and demoted Admin sessions are rejected.
+
+Run `npm --prefix backend run check` in CI or with isolated PostgreSQL test flags. See [B4 implementation and controls](../docs/backend/B4_IMPLEMENTATION.md).
+
+B5–B23 implement the remaining authenticated business, devices, campaigns, KYC and financial modules. Do not use a public Render URL and unrelated Vercel origin for production session cookies without verified same-site deployment.

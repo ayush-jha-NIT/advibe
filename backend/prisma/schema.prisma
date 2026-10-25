@@ -63,6 +63,8 @@ model User {
   ownedBusinesses Business[]           @relation("BusinessOwner")
   memberships     BusinessMembership[]
   auditEvents     AuditEvent[]         @relation("AuditActor")
+  mfaCredential   AdminMfaCredential?
+  mfaChallenges   MfaLoginChallenge[]
 
   @@index([status, createdAt])
 }
@@ -76,6 +78,7 @@ model Session {
   lastSeenAt DateTime? @db.Timestamptz(6)
   revokedAt  DateTime? @db.Timestamptz(6)
   user       User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+  mfaVerifiedAt DateTime? @db.Timestamptz(6)
 
   @@index([userId, revokedAt, expiresAt])
   @@index([expiresAt])
@@ -172,4 +175,28 @@ model OutboxEvent {
 
   @@index([state, availableAt])
   @@index([aggregateType, aggregateId, createdAt])
+}
+
+model AdminMfaCredential {
+  userId       String    @id @db.Uuid
+  secretCipher String    @db.VarChar(500)
+  enabledAt    DateTime? @db.Timestamptz(6)
+  lastUsedStep BigInt    @default(-1)
+  createdAt    DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime  @updatedAt @db.Timestamptz(6)
+  user         User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+}
+
+model MfaLoginChallenge {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @db.Uuid
+  tokenHash   String    @db.Char(64)
+  attempts    Int       @default(0)
+  expiresAt   DateTime  @db.Timestamptz(6)
+  consumedAt  DateTime? @db.Timestamptz(6)
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId, consumedAt, expiresAt])
+  @@index([expiresAt])
 }

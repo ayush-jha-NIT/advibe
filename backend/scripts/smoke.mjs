@@ -11,7 +11,8 @@ const child = spawn(process.execPath, ["dist/server.js"], {
   cwd,
   env: { ...process.env, NODE_ENV: "test", HOST: "127.0.0.1", PORT: String(port),
     CORS_ORIGINS: "http://localhost:3000", LOG_LEVEL: "silent",
-    AUTH_SECRET: "ci_only_dev_test_auth_secret_32_characters_long_value" },
+    AUTH_SECRET: "ci_only_dev_test_auth_secret_32_characters_long_value",
+    MFA_ENCRYPTION_KEY: "3f4e8bb1976542ac8ef51b03d9607a2acb8970645a1ed3c0b7d14982f63a0e57" },
   stdio: ["ignore", "pipe", "pipe"],
 });
 let stderr = "";

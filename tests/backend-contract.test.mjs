@@ -107,7 +107,7 @@ test("existing portal navigation is completely covered by frontend-to-API migrat
  for(const path of ["/login","/signup","/verify","/forgot-password","/reset-password","/contact","/pricing"])
   assert.ok(map.includes("| "+path+" |"),"Missing public/auth mapping: "+path);
 });
-test("B0–B3 documentation preserves production safety gates",()=>{
+test("B0–B4 documentation preserves production safety gates",()=>{
  const docs=["B0_ARCHITECTURE.md","B0_DATABASE.md","B0_API_MAPPING.md","B0_DECISIONS.md","BACKEND_ROADMAP.md","B0_CONTRACT_RULES.md"];
  for(const filename of docs){
   const content=read("docs/backend/"+filename);
@@ -117,10 +117,18 @@ test("B0–B3 documentation preserves production safety gates",()=>{
  for(const topic of ["idempotency","exclusion","private","webhook","retention","settlement"])
   assert.match(blueprint,new RegExp(topic,"i"),"Missing DB risk topic "+topic);
  const runtime=read("backend/README.md");
- assert.match(runtime,/B3 authentication endpoints are implemented/,"B3 runtime must be documented");
- assert.match(runtime,/Admin login returns 403 until B4 MFA/,"B3 must keep Admin blocked");
+ assert.match(runtime,/B4 MFA and authorization/,"B4 runtime must be documented");
+ assert.match(runtime,/Admin authenticator enrollment/, "B4 must require MFA enrollment");
+ assert.match(runtime,/cross-business access/i, "B4 must deny cross-business access");
  const b2Doc=read("docs/backend/B2_IMPLEMENTATION.md");
  const b3Doc=read("docs/backend/B3_IMPLEMENTATION.md");
+ const b4Doc=read("docs/backend/B4_IMPLEMENTATION.md");
+ assert.match(b4Doc,/AES-256-GCM/);
+ assert.match(b4Doc,/TOTP/);
+ assert.match(b4Doc,/tenant/i);
+ assert.equal(spec.paths["/auth/mfa/verify"].post["x-implementation-status"],"implemented-b4");
+ assert.ok(spec.paths["/auth/login"].post.responses["202"]);
+ assert.equal(spec.paths["/auth/admin-security"].get["x-access-roles"].includes("admin"),true);
  assert.match(b3Doc,/Argon2id/i);
  assert.match(b3Doc,/CSRF/i);
  assert.equal(spec.paths["/auth/login"].post["x-implementation-status"],"implemented-b3");
