@@ -107,7 +107,7 @@ test("existing portal navigation is completely covered by frontend-to-API migrat
  for(const path of ["/login","/signup","/verify","/forgot-password","/reset-password","/contact","/pricing"])
   assert.ok(map.includes("| "+path+" |"),"Missing public/auth mapping: "+path);
 });
-test("B0/B1 documentation preserves production safety gates",()=>{
+test("B0–B2 documentation preserves production safety gates",()=>{
  const docs=["B0_ARCHITECTURE.md","B0_DATABASE.md","B0_API_MAPPING.md","B0_DECISIONS.md","BACKEND_ROADMAP.md","B0_CONTRACT_RULES.md"];
  for(const filename of docs){
   const content=read("docs/backend/"+filename);
@@ -117,8 +117,15 @@ test("B0/B1 documentation preserves production safety gates",()=>{
  for(const topic of ["idempotency","exclusion","private","webhook","retention","settlement"])
   assert.match(blueprint,new RegExp(topic,"i"),"Missing DB risk topic "+topic);
  const runtime=read("backend/README.md");
- assert.match(runtime,/B1 implements an isolated Node 22/,"B1 runtime must be documented");
- assert.match(runtime,/no database, authentication, payments, KYC/i,"B1 must disclose missing integrations");
+ assert.match(runtime,/B2 database foundation are implemented/,"B2 DB runtime must be documented");
+ assert.match(runtime,/No production accounts, authentication, KYC, payment/i,"B2 must disclose missing integrations");
+ const b2Doc=read("docs/backend/B2_IMPLEMENTATION.md");
+ assert.match(b2Doc,/serializable transaction/i);
+ assert.match(b2Doc,/restore/i);
+ const migration=read("backend/prisma/migrations/20261025220000_b2_foundation/migration.sql");
+ assert.match(migration,/append.only/i);
+ assert.match(migration,/FOREIGN KEY/i);
+ assert.match(migration,/CREATE UNIQUE INDEX/i);
  assert.equal(spec.paths["/health"].get["x-implementation-status"],"implemented-b1");
  assert.equal(spec.paths["/ready"].get["x-implementation-status"],"implemented-b2");
  assert.equal(spec.paths["/ready"].get.responses["503"].content["application/json"].schema.$ref,"#/components/schemas/ErrorEnvelope");
