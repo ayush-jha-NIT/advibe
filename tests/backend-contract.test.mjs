@@ -118,11 +118,11 @@ test("B0–B5 documentation preserves production safety gates",()=>{
   assert.match(blueprint,new RegExp(topic,"i"),"Missing DB risk topic "+topic);
  const runtime=read("backend/README.md");
  assert.match(runtime,/backend B5: profiles, businesses and enquiries/,"B5 runtime must be documented");
- assert.match(runtime,/Admin authenticator enrollment/, "B4 must require MFA enrollment");
- assert.match(runtime,/cross-business access/i, "B4 must deny cross-business access");
  const b2Doc=read("docs/backend/B2_IMPLEMENTATION.md");
  const b3Doc=read("docs/backend/B3_IMPLEMENTATION.md");
  const b4Doc=read("docs/backend/B4_IMPLEMENTATION.md");
+ assert.match(b4Doc,/Admin MFA with strict enrollment boundary/i,"B4 must require MFA enrollment");
+ assert.match(b4Doc,/cross-business/i,"B4 must deny cross-business access");
  const b5Doc=read("docs/backend/B5_IMPLEMENTATION.md");
  assert.match(b5Doc,/CAPTCHA/i);
  assert.match(b5Doc,/tenant/i);
