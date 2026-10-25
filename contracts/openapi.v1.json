@@ -2056,6 +2056,25 @@
           }
         },
         "additionalProperties": false
+      },
+      "AdminBookingConfirmationInput": {
+        "type": "object",
+        "required": [
+          "holdId"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "holdId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 500,
+            "description": "Audited operator note; never overrides payment/KYC or availability requirements"
+          }
+        }
       }
     },
     "responses": {
@@ -8047,7 +8066,7 @@
         "x-access-roles": [
           "admin"
         ],
-        "x-trust-boundary": "public",
+        "x-trust-boundary": "session",
         "security": [
           {
             "sessionCookie": []
@@ -8386,6 +8405,94 @@
           }
         },
         "x-csrf-required": true
+      }
+    },
+    "/admin/bookings/confirm": {
+      "post": {
+        "tags": [
+          "Inventory"
+        ],
+        "operationId": "adminConfirmEligibleBooking",
+        "summary": "Admin confirmation of verified paid, approved booking hold",
+        "description": "Operator action is audited and server-validated: requires live hold, approved creative and campaign, verified paid order, and conflict-free inventory. Cannot bypass provider payment or capacity constraints. B0 design only.",
+        "x-backend-phase": "B15",
+        "x-access-roles": [
+          "admin"
+        ],
+        "x-trust-boundary": "session",
+        "x-csrf-required": true,
+        "x-idempotency-required": true,
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminBookingConfirmationInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Confirmed booking records",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Booking"
+                      }
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
       }
     }
   }

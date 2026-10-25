@@ -55,7 +55,7 @@ Status: B0 mapping only. No data-fetching or authentication code was replaced ye
 | Admin | /admin/ad-formats | GET /public/formats; GET /pricing/rules | B9/B11 | Moderation policies and approved rates |
 | Admin | /admin/pricing | GET /pricing/rules; PUT /admin/pricing/rules/{ruleId} | B11 | Versioned rate edits |
 | Admin | /admin/approvals | POST /admin/campaigns/{campaignId}/decision; POST /admin/creatives/{creativeId}/decision | B10/B12 | Review audit |
-| Admin | /admin/bookings | GET /campaigns/{campaignId}/bookings; POST /reservations/holds/{holdId}/confirm | B13/B14 | Server atomic capacity |
+| Admin | /admin/bookings | GET /campaigns/{campaignId}/bookings; POST /admin/bookings/confirm | B13/B14 | Server atomic capacity |
 | Admin | /admin/payments | GET /payments; POST /admin/refunds | B14/B19 | Gateway verified refunds |
 | Admin | /admin/settlements | GET /admin/settlements; POST /admin/payouts | B18 | Payout verification and reconciliation |
 | Admin | /admin/analytics | GET /admin/reports | B21 | Verified aggregation |

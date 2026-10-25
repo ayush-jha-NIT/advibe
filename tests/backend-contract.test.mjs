@@ -77,7 +77,7 @@ test("payments, bookings and KYC stay behind authoritative input boundaries",()=
  const get=(path,method="post")=>spec.paths[path]?.[method];
  const requiredIdempotent=[
   ["/reservations/holds","post"],["/reservations/holds/{holdId}/confirm","post"],
-  ["/payments/orders","post"],["/admin/payouts","post"],["/admin/refunds","post"],
+  ["/payments/orders","post"],["/admin/payouts","post"],["/admin/refunds","post"],["/admin/bookings/confirm","post"],
   ["/admin/driver-applications/{applicationId}/decision","post"],["/admin/creatives/{creativeId}/decision","post"]
  ];
  for(const [path,method] of requiredIdempotent)assert.equal(get(path,method)["x-idempotency-required"],true,path);
@@ -86,6 +86,8 @@ test("payments, bookings and KYC stay behind authoritative input boundaries",()=
  assert.deepEqual(spec.components.schemas.PaymentOrderInput.required,["campaignId","quoteId","reservationHoldId"]);
  assert.ok(!Object.hasOwn(spec.components.schemas.PaymentOrderInput.properties,"amountPaise"),"Client must not set charge amount");
  assert.equal(req("/admin/refunds"),"#/components/schemas/RefundInput");
+ assert.deepEqual(spec.paths["/admin/bookings/confirm"].post["x-access-roles"],["admin"]);
+ assert.equal(req("/admin/bookings/confirm"),"#/components/schemas/AdminBookingConfirmationInput");
  assert.equal(req("/devices/trip-events"),"#/components/schemas/GpsBatchInput");
  assert.equal(req("/drivers/documents/upload-intents"),"#/components/schemas/KycDocumentIntentInput");
  assert.equal(get("/webhooks/cashfree/payments")["x-trust-boundary"],"webhook");

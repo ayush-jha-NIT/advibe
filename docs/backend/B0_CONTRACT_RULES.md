@@ -37,3 +37,5 @@ Payment: created -> pending -> paid/failed with verified gateway facts, refund f
 Version URI is /api/v1. JSON request and response except explicitly raw provider webhook bodies and signed upload endpoints. Request ID header on every response, no-store on personalized endpoints, bounded payload sizes, credential-safe logs, 400/401/403/404/409/422/429/500 as applicable.
 Separate sandbox/staging/production secrets; URL placeholders in the contract are intentionally invalid.
 Contract should be updated BEFORE controller code, then pass contract tests, integration tests, schema migration tests and negative authorization tests. Nonbreaking additive changes may stay in v1; breaking schema/semantics require a versioning policy and migration.
+
+Admin booking workbench uses POST /admin/bookings/confirm. An operator may confirm a valid hold only if payment is authoritatively verified, campaign/creative are approved, and the capacity remains available. Admin cannot mark a charge paid or bypass the booking conflict guard.
