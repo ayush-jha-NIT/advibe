@@ -31,13 +31,14 @@ test("B5 profile, real business ownership and enquiry lifecycle", async () => {
   const seed = randomUUID().slice(0, 12);
   const email = (kind: string) => kind + "-" + seed + "@example.invalid";
   await db.$connect();
-  const [owner, manager, viewer, stranger, driver] = await Promise.all(
+  const users = await Promise.all(
     ["owner", "manager", "viewer", "stranger", "driver"].map(async kind => db.user.create({
       data: { email: email(kind), displayName: "B5 " + kind,
         passwordHash: hash, status: "ACTIVE", emailVerifiedAt: new Date(),
         role: kind === "driver" ? "DRIVER" : "ADVERTISER" },
     })),
   );
+  const [owner, manager, viewer, stranger, driver] = users as [User, User, User, User, User];
   type Identity = { user: User; cookie: string; csrf: string };
   async function identity(user: User): Promise<Identity> {
     const token = makeSessionToken();
@@ -48,9 +49,10 @@ test("B5 profile, real business ownership and enquiry lifecycle", async () => {
     return { user, cookie: "advibe_dev_session=" + token,
       csrf: mac(settings, "csrf", hashToken(token)) };
   }
-  const [owned, managed, viewing, outside, driving] = await Promise.all(
+  const identities = await Promise.all(
     [owner, manager, viewer, stranger, driver].map(identity),
   );
+  const [owned, managed, viewing, outside, driving] = identities as [Identity, Identity, Identity, Identity, Identity];
   const verifyCalls: string[] = [];
   const app = createApp(config, createLogger(config), async () => { await db.user.count(); },
     { db, settings, sender: async () => { throw new Error("Unexpected email"); } },
