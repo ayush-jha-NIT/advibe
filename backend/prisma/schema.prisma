@@ -30,6 +30,19 @@ enum BusinessRole {
   VIEWER
 }
 
+enum BusinessVerificationStatus {
+  PENDING
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum EnquiryStatus {
+  NEW
+  REVIEWED
+  CLOSED
+}
+
 enum ChallengePurpose {
   VERIFY_EMAIL
   PASSWORD_RESET
@@ -52,6 +65,7 @@ model User {
   id              String               @id @default(uuid()) @db.Uuid
   email           String               @unique @db.VarChar(320)
   displayName     String               @db.VarChar(160)
+  city            String?              @db.VarChar(100)
   passwordHash    String?              @db.VarChar(255)
   role            AccountRole          @default(ADVERTISER)
   status          AccountStatus        @default(PENDING)
@@ -107,12 +121,16 @@ model Business {
   slug         String               @unique @db.VarChar(100)
   displayName  String               @db.VarChar(180)
   legalName    String?              @db.VarChar(220)
+  city         String?              @db.VarChar(100)
+  verificationStatus BusinessVerificationStatus @default(PENDING)
+  archivedAt   DateTime?            @db.Timestamptz(6)
   createdAt    DateTime             @default(now()) @db.Timestamptz(6)
   updatedAt    DateTime             @updatedAt @db.Timestamptz(6)
   owner        User                 @relation("BusinessOwner", fields: [ownerUserId], references: [id], onDelete: Restrict)
   memberships  BusinessMembership[]
 
   @@index([ownerUserId])
+  @@index([archivedAt, createdAt])
 }
 
 model BusinessMembership {
@@ -199,4 +217,20 @@ model MfaLoginChallenge {
 
   @@index([userId, consumedAt, expiresAt])
   @@index([expiresAt])
+}
+
+model Enquiry {
+  id                String        @id @default(uuid()) @db.Uuid
+  name              String        @db.VarChar(100)
+  email             String        @db.VarChar(320)
+  subject           String        @db.VarChar(120)
+  message           String        @db.VarChar(1500)
+  status            EnquiryStatus @default(NEW)
+  consentAt         DateTime      @db.Timestamptz(6)
+  captchaVerifiedAt DateTime      @db.Timestamptz(6)
+  submitterHash     String        @db.Char(64)
+  createdAt         DateTime      @default(now()) @db.Timestamptz(6)
+
+  @@index([status, createdAt])
+  @@index([createdAt])
 }

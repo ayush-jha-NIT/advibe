@@ -1,6 +1,6 @@
 # AdVibe production backend implementation roadmap (B0–B23)
 
-The 24 frontend parts remain a browser-only demonstration. B0–B4 implemented: B4 includes encrypted Admin TOTP MFA, fresh database RBAC and tenant access checks; B5–B23 remain pending. Production Neon, email and same-site domain configuration are not complete. Production domains, Neon and Resend provisioning are not complete. Do not confuse health endpoints with production business functionality.
+The 24 frontend parts remain a browser-only demonstration. B0–B5 implemented: B5 adds PostgreSQL-backed account profiles, scoped advertiser business CRUD/archival and consent-verified enquiries; B6–B23 remain pending. Production Neon, email and same-site domain configuration are not complete. Production domains, Neon and Resend provisioning are not complete. Do not confuse health endpoints with production business functionality.
 
 | Part | Scope | Acceptance evidence |
 | --- | --- | --- |

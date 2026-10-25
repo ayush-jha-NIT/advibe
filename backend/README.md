@@ -1,10 +1,16 @@
-# AdVibe backend B4: MFA and authorization
+# AdVibe backend B5: profiles, businesses and enquiries
 
-The backend repository implements B0–B4. B4 adds AES-256-GCM encrypted Admin TOTP MFA, one-time MFA login tickets, atomic code replay prevention, fresh database-backed role checks and tenant membership enforcement. Production endpoints are NOT deployed; Vercel frontend retains browser demo login.
+B0–B5 are implemented in the backend repository; the deployed Vercel UI is still demo-only. B5 uses B3 sessions and B4 MFA/RBAC and adds authenticated account profiles, advertiser business management, and public enquiries with consent and CAPTCHA verification.
 
-## Environment and startup
+## Setup (Node 22+, PostgreSQL 16+)
 
-Node 22+, PostgreSQL 16+, private pooled DATABASE_URL and direct DIRECT_URL, a 32+ character AUTH_SECRET, independent 32-byte hex MFA_ENCRYPTION_KEY (64 hex chars), approved CORS_ORIGINS, AUTH_WEB_ORIGIN and verified Resend credentials for production.
+Copy backend/.env.example to backend/.env and set the private DATABASE_URL, DIRECT_URL, AUTH_SECRET, MFA_ENCRYPTION_KEY and Resend settings. For B5 public enquiries also configure:
+
+- ENQUIRY_TURNSTILE_SECRET: private server-side Cloudflare Turnstile secret
+- ENQUIRY_TURNSTILE_HOSTNAME: the exact approved frontend hostname
+- Client Turnstile widget: action must be **enquiry**, and client sends its one-time token as captchaToken
+
+Production API **refuses to start** without Turnstile configuration, and the public enquiry endpoint fails closed when CAPTCHA verification is unavailable. Use a real site-key, verified hostname and HTTPS in staging; never put the secret in a public Next.js environment variable.
 
 ```bash
 npm install --prefix backend
@@ -13,34 +19,29 @@ npm --prefix backend run db:migrate:deploy
 npm --prefix backend run dev
 ```
 
-B4 migration `20261025235500_b4_admin_mfa` adds AdminMfaCredential and MfaLoginChallenge, and a nullable MFA verification timestamp on sessions. It does not modify production data until a privileged operator runs migrations against the correct database.
+The B5 migration (20261026010000_b5_accounts_business_enquiry) adds nullable account and legacy business city fields, business verification/archival metadata, and a consent-backed Enquiry table with constraints and indexes. Existing B2 businesses are preserved without inventing a city value.
 
-### Admin authenticator enrollment: trusted operator only
+## Live backend routes: /api/v1
 
-No API can self-register an Admin or disable MFA. Provision a preapproved, active, email-verified ADMIN user by approved internal identity administration. From a trusted terminal with authenticated operator access:
+| Method | Path | Authorization and effect |
+| --- | --- | --- |
+| GET | /me | Session-authenticated owner profile; no passwords, session secrets or MFA data |
+| PATCH | /me | CSRF-protected own displayName/city, audited |
+| POST | /businesses | Verified advertiser with CSRF; creates pending business + OWNER membership + audit + outbox in one DB transaction |
+| GET | /businesses | Current own active memberships; cursor pagination |
+| GET | /businesses/me | Backward-compatible first active membership; requires advertiser or Admin with explicit membership |
+| PATCH | /businesses/me | Advertiser owner updates first owned active business |
+| GET | /businesses/:businessId | Explicit current membership, otherwise 404 |
+| PATCH | /businesses/:businessId | Advertiser OWNER or MANAGER, current active membership and CSRF; never accepts owner or verification changes |
+| DELETE | /businesses/:businessId | Advertiser who owns business; CSRF; archives and revokes all memberships without deleting history |
+| POST | /enquiries | Public JSON POST, consent=true, verified Turnstile, PostgreSQL rate limits; persists DB enquiry and durable outbox event |
 
-```bash
-# Set ADMIN_MFA_USER_ID to an approved existing Admin UUID.
-# Set ADMIN_MFA_OPERATOR_APPROVAL=verified-admin-identity (explicit operator gate).
-npm --prefix backend run admin:mfa -- enroll
-# Scan the one-time displayed otpauth URI with the Admin's authenticator.
-# Set ADMIN_MFA_CODE to a current TOTP code and run:
-npm --prefix backend run admin:mfa -- activate
-```
+Every authenticated operation derives the account from server-held, verified sessions and checks current role/membership in the database. No Admin override to read an unrelated tenant, no direct self-approval and no account role escalation. Business changes and enquiry writes preserve append-only audit/outbox requirements.
 
-Operator CLI uses the same injected application database and secret environment as the backend. Protect terminal access and never include the URI, MFA code or key in logs or commits. The secret is AES-256-GCM-encrypted at rest with per-user authenticated associated data. CLI refuses overwriting active MFA enrollment. Enrollment is not enabled until the operator proves possession of the authenticator. MFA reset after loss requires an independently reviewed recovery process; do not delete or replace active MFA credentials via public HTTP.
+Public enquiry responses do **not** return contact details or an internal enquiry identifier. The outbox is durable; a later worker (B20) must deliver notifications. There is no public enquiry listing or public access to stored PII.
 
-### Login and permissions
+## Testing, production boundary and next steps
 
-- `POST /api/v1/auth/login`: verified advertiser/driver login returns 201 and HttpOnly session. Password-valid enrolled Admin returns **202 with a short-lived MFA challenge ticket, no cookie**; unconfigured Admin is denied.
-- `POST /api/v1/auth/mfa/verify`: validates challenge ticket and 6-digit authenticator code, enforces attempt limits and monotonic TOTP counters in a PostgreSQL transaction, then issues an MFA-verified session.
-- `GET /api/v1/auth/admin-security`: requires current server-verified ADMIN plus recent-enough MFA-backed session.
-- `GET /api/v1/auth/permissions`: current user's role and active business memberships from server database, no caller-supplied userId.
-- `GET /api/v1/auth/permissions/businesses/:businessId`: requires active membership and returns 404 for missing/foreign business, including from Admin sessions. No admin blanket access to tenant data.
-- `/auth/session`, `/auth/logout`, `/auth/logout-all` use the same central server principal validation. Authenticated mutations still require a session-bound CSRF token.
+CI uses disposable PostgreSQL 16, runs all Prisma migrations, validates B2–B5 plus real HTTP authorization and CAPTCHA-stub tests, and checks the original Next.js production build and Chromium smoke. To run backend checks yourself supply NODE_ENV=test and DB_TEST_ALLOWED=true with a **local** throwaway database named with _test or _ci, then `npm --prefix backend run check`.
 
-**Cross-business access is denied** even with a valid session or spoofed role header. Revoked memberships are checked fresh. Promotion from advertiser to Admin does not upgrade an existing session, and demoted Admin sessions are rejected.
-
-Run `npm --prefix backend run check` in CI or with isolated PostgreSQL test flags. See [B4 implementation and controls](../docs/backend/B4_IMPLEMENTATION.md).
-
-B5–B23 implement the remaining authenticated business, devices, campaigns, KYC and financial modules. Do not use a public Render URL and unrelated Vercel origin for production session cookies without verified same-site deployment.
+The production AdVibe Neon database, dedicated email sender, verified Turnstile widget, frontend real-API migration and production service are not provisioned/deployed. B6 driver onboarding is next; B22 later connects the frontend to the real backend.

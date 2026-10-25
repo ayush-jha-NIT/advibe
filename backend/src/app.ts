@@ -7,10 +7,13 @@ import { HttpError } from "./lib/http-error.js";
 import { errorHandler, notFound } from "./middleware/error-handler.js";
 import { requestContext } from "./middleware/request-context.js";
 import { createAuthRouter, type AuthDependencies } from "./modules/auth/routes.js";
+import { createAccountsRouter } from "./modules/accounts/routes.js";
+import { createTurnstileVerifier, type CaptchaVerifier } from "./modules/enquiries/captcha.js";
 
 /** Every live API server supplies a database probe; omitted probes fail closed. */
 export function createApp(
   config: AppConfig, logger: Logger, checkDatabase?: () => Promise<void>, auth?: AuthDependencies,
+  verifyCaptcha?: CaptchaVerifier,
 ): Express {
   const app = express();
   app.disable("x-powered-by");
@@ -40,8 +43,12 @@ export function createApp(
     catch { throw new HttpError(503, "NOT_READY", "API or database is unavailable"); }
     res.status(200).json({ data: { message: "ready" } });
   });
-  if (auth) app.use("/api/v1/auth", createAuthRouter(config, auth));
-  // B4-B23 add scoped business routes; never turn demo routes into real successes.
+  if (auth) {
+    app.use("/api/v1/auth", createAuthRouter(config, auth));
+    app.use("/api/v1", createAccountsRouter(config, auth,
+      verifyCaptcha ?? createTurnstileVerifier()));
+  }
+  // B6-B23 add other scoped domain routes; demo routes remain disabled.
   app.use(notFound);
   app.use(errorHandler(logger));
   return app;

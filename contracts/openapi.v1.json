@@ -3,7 +3,7 @@
   "info": {
     "title": "AdVibe Backend API",
     "version": "0.1.0-b0",
-    "description": "B0–B4 contract: implemented liveness, DB readiness, B3 email login and B4 MFA + server-scoped permission inspection. Financial, KYC, hardware and most business APIs remain NOT deployed or implemented."
+    "description": "B0–B5 contract. Auth, Admin MFA, account profiles, tenant-scoped business management and consent/CAPTCHA-verified public enquiries are implemented. Money, KYC, hardware and remaining business modules are NOT deployed or implemented."
   },
   "servers": [
     {
@@ -314,6 +314,14 @@
               "suspended",
               "pending"
             ]
+          },
+          "city": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1,
+            "maxLength": 100
           }
         },
         "additionalProperties": false
@@ -337,7 +345,10 @@
             "maxLength": 160
           },
           "city": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "minLength": 1,
             "maxLength": 100
           },
@@ -349,6 +360,26 @@
               "approved",
               "rejected"
             ]
+          },
+          "slug": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100
+          },
+          "legalName": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 220
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
           }
         },
         "additionalProperties": false
@@ -1597,9 +1628,7 @@
       },
       "ProfileInput": {
         "type": "object",
-        "required": [
-          "displayName"
-        ],
+        "minProperties": 1,
         "properties": {
           "displayName": {
             "type": "string",
@@ -1607,7 +1636,11 @@
             "maxLength": 100
           },
           "city": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1,
             "maxLength": 100
           }
         },
@@ -1799,7 +1832,8 @@
           "email",
           "subject",
           "message",
-          "consent"
+          "consent",
+          "captchaToken"
         ],
         "properties": {
           "name": {
@@ -1824,6 +1858,13 @@
           "consent": {
             "type": "boolean",
             "const": true
+          },
+          "captchaToken": {
+            "type": "string",
+            "minLength": 20,
+            "maxLength": 2048,
+            "writeOnly": true,
+            "description": "Cloudflare Turnstile widget token, issued for action 'enquiry'. Validated server-side; never returned or stored."
           }
         },
         "additionalProperties": false
@@ -2212,6 +2253,66 @@
           },
           "mfaVerified": {
             "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "BusinessCreateInput": {
+        "type": "object",
+        "required": [
+          "slug",
+          "displayName",
+          "city"
+        ],
+        "properties": {
+          "slug": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100,
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          },
+          "displayName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "city": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "legalName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 220
+          }
+        },
+        "additionalProperties": false
+      },
+      "BusinessUpdateInput": {
+        "type": "object",
+        "minProperties": 1,
+        "properties": {
+          "displayName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "city": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "legalName": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1,
+            "maxLength": 220
           }
         },
         "additionalProperties": false
@@ -2891,7 +2992,7 @@
         ],
         "operationId": "getMe",
         "summary": "Read authenticated profile",
-        "description": "Read authenticated profile B0 contract only; no runtime handler exists yet.",
+        "description": "Read authenticated profile; B5 PostgreSQL-backed and policy-enforced. No client role or owner override.",
         "x-backend-phase": "B5",
         "x-access-roles": [
           "advertiser",
@@ -2948,7 +3049,8 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        }
+        },
+        "x-implementation-status": "implemented-b5"
       },
       "patch": {
         "tags": [
@@ -2956,7 +3058,7 @@
         ],
         "operationId": "updateMe",
         "summary": "Update own profile",
-        "description": "Update own profile B0 contract only; no runtime handler exists yet.",
+        "description": "Update own profile; B5 PostgreSQL-backed and policy-enforced. No client role or owner override.",
         "x-backend-phase": "B5",
         "x-access-roles": [
           "advertiser",
@@ -3029,7 +3131,8 @@
           {
             "$ref": "#/components/parameters/CsrfToken"
           }
-        ]
+        ],
+        "x-implementation-status": "implemented-b5"
       }
     },
     "/businesses/me": {
@@ -3039,7 +3142,7 @@
         ],
         "operationId": "getOwnBusiness",
         "summary": "Read verified business membership",
-        "description": "Read verified business membership B0 contract only; no runtime handler exists yet.",
+        "description": "Read first active business membership scoped to authenticated principal. Does not grant Admin global tenant visibility.",
         "x-backend-phase": "B5",
         "x-access-roles": [
           "advertiser",
@@ -3095,7 +3198,8 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        }
+        },
+        "x-implementation-status": "implemented-b5"
       },
       "patch": {
         "tags": [
@@ -3103,7 +3207,7 @@
         ],
         "operationId": "updateOwnBusiness",
         "summary": "Update own advertiser business",
-        "description": "Update own advertiser business B0 contract only; no runtime handler exists yet.",
+        "description": "Update first active business OWNED by the authenticated advertiser; CSRF required.",
         "x-backend-phase": "B5",
         "x-access-roles": [
           "advertiser"
@@ -3164,7 +3268,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ProfileInput"
+                "$ref": "#/components/schemas/BusinessUpdateInput"
               }
             }
           }
@@ -3174,7 +3278,8 @@
           {
             "$ref": "#/components/parameters/CsrfToken"
           }
-        ]
+        ],
+        "x-implementation-status": "implemented-b5"
       }
     },
     "/enquiries": {
@@ -3184,7 +3289,7 @@
         ],
         "operationId": "createEnquiry",
         "summary": "Submit public contact enquiry",
-        "description": "Requires captcha/spam throttling and consent; no public record lookup. B0 contract only; no runtime handler exists yet.",
+        "description": "Submit public contact enquiry; B5 PostgreSQL-backed and policy-enforced. No client role or owner override.",
         "x-backend-phase": "B5",
         "x-access-roles": [
           "public"
@@ -3245,7 +3350,8 @@
               }
             }
           }
-        }
+        },
+        "x-implementation-status": "implemented-b5"
       }
     },
     "/public/locations": {
@@ -9082,6 +9188,414 @@
           }
         },
         "x-implementation-status": "implemented-b4"
+      }
+    },
+    "/businesses": {
+      "post": {
+        "tags": [
+          "Accounts"
+        ],
+        "operationId": "createAdvertiserBusiness",
+        "summary": "Create business for logged-in advertiser",
+        "description": "Authenticated advertiser only. Creates business plus OWNER membership, immutable audit and outbox atomically; verification always pending.",
+        "x-backend-phase": "B5",
+        "x-access-roles": [
+          "advertiser"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful authoritative response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Business"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BusinessCreateInput"
+              }
+            }
+          }
+        },
+        "x-csrf-required": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "x-implementation-status": "implemented-b5"
+      },
+      "get": {
+        "tags": [
+          "Accounts"
+        ],
+        "operationId": "listAccessibleBusinesses",
+        "summary": "List own currently accessible businesses",
+        "description": "Only active database-backed memberships. Cursor scoped to caller; excludes archived businesses.",
+        "x-backend-phase": "B5",
+        "x-access-roles": [
+          "advertiser",
+          "admin"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Own business list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Business"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/CursorMeta"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "x-implementation-status": "implemented-b5",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Cursor"
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          }
+        ]
+      }
+    },
+    "/businesses/{businessId}": {
+      "get": {
+        "tags": [
+          "Accounts"
+        ],
+        "operationId": "getAccessibleBusiness",
+        "summary": "Get business with active membership",
+        "description": "Strict tenant-scoped read; 404 for missing or unauthorized business.",
+        "x-backend-phase": "B5",
+        "x-access-roles": [
+          "advertiser",
+          "admin"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful authoritative response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Business"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "x-implementation-status": "implemented-b5",
+        "parameters": [
+          {
+            "name": "businessId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "Accounts"
+        ],
+        "operationId": "updateAccessibleBusiness",
+        "summary": "Update managed business profile",
+        "description": "Advertiser OWNER or MANAGER active membership required. Cannot alter verification/ownership/role.",
+        "x-backend-phase": "B5",
+        "x-access-roles": [
+          "advertiser"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful authoritative response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Business"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BusinessUpdateInput"
+              }
+            }
+          }
+        },
+        "x-csrf-required": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          },
+          {
+            "name": "businessId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "x-implementation-status": "implemented-b5"
+      },
+      "delete": {
+        "tags": [
+          "Accounts"
+        ],
+        "operationId": "archiveOwnedBusiness",
+        "summary": "Archive own business and revoke memberships",
+        "description": "Only advertiser OWNER with matching ownerUserId. Retains audit/outbox; no destructive deletion.",
+        "x-backend-phase": "B5",
+        "x-access-roles": [
+          "advertiser"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful authoritative response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/PublicMessage"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "x-csrf-required": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          },
+          {
+            "name": "businessId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "x-implementation-status": "implemented-b5"
       }
     }
   }

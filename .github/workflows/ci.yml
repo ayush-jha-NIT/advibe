@@ -35,7 +35,7 @@ jobs:
         run: npm run build
 
   backend-verify:
-    name: Express B4 authorization and MFA checks
+    name: Express B5 accounts businesses and enquiries checks
     runs-on: ubuntu-latest
     permissions:
       contents: read

@@ -2,14 +2,15 @@ import type { PrismaClient } from "@prisma/client";
 import { z } from "zod";
 import { serializableTransaction } from "../../db/transaction.js";
 
-const businessInput = z.object({
+const businessInput = z.strictObject({
   slug: z.string().min(2).max(100).regex(/^[a-z0-9]+(-[a-z0-9]+)*$/),
-  displayName: z.string().trim().min(1).max(180),
-}).strict();
-
+  displayName: z.string().trim().min(1).max(160),
+  city: z.string().trim().min(1).max(100).optional(),
+  legalName: z.string().trim().min(1).max(220).optional(),
+});
 export type CreateBusinessInput = z.input<typeof businessInput>;
 
-/** B2 repository only. No public signup or role authorization before B3-B5. */
+/** Atomic B2 business ownership, audit and outbox; B5 API authorizes caller. */
 export async function createOwnedBusiness(
   db: PrismaClient,
   ownerUserId: string,
@@ -22,8 +23,12 @@ export async function createOwnedBusiness(
       select: { id: true, status: true },
     });
     if (!owner || owner.status === "CLOSED") throw new Error("Owner account unavailable");
+
+    const owned = await tx.business.count({ where: { ownerUserId, archivedAt: null } });
+    if (owned >= 10) throw new Error("Maximum ten active businesses per owner");
     const business = await tx.business.create({
-      data: { ownerUserId, slug: valid.slug, displayName: valid.displayName },
+      data: { ownerUserId, slug: valid.slug, displayName: valid.displayName,
+        city: valid.city, legalName: valid.legalName },
     });
     await tx.businessMembership.create({
       data: { businessId: business.id, userId: ownerUserId, role: "OWNER" },
@@ -39,13 +44,10 @@ export async function createOwnedBusiness(
     return business;
   });
 }
-
-/** B5 will derive userId from the authenticated session, never a request body. */
 export async function listBusinessesForUser(db: PrismaClient, userId: string) {
   const memberships = await db.businessMembership.findMany({
-    where: { userId, revokedAt: null },
-    select: { business: true },
-    orderBy: { createdAt: "desc" },
+    where: { userId, revokedAt: null, business: { archivedAt: null } },
+    select: { business: true }, orderBy: { createdAt: "desc" },
   });
   return memberships.map(record => record.business);
 }
