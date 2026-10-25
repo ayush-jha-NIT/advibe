@@ -117,7 +117,7 @@ test("B0–B4 documentation preserves production safety gates",()=>{
  for(const topic of ["idempotency","exclusion","private","webhook","retention","settlement"])
   assert.match(blueprint,new RegExp(topic,"i"),"Missing DB risk topic "+topic);
  const runtime=read("backend/README.md");
- assert.match(runtime,/B4 MFA and authorization/,"B4 runtime must be documented");
+ assert.match(runtime,/backend B4: MFA and authorization/,"B4 runtime must be documented");
  assert.match(runtime,/Admin authenticator enrollment/, "B4 must require MFA enrollment");
  assert.match(runtime,/cross-business access/i, "B4 must deny cross-business access");
  const b2Doc=read("docs/backend/B2_IMPLEMENTATION.md");
@@ -128,7 +128,7 @@ test("B0–B4 documentation preserves production safety gates",()=>{
  assert.match(b4Doc,/tenant/i);
  assert.equal(spec.paths["/auth/mfa/verify"].post["x-implementation-status"],"implemented-b4");
  assert.ok(spec.paths["/auth/login"].post.responses["202"]);
- assert.equal(spec.paths["/auth/admin-security"].get["x-access-roles"].includes("admin"),true);
+ assert.deepEqual(spec.paths["/auth/admin-security"].get["x-access-roles"],["admin"]);
  assert.match(b3Doc,/Argon2id/i);
  assert.match(b3Doc,/CSRF/i);
  assert.equal(spec.paths["/auth/login"].post["x-implementation-status"],"implemented-b3");

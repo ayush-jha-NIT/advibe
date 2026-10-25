@@ -96,18 +96,19 @@ test("B4 admin password -> MFA ticket -> replay-safe TOTP -> session; tenant iso
     assert.equal(passwordOk.status, 202);
     assert.equal(passwordOk.headers.get("set-cookie"), null, "Password alone must not issue an admin cookie");
     const pending = await passwordOk.json() as { data: { challengeId: string; ticket: string } };
+    const pendingInput = { challengeId: pending.data.challengeId, ticket: pending.data.ticket };
     assert.match(pending.data.ticket, /^[A-Za-z0-9_-]{43}$/);
     assert.equal((await get("/admin-security")).status, 401);
     const invalidTicket = await post("/mfa/verify", {
-      ...pending.data, ticket: "a".repeat(43), code: totpForStep(enrollment.secret, nowStep),
+      ...pendingInput, ticket: "a".repeat(43), code: totpForStep(enrollment.secret, nowStep),
     });
     assert.equal(invalidTicket.status, 401);
     const badCode = await post("/mfa/verify", {
-      ...pending.data, code: "999999" === totpForStep(enrollment.secret, nowStep) ? "999998" : "999999",
+      ...pendingInput, code: "999999" === totpForStep(enrollment.secret, nowStep) ? "999998" : "999999",
     });
     assert.equal(badCode.status, 401);
     const mfa = await post("/mfa/verify", {
-      ...pending.data, code: totpForStep(enrollment.secret, Math.floor(Date.now() / 30_000)),
+      ...pendingInput, code: totpForStep(enrollment.secret, Math.floor(Date.now() / 30_000)),
     });
     assert.equal(mfa.status, 201);
     assert.match(mfa.headers.get("set-cookie") || "", /HttpOnly/);
@@ -120,15 +121,16 @@ test("B4 admin password -> MFA ticket -> replay-safe TOTP -> session; tenant iso
       revokedAt: null }, orderBy: { createdAt: "desc" } });
     assert.ok(persisted.mfaVerifiedAt);
     assert.equal((await post("/mfa/verify", {
-      ...pending.data, code: totpForStep(enrollment.secret, Math.floor(Date.now() / 30_000)),
+      ...pendingInput, code: totpForStep(enrollment.secret, Math.floor(Date.now() / 30_000)),
     })).status, 401, "Challenge consumption is one-time");
 
     // A second password challenge cannot reuse an already accepted TOTP step.
     const nextLogin = await post("/login", { email: admin.email, password });
     assert.equal(nextLogin.status, 202);
     const second = await nextLogin.json() as { data: { ticket: string; challengeId: string } };
+    const secondInput = { challengeId: second.data.challengeId, ticket: second.data.ticket };
     assert.equal((await post("/mfa/verify", {
-      ...second.data, code: totpForStep(enrollment.secret, Math.floor(Date.now() / 30_000)),
+      ...secondInput, code: totpForStep(enrollment.secret, Math.floor(Date.now() / 30_000)),
     })).status, 401);
 
     const ownerLogin = await post("/login", { email: advertiser.email, password });

@@ -9028,8 +9028,6 @@
         "description": "B4 database-enforced server session role, fresh membership and Admin MFA checks.",
         "x-backend-phase": "B4",
         "x-access-roles": [
-          "advertiser",
-          "driver",
           "admin"
         ],
         "x-trust-boundary": "session",
