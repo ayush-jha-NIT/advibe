@@ -1,4 +1,4 @@
-name: Frontend checks
+name: AdVibe frontend and API contract checks
 
 on:
   push:
@@ -29,6 +29,8 @@ jobs:
         run: npm run typecheck
       - name: Demo domain tests
         run: npm run test:demo
+      - name: Backend B0 OpenAPI contract tests
+        run: npm run test:contracts
       - name: Production build
         run: npm run build
 

@@ -1,6 +1,8 @@
 # AdVibe Production Readiness — Mandatory Backend and Launch Work
 
-**Status: complete frontend demonstration, NOT production-ready platform.**
+**Status: complete frontend demonstration, NOT production-ready platform. Backend B0 has delivered design contracts only; B1–B23 are pending.**
+
+Backend baseline: [B0 architecture](backend/B0_ARCHITECTURE.md), [database](backend/B0_DATABASE.md), [API migration map](backend/B0_API_MAPPING.md), [decisions](backend/B0_DECISIONS.md), and [versioned OpenAPI](../contracts/openapi.v1.json).
 
 The 24-part approved implementation is a Next.js UI backed by fictional browser-local data. Demo roles are not server-enforced permissions. Client-only payment/KYC/device statuses are not reliable proof.
 

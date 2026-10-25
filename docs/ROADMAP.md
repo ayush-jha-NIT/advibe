@@ -67,3 +67,10 @@ Client-approved visual reference set: 59 screenshots across Public, Admin, Adver
 **Part 22:** Shared public and portal drawers trap keyboard focus and restore it, portal search ID collisions are removed, route main landmarks and skip links are improved, misleading preview copy is corrected, orange CTAs have more legible navy labels, and accessibility/route tests are added. See docs/PART_22_QA.md. Real browser/device accessibility testing remains Part 23.
 
 **Part 23 handoff:** The approved 24-part frontend-demo roadmap is code-complete and CI-gated, with an actual Chromium browser test of the built app. No matching AdVibe Vercel project was found under the currently connected accounts when checked, so production URL, deployment and physical-device manual sign-off cannot be marked verified. Production backend, KYC, payments, devices, legal terms and account security remain launch blockers. See docs/PART_23_RELEASE.md and docs/PRODUCTION_READINESS.md.
+
+## Production backend roadmap (separate workstream)
+
+- [x] **B0**: Architecture, versioned OpenAPI contract, PostgreSQL/Prisma design, frontend-to-API mapping, security/transaction invariants, decision register and automated contract tests. **Design only; no executable backend.**
+- [ ] **B1–B23**: Production backend runtime through secure launch. Implement sequentially following [Backend roadmap](backend/BACKEND_ROADMAP.md). These are NOT included in the 24 completed frontend parts.
+
+Current B0 contract: [contracts/openapi.v1.json](../contracts/openapi.v1.json). See [B0 architecture](backend/B0_ARCHITECTURE.md) and [B0 database](backend/B0_DATABASE.md). Real authentication, file storage, payment gateway, KYC and devices remain future implementation work.

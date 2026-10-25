@@ -1,3 +1,5 @@
+> **Historical frontend foundation notes:** This file originally described frontend Parts 0–4 and their later planned screens. Parts 0–23 are now completed as a browser demo. For the new production backend design see [B0 architecture](backend/B0_ARCHITECTURE.md), [database blueprint](backend/B0_DATABASE.md) and [API contract](../contracts/openapi.v1.json). B0 does not deploy a backend.
+
 # AdVibe frontend architecture
 
 ## Implemented foundation (Parts 0–4)

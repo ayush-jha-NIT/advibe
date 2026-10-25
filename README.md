@@ -1,5 +1,11 @@
 # AdVibe Frontend
 
+## Backend implementation status (B0)
+
+**Backend B0 architecture and API planning is complete as a specification only.** The production backend is NOT running: current frontend remains a browser-local demonstration. Start B1–B23 implementation from [Backend roadmap](docs/backend/BACKEND_ROADMAP.md), [B0 architecture](docs/backend/B0_ARCHITECTURE.md), [relational database blueprint](docs/backend/B0_DATABASE.md), [API migration map](docs/backend/B0_API_MAPPING.md), [decisions register](docs/backend/B0_DECISIONS.md) and [versioned OpenAPI v1 contract](contracts/openapi.v1.json).
+
+Run `npm run test:contracts` for structural contract checks; `npm run check` continues to verify the existing frontend. B0 introduces no real login, payouts, KYC or physical device integration. Demo environment: https://advibe-nu.vercel.app/ (access protection may apply).
+
 Responsive four-portal frontend for AdVibe: Public Website, Advertiser Portal, Driver Partner Portal and Admin Portal.
 
 ## Status
