@@ -107,7 +107,7 @@ test("existing portal navigation is completely covered by frontend-to-API migrat
  for(const path of ["/login","/signup","/verify","/forgot-password","/reset-password","/contact","/pricing"])
   assert.ok(map.includes("| "+path+" |"),"Missing public/auth mapping: "+path);
 });
-test("B0–B6 documentation preserves production safety gates",()=>{
+test("B0–B7 documentation preserves production safety gates",()=>{
  const docs=["B0_ARCHITECTURE.md","B0_DATABASE.md","B0_API_MAPPING.md","B0_DECISIONS.md","BACKEND_ROADMAP.md","B0_CONTRACT_RULES.md"];
  for(const filename of docs){
   const content=read("docs/backend/"+filename);
@@ -117,7 +117,7 @@ test("B0–B6 documentation preserves production safety gates",()=>{
  for(const topic of ["idempotency","exclusion","private","webhook","retention","settlement"])
   assert.match(blueprint,new RegExp(topic,"i"),"Missing DB risk topic "+topic);
  const runtime=read("backend/README.md");
- assert.match(runtime,/backend B6: driver onboarding and vehicles/,"B6 runtime must be documented");
+ assert.match(runtime,/backend B7: private KYC and agreement review/,"B7 runtime must be documented");
  const b2Doc=read("docs/backend/B2_IMPLEMENTATION.md");
  const b3Doc=read("docs/backend/B3_IMPLEMENTATION.md");
  const b4Doc=read("docs/backend/B4_IMPLEMENTATION.md");
@@ -125,6 +125,12 @@ test("B0–B6 documentation preserves production safety gates",()=>{
  assert.match(b4Doc,/cross-business/i,"B4 must deny cross-business access");
  const b5Doc=read("docs/backend/B5_IMPLEMENTATION.md");
  const b6Doc=read("docs/backend/B6_IMPLEMENTATION.md");
+ const b7Doc=read("docs/backend/B7_IMPLEMENTATION.md");
+ assert.match(b7Doc,/fail.closed/i);
+ assert.match(b7Doc,/retention/i);
+ assert.match(b7Doc,/scan/i);
+ assert.equal(spec.paths["/drivers/documents/upload-intents"].post["x-implementation-status"],"implemented-b7");
+ assert.equal(spec.paths["/admin/driver-applications/{applicationId}/decision"].post["x-implementation-status"],"implemented-b7");
  assert.match(b6Doc,/optimistic/i);
  assert.match(b6Doc,/KYC/i);
  assert.match(b6Doc,/one active draft/i);

@@ -35,7 +35,7 @@ jobs:
         run: npm run build
 
   backend-verify:
-    name: Express B6 driver onboarding and vehicle checks
+    name: Express B7 KYC, legal consent and verification checks
     runs-on: ubuntu-latest
     permissions:
       contents: read

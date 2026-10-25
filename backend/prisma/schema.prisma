@@ -81,6 +81,8 @@ model User {
   mfaChallenges   MfaLoginChallenge[]
   driverApplications DriverApplication[]
   driverVehicles  Vehicle[]
+  reviewedKycDocuments DriverDocument[] @relation("DocumentReviewer")
+  driverReviewDecisions DriverApplicationReview[] @relation("ApplicationReviewer")
 
   @@index([status, createdAt])
 }
@@ -304,6 +306,100 @@ model DriverApplication {
   driver                   User                   @relation(fields: [driverUserId], references: [id], onDelete: Restrict)
   vehicle                  Vehicle?               @relation("ApplicationVehicle", fields: [vehicleId, driverUserId], references: [id, driverUserId], onDelete: Restrict)
 
+  documents DriverDocument[]
+  agreements DriverAgreement[]
+  reviews DriverApplicationReview[]
+
+  @@unique([id, driverUserId])
   @@index([driverUserId, createdAt, id])
   @@index([state, submittedAt])
+}
+
+enum KycDocumentKind {
+  LICENCE
+  REGISTRATION
+  INSURANCE
+  OTHER
+}
+enum KycDocumentStatus {
+  PENDING_UPLOAD
+  UPLOADED
+  SCAN_CLEAN
+  SCAN_REJECTED
+  VERIFIED
+  REJECTED
+}
+enum DriverReviewDecision {
+  APPROVED
+  REJECTED
+  CHANGES_REQUESTED
+}
+
+model DriverDocument {
+  id                String            @id @default(uuid()) @db.Uuid
+  applicationId     String            @db.Uuid
+  driverUserId      String            @db.Uuid
+  kind              KycDocumentKind
+  contentType       String            @db.VarChar(60)
+  sizeBytes         Int
+  storageKey        String            @unique @db.VarChar(350)
+  storageVersionId  String?           @db.VarChar(200)
+  sha256            String?           @db.Char(64)
+  status            KycDocumentStatus @default(PENDING_UPLOAD)
+  uploadExpiresAt   DateTime          @db.Timestamptz(6)
+  uploadedAt        DateTime?         @db.Timestamptz(6)
+  scannedAt         DateTime?         @db.Timestamptz(6)
+  reviewedAt        DateTime?         @db.Timestamptz(6)
+  reviewedByUserId  String?           @db.Uuid
+  retentionUntil    DateTime          @db.Timestamptz(6)
+  createdAt         DateTime          @default(now()) @db.Timestamptz(6)
+  application       DriverApplication @relation(fields: [applicationId, driverUserId], references: [id, driverUserId], onDelete: Restrict)
+  reviewer          User?             @relation("DocumentReviewer", fields: [reviewedByUserId], references: [id], onDelete: Restrict)
+  scanEvents        KycScanEvent[]
+
+  @@index([applicationId, kind, status])
+  @@index([retentionUntil])
+  @@index([driverUserId, createdAt])
+}
+
+model KycScanEvent {
+  id            String         @id @default(uuid()) @db.Uuid
+  providerEventId String       @unique @db.VarChar(100)
+  documentId    String         @db.Uuid
+  verdict       String         @db.VarChar(30)
+  digest        String         @db.Char(64)
+  createdAt     DateTime       @default(now()) @db.Timestamptz(6)
+  document      DriverDocument @relation(fields: [documentId], references: [id], onDelete: Restrict)
+
+  @@index([documentId, createdAt])
+}
+
+model DriverAgreement {
+  id                 String            @id @default(uuid()) @db.Uuid
+  applicationId      String            @db.Uuid
+  driverUserId       String            @db.Uuid
+  templateVersion    String            @db.VarChar(100)
+  templateSha256     String            @db.Char(64)
+  privacyVersion     String            @db.VarChar(100)
+  acceptedIpHash     String            @db.Char(64)
+  acceptedAt         DateTime          @default(now()) @db.Timestamptz(6)
+  application        DriverApplication @relation(fields: [applicationId, driverUserId], references: [id, driverUserId], onDelete: Restrict)
+
+  @@unique([applicationId, templateVersion, templateSha256])
+  @@index([driverUserId, acceptedAt])
+}
+
+model DriverApplicationReview {
+  id            String               @id @default(uuid()) @db.Uuid
+  applicationId String               @db.Uuid
+  adminUserId   String               @db.Uuid
+  decision      DriverReviewDecision
+  reason        String?              @db.VarChar(2000)
+  evidence      Json
+  createdAt     DateTime             @default(now()) @db.Timestamptz(6)
+  application   DriverApplication    @relation(fields: [applicationId], references: [id], onDelete: Restrict)
+  admin         User                 @relation("ApplicationReviewer", fields: [adminUserId], references: [id], onDelete: Restrict)
+
+  @@index([applicationId, createdAt])
+  @@index([adminUserId, createdAt])
 }

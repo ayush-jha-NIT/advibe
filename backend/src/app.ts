@@ -10,11 +10,12 @@ import { createAuthRouter, type AuthDependencies } from "./modules/auth/routes.j
 import { createAccountsRouter } from "./modules/accounts/routes.js";
 import { createTurnstileVerifier, type CaptchaVerifier } from "./modules/enquiries/captcha.js";
 import { createDriverRouter } from "./modules/drivers/routes.js";
+import { createKycRouter, type KycDependencies } from "./modules/kyc/routes.js";
 
 /** Every live API server supplies a database probe; omitted probes fail closed. */
 export function createApp(
   config: AppConfig, logger: Logger, checkDatabase?: () => Promise<void>, auth?: AuthDependencies,
-  verifyCaptcha?: CaptchaVerifier,
+  verifyCaptcha?: CaptchaVerifier, kyc?: KycDependencies,
 ): Express {
   const app = express();
   app.disable("x-powered-by");
@@ -47,10 +48,11 @@ export function createApp(
   if (auth) {
     app.use("/api/v1/auth", createAuthRouter(config, auth));
     app.use("/api/v1/drivers", createDriverRouter(config, auth));
+    app.use("/api/v1", createKycRouter(config, auth, kyc));
     app.use("/api/v1", createAccountsRouter(config, auth,
       verifyCaptcha ?? createTurnstileVerifier()));
   }
-  // B7-B23 add private KYC, device, pricing and payment routes; demo remains isolated.
+  // B8-B23 add devices, pricing and payment routes; demo remains isolated.
   app.use(notFound);
   app.use(errorHandler(logger));
   return app;

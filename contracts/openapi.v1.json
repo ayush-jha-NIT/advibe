@@ -3,7 +3,7 @@
   "info": {
     "title": "AdVibe Backend API",
     "version": "0.1.0-b0",
-    "description": "B0–B6 contract: B6 driver-owned vehicle registration, persistent five-step drafts, optimistic saving and submission are implemented and tested. KYC evidence, review, device pairing, financial and booking operations remain NOT deployed or implemented."
+    "description": "B0–B7 contract: private KYC upload intents, signed scanning, consent receipts, independent Admin document/application review are implemented in CI. KYC providers/storage and privacy policies require real production provisioning. Booking, payment, devices and most domains remain NOT deployed or implemented."
   },
   "servers": [
     {
@@ -1593,7 +1593,8 @@
       "ReviewInput": {
         "type": "object",
         "required": [
-          "decision"
+          "decision",
+          "reason"
         ],
         "properties": {
           "decision": {
@@ -1606,7 +1607,8 @@
           },
           "reason": {
             "type": "string",
-            "maxLength": 2000
+            "maxLength": 2000,
+            "minLength": 8
           }
         },
         "additionalProperties": false
@@ -2518,6 +2520,271 @@
           }
         },
         "additionalProperties": false
+      },
+      "KycDocument": {
+        "type": "object",
+        "required": [
+          "id",
+          "applicationId",
+          "kind",
+          "contentType",
+          "sizeBytes",
+          "status",
+          "uploadedAt",
+          "reviewedAt",
+          "retentionUntil"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "applicationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "licence",
+              "registration",
+              "insurance",
+              "other"
+            ]
+          },
+          "contentType": {
+            "type": "string"
+          },
+          "sizeBytes": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10485760
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending_upload",
+              "uploaded",
+              "scan_clean",
+              "scan_rejected",
+              "verified",
+              "rejected"
+            ]
+          },
+          "uploadedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "reviewedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "retentionUntil": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "KycScanNotice": {
+        "type": "object",
+        "required": [
+          "eventId",
+          "documentId",
+          "verdict",
+          "sha256",
+          "versionId",
+          "timestamp"
+        ],
+        "properties": {
+          "eventId": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 100
+          },
+          "documentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "verdict": {
+            "type": "string",
+            "enum": [
+              "clean",
+              "rejected"
+            ]
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "versionId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "timestamp": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "additionalProperties": false
+      },
+      "DriverAgreementAcceptanceInput": {
+        "type": "object",
+        "required": [
+          "templateVersion",
+          "templateSha256",
+          "privacyVersion",
+          "acceptAgreement",
+          "privacyConsent"
+        ],
+        "properties": {
+          "templateVersion": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "templateSha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "privacyVersion": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "acceptAgreement": {
+            "type": "boolean",
+            "const": true
+          },
+          "privacyConsent": {
+            "type": "boolean",
+            "const": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "KycDocumentDecisionInput": {
+        "type": "object",
+        "required": [
+          "decision",
+          "reason"
+        ],
+        "properties": {
+          "decision": {
+            "type": "string",
+            "enum": [
+              "verified",
+              "rejected"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 1000
+          }
+        },
+        "additionalProperties": false
+      },
+      "KycDownloadUrl": {
+        "type": "object",
+        "required": [
+          "url",
+          "expiresInSeconds"
+        ],
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "expiresInSeconds": {
+            "type": "integer",
+            "const": 60
+          }
+        },
+        "additionalProperties": false
+      },
+      "DriverAgreementReceipt": {
+        "type": "object",
+        "required": [
+          "id",
+          "applicationId",
+          "templateVersion",
+          "templateSha256",
+          "privacyVersion",
+          "acceptedAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "applicationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "templateVersion": {
+            "type": "string"
+          },
+          "templateSha256": {
+            "type": "string"
+          },
+          "privacyVersion": {
+            "type": "string"
+          },
+          "acceptedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "DriverReviewDetail": {
+        "type": "object",
+        "required": [
+          "id",
+          "driverUserId",
+          "state",
+          "documents",
+          "agreements",
+          "reviews"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "driverUserId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "state": {
+            "type": "string"
+          },
+          "documents": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/KycDocument"
+            }
+          },
+          "agreements": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DriverAgreementReceipt"
+            }
+          },
+          "reviews": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        },
+        "additionalProperties": true
       }
     },
     "responses": {
@@ -4348,7 +4615,7 @@
         ],
         "operationId": "createDriverDocumentUploadIntent",
         "summary": "Generate private, time-bound document upload intent",
-        "description": "Generate private, time-bound document upload intent B0 contract only; no runtime handler exists yet.",
+        "description": "Generate private, time-bound document upload intent; only explicit verified evidence can influence final decisions.",
         "x-backend-phase": "B7",
         "x-access-roles": [
           "driver"
@@ -4423,7 +4690,8 @@
           {
             "$ref": "#/components/parameters/IdempotencyKey"
           }
-        ]
+        ],
+        "x-implementation-status": "implemented-b7"
       }
     },
     "/admin/driver-applications": {
@@ -4433,7 +4701,7 @@
         ],
         "operationId": "adminListDriverApplications",
         "summary": "List driver applications for authorized reviewers",
-        "description": "List driver applications for authorized reviewers B0 contract only; no runtime handler exists yet.",
+        "description": "List driver applications for authorized reviewers; only explicit verified evidence can influence final decisions.",
         "x-backend-phase": "B7",
         "x-access-roles": [
           "admin"
@@ -4502,7 +4770,8 @@
           {
             "$ref": "#/components/parameters/Limit"
           }
-        ]
+        ],
+        "x-implementation-status": "implemented-b7"
       }
     },
     "/admin/driver-applications/{applicationId}/decision": {
@@ -4512,7 +4781,7 @@
         ],
         "operationId": "adminReviewDriver",
         "summary": "Record evidence-backed driver decision",
-        "description": "Record evidence-backed driver decision B0 contract only; no runtime handler exists yet.",
+        "description": "Record evidence-backed driver decision; only explicit verified evidence can influence final decisions.",
         "x-backend-phase": "B7",
         "x-access-roles": [
           "admin"
@@ -4596,7 +4865,8 @@
           {
             "$ref": "#/components/parameters/IdempotencyKey"
           }
-        ]
+        ],
+        "x-implementation-status": "implemented-b7"
       }
     },
     "/locations": {
@@ -9888,6 +10158,670 @@
           }
         ],
         "x-implementation-status": "implemented-b5"
+      }
+    },
+    "/drivers/documents/{documentId}/complete": {
+      "post": {
+        "tags": [
+          "KYC"
+        ],
+        "operationId": "completePrivateKycUpload",
+        "summary": "Confirm private object metadata",
+        "description": "Confirm private object metadata; implemented in B7 using PostgreSQL-backed authorization, audit and verification guards.",
+        "x-backend-phase": "B7",
+        "x-access-roles": [
+          "driver"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful authoritative response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/PublicMessage"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "x-csrf-required": true,
+        "x-idempotency-required": false,
+        "parameters": [
+          {
+            "name": "documentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "x-implementation-status": "implemented-b7"
+      }
+    },
+    "/drivers/applications/{applicationId}/documents": {
+      "get": {
+        "tags": [
+          "KYC"
+        ],
+        "operationId": "getOwnKycDocuments",
+        "summary": "List own KYC document statuses",
+        "description": "List own KYC document statuses; implemented in B7 using PostgreSQL-backed authorization, audit and verification guards.",
+        "x-backend-phase": "B7",
+        "x-access-roles": [
+          "driver"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful authoritative response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/KycDocument"
+                      }
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "x-implementation-status": "implemented-b7",
+        "parameters": [
+          {
+            "name": "applicationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "x-csrf-required": false,
+        "x-idempotency-required": false
+      }
+    },
+    "/drivers/applications/{applicationId}/accept-agreement": {
+      "post": {
+        "tags": [
+          "KYC"
+        ],
+        "operationId": "acceptDriverAgreement",
+        "summary": "Accept versioned agreement and privacy notice",
+        "description": "Accept versioned agreement and privacy notice; implemented in B7 using PostgreSQL-backed authorization, audit and verification guards.",
+        "x-backend-phase": "B7",
+        "x-access-roles": [
+          "driver"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful authoritative response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/DriverAgreementReceipt"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DriverAgreementAcceptanceInput"
+              }
+            }
+          }
+        },
+        "x-csrf-required": true,
+        "x-idempotency-required": false,
+        "parameters": [
+          {
+            "name": "applicationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "x-implementation-status": "implemented-b7"
+      }
+    },
+    "/drivers/applications/{applicationId}/reopen": {
+      "post": {
+        "tags": [
+          "KYC"
+        ],
+        "operationId": "reopenChangesRequestedDraft",
+        "summary": "Reopen own changes-requested draft",
+        "description": "Reopen own changes-requested draft; implemented in B7 using PostgreSQL-backed authorization, audit and verification guards.",
+        "x-backend-phase": "B7",
+        "x-access-roles": [
+          "driver"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful authoritative response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/DriverApplication"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "x-csrf-required": true,
+        "x-idempotency-required": false,
+        "parameters": [
+          {
+            "name": "applicationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "x-implementation-status": "implemented-b7"
+      }
+    },
+    "/admin/driver-applications/{applicationId}": {
+      "get": {
+        "tags": [
+          "KYC"
+        ],
+        "operationId": "getAdminDriverReviewDetail",
+        "summary": "Inspect submitted application evidence metadata",
+        "description": "Inspect submitted application evidence metadata; implemented in B7 using PostgreSQL-backed authorization, audit and verification guards.",
+        "x-backend-phase": "B7",
+        "x-access-roles": [
+          "admin"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful authoritative response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/DriverReviewDetail"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "parameters": [
+          {
+            "name": "applicationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "x-implementation-status": "implemented-b7",
+        "x-csrf-required": false,
+        "x-idempotency-required": false
+      }
+    },
+    "/admin/driver-documents/{documentId}/download-url": {
+      "get": {
+        "tags": [
+          "KYC"
+        ],
+        "operationId": "getPrivateKycReviewUrl",
+        "summary": "Issue 60-second private Admin document view URL",
+        "description": "Issue 60-second private Admin document view URL; implemented in B7 using PostgreSQL-backed authorization, audit and verification guards.",
+        "x-backend-phase": "B7",
+        "x-access-roles": [
+          "admin"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful authoritative response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/KycDownloadUrl"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "parameters": [
+          {
+            "name": "documentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "x-implementation-status": "implemented-b7",
+        "x-csrf-required": false,
+        "x-idempotency-required": false
+      }
+    },
+    "/admin/driver-documents/{documentId}/decision": {
+      "post": {
+        "tags": [
+          "KYC"
+        ],
+        "operationId": "reviewPrivateKycDocument",
+        "summary": "Attest reviewed scanned document",
+        "description": "Attest reviewed scanned document; implemented in B7 using PostgreSQL-backed authorization, audit and verification guards.",
+        "x-backend-phase": "B7",
+        "x-access-roles": [
+          "admin"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful authoritative response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/KycDocument"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KycDocumentDecisionInput"
+              }
+            }
+          }
+        },
+        "x-csrf-required": true,
+        "x-idempotency-required": false,
+        "parameters": [
+          {
+            "name": "documentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "x-implementation-status": "implemented-b7"
+      }
+    },
+    "/webhooks/kyc/document-scan": {
+      "post": {
+        "tags": [
+          "KYC"
+        ],
+        "operationId": "verifyProviderKycScanNotice",
+        "summary": "Accept signed independent document scan result",
+        "description": "Accept signed independent document scan result; implemented in B7 using PostgreSQL-backed authorization, audit and verification guards.",
+        "x-backend-phase": "B7",
+        "x-access-roles": [
+          "provider"
+        ],
+        "x-trust-boundary": "webhook",
+        "security": [],
+        "responses": {
+          "201": {
+            "description": "Successful authoritative response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/PublicMessage"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KycScanNotice"
+              }
+            }
+          }
+        },
+        "x-csrf-required": false,
+        "x-idempotency-required": false,
+        "parameters": [],
+        "x-implementation-status": "implemented-b7",
+        "x-signature-verification-required": true
       }
     }
   }

@@ -1,28 +1,33 @@
-# AdVibe backend B6: driver onboarding and vehicles
+# AdVibe backend B7: private KYC and agreement review
 
-The repository implements B0–B6 with Node 22+, Express, Prisma and PostgreSQL 16+. The deployed Vercel frontend is still in demo mode and the real AdVibe Neon service is not provisioned.
+B0–B7 have repository implementations. The Next.js frontend remains a demo, and no production Neon, KYC scanner vendor, private storage bucket or legally approved retention policy has been connected.
 
-## Local setup
+Node 22+, PostgreSQL 16+, private pooled DATABASE_URL, unpooled DIRECT_URL, AUTH_SECRET, MFA_ENCRYPTION_KEY, verified Resend and Turnstile configuration remain required. Apply migration 20261026030000_b7_private_kyc to disposable staging first.
 
-Set private DATABASE_URL (pooled), DIRECT_URL (direct for Prisma Migrate), AUTH_SECRET (32+ characters), MFA_ENCRYPTION_KEY (separate 64 hex characters), approved CORS_ORIGINS and AUTH_WEB_ORIGIN in backend/.env. Production also requires verified Resend and Cloudflare Turnstile from B3–B5.
+B7 additional private environment values:
+- KYC_S3_BUCKET / KYC_S3_REGION: encrypted, private, versioned S3 bucket with least-privilege server-only IAM.
+- KYC_SCAN_SECRET: separate >=32-character secret shared only with the trusted scanner callback.
+- KYC_RETENTION_DAYS: legally approved document retention days, 1..365.
+- DRIVER_AGREEMENT_VERSION and DRIVER_AGREEMENT_SHA256: reviewed/published agreement identifier and exact SHA-256.
+- DRIVER_PRIVACY_VERSION: reviewed/published privacy notice version.
 
-Run from project root:
-- npm install --prefix backend
-- npm --prefix backend run db:validate
-- npm --prefix backend run db:migrate:deploy
-- npm --prefix backend run dev
+No live uploads or approvals are available when policy values/storage are missing. Never store raw government IDs in application tables, frontend localStorage, Cloudinary public URLs, logs or Git.
 
-Use the new B6 forward-only migration on staging before production. Never db push/reset a shared DB.
+Run npm install --prefix backend; npm --prefix backend run db:migrate:deploy; npm --prefix backend run check against disposable local test PostgreSQL only (NODE_ENV=test, DB_TEST_ALLOWED=true). For development run npm --prefix backend run dev after provisioning the local database. GitHub Actions does this in a fresh PostgreSQL 16 service container.
 
-B6 driver-only endpoints:
-- GET /api/v1/drivers/me: own safe driver profile
-- POST /api/v1/drivers/applications: start resumable private draft, requires CSRF and Idempotency-Key
-- GET /api/v1/drivers/applications: list own applications with cursor/limit
-- GET /api/v1/drivers/applications/{applicationId}: resume draft with current version
-- PATCH /api/v1/drivers/applications/{applicationId}: discriminated per-step input, sequential progression, optimistic expectedVersion
-- POST /api/v1/drivers/applications/{applicationId}/submit: atomic, idempotent submitted state and audit/outbox
-- GET/POST /api/v1/drivers/me/vehicles: private owned vehicles; registration token HMAC only, no raw plate; always pending review at creation
+Important B7 routes:
+- POST /api/v1/drivers/documents/upload-intents
+- POST /api/v1/drivers/documents/:documentId/complete
+- GET /api/v1/drivers/applications/:applicationId/documents
+- POST /api/v1/drivers/applications/:applicationId/accept-agreement
+- POST /api/v1/drivers/applications/:applicationId/reopen
+- POST /api/v1/webhooks/kyc/document-scan (HMAC-signed provider-only)
+- GET /api/v1/admin/driver-applications
+- GET /api/v1/admin/driver-applications/:applicationId
+- GET /api/v1/admin/driver-documents/:documentId/download-url
+- POST /api/v1/admin/driver-documents/:documentId/decision
+- POST /api/v1/admin/driver-applications/:applicationId/decision
 
-Submitted is NOT approved. An agreement template reference is not a legal signature; readiness is not KYC verification. B7 adds documents, consent and audited Admin review. B22 later migrates the Next.js frontend to live services.
+Only an enrolled MFA-authenticated Admin may review confidential evidence. A clean scan still needs human document approval, and application approval requires all three specified documents plus legally reviewed agreement acceptance. Submission/approval is not proof of live KYC compliance or device activation.
 
-See docs/backend/B6_IMPLEMENTATION.md for state/step schema, transactions, threat boundaries and QA. Run npm --prefix backend run check only against disposable local PostgreSQL with NODE_ENV=test and DB_TEST_ALLOWED=true; the GitHub Actions pipeline provisions this automatically.
+See docs/backend/B7_IMPLEMENTATION.md for boundaries, S3 lifecycle, verified scanner requirements and tests. Next: B8 device provisioning with separate hardware identity. B22 eventually integrates the real frontend.
