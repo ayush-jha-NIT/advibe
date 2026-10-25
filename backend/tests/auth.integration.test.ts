@@ -33,8 +33,8 @@ test("B3 register, verification, session, reset, logout and security tests", asy
   });
   const server = app.listen(0, "127.0.0.1");
   try {
-    await db.$connect();
     await once(server, "listening");
+    await db.$connect();
     const base = "http://127.0.0.1:" + (server.address() as AddressInfo).port + "/api/v1/auth/";
     const email = "b3-" + randomUUID().slice(0, 12) + "@example.invalid";
     const pwd = "AUniqueSecurePassphrase!2026";
