@@ -3,7 +3,7 @@
   "info": {
     "title": "AdVibe Backend API",
     "version": "0.1.0-b0",
-    "description": "B0/B1 CONTRACT. Most planned endpoints are NOT deployed or implemented. B1 implements GET /health and GET /ready when the isolated Express server is started. Database, auth, payments, KYC and devices remain design-only."
+    "description": "B0–B2 contract. Only GET /health and GET /ready implemented. B2 readiness verifies PostgreSQL connectivity and foundation migration. Most business endpoints are NOT deployed or implemented."
   },
   "servers": [
     {
@@ -8503,7 +8503,7 @@
         ],
         "operationId": "getReadiness",
         "summary": "API-process readiness",
-        "description": "Returns 200 while process accepts requests and 503 while draining. B1 has no DB or provider dependencies.",
+        "description": "B2 checks a live PostgreSQL connection and accessible foundation table; 503 if DB is unavailable or API draining. Not a payment/device health claim.",
         "x-backend-phase": "B1",
         "x-access-roles": [
           "public"
@@ -8565,7 +8565,7 @@
             }
           }
         },
-        "x-implementation-status": "implemented-b1"
+        "x-implementation-status": "implemented-b2"
       }
     }
   }

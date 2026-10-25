@@ -1,12 +1,12 @@
 # AdVibe Frontend
 
-## Backend implementation status (B1)
+## Backend implementation status (B2)
 
-**B1 isolated Express + TypeScript runtime implemented.** The API foundation provides health/readiness, environment checks, structured logging, request IDs, safe errors, Zod validation, security headers and CORS. See [B1 implementation](docs/backend/B1_IMPLEMENTATION.md) and [backend setup](backend/README.md).
+**B0–B2 implemented.** B2 adds PostgreSQL/Neon Prisma models, SQL migrations, transactional repositories, constrained identity and tenant tables, development seed safeguards and database-backed readiness checks. See [B2 implementation](docs/backend/B2_IMPLEMENTATION.md) and [backend setup](backend/README.md).
 
-**Not production-ready:** Neon/Prisma, authentication, payments, KYC, payouts and device connectivity are not implemented. The existing Vercel frontend remains an isolated demonstration. B2–B23 are pending. [B0/B1 OpenAPI contract](contracts/openapi.v1.json).
+**Not production-ready:** Prisma/PostgreSQL is tested using disposable PostgreSQL in CI, but no dedicated AdVibe Neon project has been provisioned. Authentication, payments, KYC, payouts and devices are not implemented. Vercel frontend is still a separate demo. B3–B23 remain pending.
 
-Backend checks: `npm install --prefix backend && npm --prefix backend run check`. Frontend checks: `npm run check`.
+Backend checks require an isolated migrated test PostgreSQL DB; CI provisions it automatically. Frontend checks: `npm run check`.
 
 
 Responsive four-portal frontend for AdVibe: Public Website, Advertiser Portal, Driver Partner Portal and Admin Portal.

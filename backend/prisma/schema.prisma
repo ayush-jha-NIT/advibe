@@ -1,0 +1,174 @@
+// AdVibe B2: initial identity and transactional infrastructure.
+// Modules B5-B21 extend this schema with approved business/domain requirements.
+// Prisma 6 pinned to avoid automatic Prisma 7 datasource/adapter changes.
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum AccountRole {
+  ADVERTISER
+  DRIVER
+  ADMIN
+}
+
+enum AccountStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  CLOSED
+}
+
+enum BusinessRole {
+  OWNER
+  MANAGER
+  VIEWER
+}
+
+enum ChallengePurpose {
+  VERIFY_EMAIL
+  PASSWORD_RESET
+  LOGIN_OTP
+}
+
+enum IdempotencyState {
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}
+
+enum OutboxState {
+  PENDING
+  PUBLISHED
+  FAILED
+}
+
+model User {
+  id              String               @id @default(uuid()) @db.Uuid
+  email           String               @unique @db.VarChar(320)
+  displayName     String               @db.VarChar(160)
+  passwordHash    String?              @db.VarChar(255)
+  role            AccountRole          @default(ADVERTISER)
+  status          AccountStatus        @default(PENDING)
+  emailVerifiedAt DateTime?            @db.Timestamptz(6)
+  createdAt       DateTime             @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime             @updatedAt @db.Timestamptz(6)
+  sessions        Session[]
+  challenges      OtpChallenge[]
+  ownedBusinesses Business[]           @relation("BusinessOwner")
+  memberships     BusinessMembership[]
+  auditEvents     AuditEvent[]         @relation("AuditActor")
+
+  @@index([status, createdAt])
+}
+
+model Session {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @db.Uuid
+  tokenHash  String    @unique @db.Char(64)
+  createdAt  DateTime  @default(now()) @db.Timestamptz(6)
+  expiresAt  DateTime  @db.Timestamptz(6)
+  lastSeenAt DateTime? @db.Timestamptz(6)
+  revokedAt  DateTime? @db.Timestamptz(6)
+  user       User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId, revokedAt, expiresAt])
+  @@index([expiresAt])
+}
+
+model OtpChallenge {
+  id         String           @id @default(uuid()) @db.Uuid
+  userId     String?          @db.Uuid
+  email      String           @db.VarChar(320)
+  purpose    ChallengePurpose
+  codeHash   String           @db.Char(64)
+  attempts   Int              @default(0)
+  expiresAt  DateTime         @db.Timestamptz(6)
+  consumedAt DateTime?        @db.Timestamptz(6)
+  createdAt  DateTime         @default(now()) @db.Timestamptz(6)
+  user       User?            @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([email, purpose, createdAt])
+  @@index([expiresAt])
+}
+
+model Business {
+  id           String               @id @default(uuid()) @db.Uuid
+  ownerUserId  String               @db.Uuid
+  slug         String               @unique @db.VarChar(100)
+  displayName  String               @db.VarChar(180)
+  legalName    String?              @db.VarChar(220)
+  createdAt    DateTime             @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime             @updatedAt @db.Timestamptz(6)
+  owner        User                 @relation("BusinessOwner", fields: [ownerUserId], references: [id], onDelete: Restrict)
+  memberships  BusinessMembership[]
+
+  @@index([ownerUserId])
+}
+
+model BusinessMembership {
+  id         String       @id @default(uuid()) @db.Uuid
+  businessId String       @db.Uuid
+  userId     String       @db.Uuid
+  role       BusinessRole @default(VIEWER)
+  createdAt  DateTime     @default(now()) @db.Timestamptz(6)
+  revokedAt  DateTime?    @db.Timestamptz(6)
+  business   Business     @relation(fields: [businessId], references: [id], onDelete: Restrict)
+  user       User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@unique([businessId, userId])
+  @@index([userId, revokedAt])
+}
+
+model AuditEvent {
+  id           String    @id @default(uuid()) @db.Uuid
+  actorUserId  String?   @db.Uuid
+  action       String    @db.VarChar(120)
+  resourceType String    @db.VarChar(80)
+  resourceId   String    @db.VarChar(128)
+  requestId    String?   @db.VarChar(128)
+  metadata     Json?
+  createdAt    DateTime  @default(now()) @db.Timestamptz(6)
+  actor        User?     @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([resourceType, resourceId, createdAt])
+  @@index([actorUserId, createdAt])
+}
+
+model IdempotencyRecord {
+  id           String           @id @default(uuid()) @db.Uuid
+  actorScope   String           @db.VarChar(180)
+  requestPath  String           @db.VarChar(200)
+  key          String           @db.VarChar(160)
+  requestHash  String           @db.Char(64)
+  state        IdempotencyState @default(IN_PROGRESS)
+  resourceId   String?          @db.VarChar(128)
+  responseCode Int?
+  expiresAt    DateTime         @db.Timestamptz(6)
+  createdAt    DateTime         @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime         @updatedAt @db.Timestamptz(6)
+
+  @@unique([actorScope, requestPath, key])
+  @@index([expiresAt])
+}
+
+model OutboxEvent {
+  id            String      @id @default(uuid()) @db.Uuid
+  aggregateType String      @db.VarChar(80)
+  aggregateId   String      @db.VarChar(128)
+  eventType     String      @db.VarChar(160)
+  payload       Json
+  state         OutboxState @default(PENDING)
+  attempts      Int         @default(0)
+  availableAt   DateTime    @default(now()) @db.Timestamptz(6)
+  publishedAt   DateTime?   @db.Timestamptz(6)
+  createdAt     DateTime    @default(now()) @db.Timestamptz(6)
+
+  @@index([state, availableAt])
+  @@index([aggregateType, aggregateId, createdAt])
+}

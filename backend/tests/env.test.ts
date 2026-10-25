@@ -25,3 +25,21 @@ test("production requires an explicit HTTPS origin", () => {
   assert.deepEqual(config.corsOrigins, ["https://app.example", "https://admin.example"]);
   assert.equal(config.trustProxy, true);
 });
+
+import { loadDatabaseConfig } from "../src/db/config.js";
+
+test("B2 startup requires both runtime and direct database URLs", () => {
+  assert.throws(() => loadDatabaseConfig({}), /DATABASE_URL/);
+  assert.throws(() => loadDatabaseConfig({ DATABASE_URL: "postgresql://dev:pw@localhost:5432/test" }), /DIRECT_URL/);
+  assert.throws(() => loadDatabaseConfig({ DATABASE_URL: "https://example.com", DIRECT_URL: "postgresql://u:p@localhost/a" }), /DATABASE_URL/);
+});
+
+test("B2 rejects non-TLS production database URLs", () => {
+  assert.throws(() => loadDatabaseConfig({
+    NODE_ENV: "production", DATABASE_URL: "postgresql://u:p@database.example/db",
+    DIRECT_URL: "postgresql://u:p@database.example/db?sslmode=require",
+  }), /sslmode/);
+  const value = "postgresql://u:p@database.example/db?sslmode=require";
+  const result = loadDatabaseConfig({ NODE_ENV: "production", DATABASE_URL: value, DIRECT_URL: value });
+  assert.equal(result.runtimeUrl, value);
+});

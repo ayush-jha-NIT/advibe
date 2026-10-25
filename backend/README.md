@@ -1,40 +1,42 @@
-# AdVibe Backend B1 — Express + TypeScript
+# AdVibe B2 — PostgreSQL / Neon + Prisma backend
 
-B1 implements an isolated Node 22 / Express 5 / TypeScript HTTP API foundation. **Only GET /api/v1/health and GET /api/v1/ready are implemented.** There is no database, authentication, payments, KYC, payout gateway, device telemetry or integration with the existing frontend demo.
+B0 contracts, B1 Express, and B2 database foundation are implemented. The server **requires reachable PostgreSQL before listening**; `/api/v1/ready` checks DB connectivity. `/api/v1/health` is process liveness only.
 
-## Local setup
+**No production accounts, authentication, KYC, payment, bookings, payouts or physical devices exist yet.** The Next.js portals remain browser-local demos. No dedicated AdVibe Neon project was found in the connected account, so GitHub Actions verifies this against isolated PostgreSQL 16, not production Neon.
 
-From repository root, with Node.js 22+:
+## Configuration and setup (Node 22+)
+
+1. Provision a new AdVibe-specific Neon project or PostgreSQL 16+ locally. Obtain runtime pooled `DATABASE_URL` and unpooled migration `DIRECT_URL`.
+2. Copy `backend/.env.example` to `backend/.env`. Set **private** URLs. Production requires `sslmode=require` or stronger and approved HTTPS CORS. Never put secrets into `NEXT_PUBLIC_`.
+3. From repository root:
 
 ```bash
 npm install --prefix backend
-cp backend/.env.example backend/.env
+npm --prefix backend run db:validate
+npm --prefix backend run db:migrate:deploy
 npm --prefix backend run dev
 ```
 
-PowerShell copy: `Copy-Item backend/.env.example backend/.env`.
-Server default: http://localhost:4000. The development script loads backend/.env if present.
+For PowerShell: `Copy-Item backend/.env.example backend/.env`. Prisma CLI loads `backend/.env` for migrations; the B1 Node dev command also loads it. Hosted `npm --prefix backend start` requires injected env vars (it does not read .env automatically).
+
+Release deploy order: migration with restricted `DIRECT_URL`, then start API using `DATABASE_URL`. Never use `prisma db push` or `prisma migrate reset` in staging/production.
+
+## CI and integration tests
+
+The `backend-verify` GitHub Actions job starts disposable PostgreSQL 16, validates the Prisma schema, runs `migrate deploy`, then executes:
 
 ```bash
-curl http://localhost:4000/api/v1/health
-curl http://localhost:4000/api/v1/ready
 npm --prefix backend run check
-npm --prefix backend run build
-npm --prefix backend start
 ```
 
-## Configuration
-`backend/.env.example` lists NODE_ENV, HOST, PORT, CORS_ORIGINS, LOG_LEVEL and TRUST_PROXY. In production, set these as private process environment variables. CORS_ORIGINS must be explicitly provided as comma-separated HTTPS origins, never `*`. TRUST_PROXY=true requires an audited trusted proxy that overwrites forwarding headers. Never commit secrets or put backend credentials into NEXT_PUBLIC_ variables.
+This includes lint, TypeScript, Node HTTP tests, real DB constraint/transaction tests, build and compiled server smoke. To run locally set `NODE_ENV=test DB_TEST_ALLOWED=true` and use a LOCAL database whose name includes `_test` or `_ci`. Tests create immutable audit rows, so use a disposable DB and do not reuse production data.
 
-## Code layout
-- `src/server.ts`: independent Node server, timeouts, signals and readiness draining.
-- `src/config/env.ts`: Zod environment validation and fail-closed production CORS.
-- `src/app.ts`: Express middleware, liveness/readiness and routing boundary.
-- `src/lib/`: error type and redacting structured logger.
-- `src/middleware/`: server request IDs, safe error envelope, Zod validation.
-- `tests/`: unit and actual HTTP integration tests.
-- `scripts/smoke.mjs`: starts compiled `dist/server.js` and verifies HTTP traffic.
+Development fixtures require `NODE_ENV=development`, `DEV_SEED_ACK=true`, a LOCAL database and an explicit manual invocation of `npm --prefix backend run db:seed:dev`. Sample records cannot log in, contain no actual people or banking data and are never seeded automatically.
 
-Use `npm --prefix backend run check` for lint, types, tests, build and compiled smoke. Root Next.js checks remain independent. The B0 contract is `../contracts/openapi.v1.json`; documentation is `../docs/backend/B1_IMPLEMENTATION.md`.
+## Relational scope and boundaries
 
-B2 will implement Neon/Prisma, migrations and downstream readiness. Real cookie/domain decisions are blocked until B3.
+B2 models: User, Session, OtpChallenge, Business, BusinessMembership, AuditEvent, IdempotencyRecord, OutboxEvent. PostgreSQL enforces UUID keys, foreign keys, unique email/member/idempotency scopes, canonical emails, safe checks and append-only audit events. The internal business repository writes owner membership, audit and outbox in one serializable transaction.
+
+B3/B4: real authentication, OTP, sessions, RBAC and MFA. B5: authenticated business endpoints. B6–B21: approved driver/hardware/ads/financial tables through additional forward-only migrations.
+
+Documentation and backup runbook: `../docs/backend/B2_IMPLEMENTATION.md`.

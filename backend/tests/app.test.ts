@@ -26,7 +26,7 @@ async function withServer<T>(app: Express, run: (baseUrl: string) => Promise<T>)
 }
 
 test("health and readiness are HTTP 200 with server request IDs and security headers", async () => {
-  await withServer(createApp(config, logger), async baseUrl => {
+  await withServer(createApp(config, logger, async () => {}), async baseUrl => {
     for (const path of ["/api/v1/health", "/api/v1/ready"]) {
       const response = await fetch(baseUrl + path);
       assert.equal(response.status, 200);
@@ -41,7 +41,7 @@ test("health and readiness are HTTP 200 with server request IDs and security hea
 });
 
 test("readiness responds with sanitized 503 while draining", async () => {
-  const app = createApp(config, logger);
+  const app = createApp(config, logger, async () => {});
   app.locals.ready = false;
   await withServer(app, async baseUrl => {
     const response = await fetch(baseUrl + "/api/v1/ready");
@@ -53,7 +53,7 @@ test("readiness responds with sanitized 503 while draining", async () => {
 });
 
 test("unknown routes return the standard error envelope, not HTML", async () => {
-  await withServer(createApp(config, logger), async baseUrl => {
+  await withServer(createApp(config, logger, async () => {}), async baseUrl => {
     const response = await fetch(baseUrl + "/api/v1/no-such-route");
     assert.equal(response.status, 404);
     const body = await response.json() as { error: { code: string; requestId: string } };
@@ -63,7 +63,7 @@ test("unknown routes return the standard error envelope, not HTML", async () => 
 });
 
 test("CORS allows exact configured origins only, without wildcard credentials", async () => {
-  await withServer(createApp(config, logger), async baseUrl => {
+  await withServer(createApp(config, logger, async () => {}), async baseUrl => {
     const allowed = await fetch(baseUrl + "/api/v1/health", {
       headers: { Origin: "http://localhost:3000" },
     });
@@ -79,7 +79,7 @@ test("CORS allows exact configured origins only, without wildcard credentials", 
 });
 
 test("invalid JSON and oversized bodies fail safely without reflection", async () => {
-  await withServer(createApp(config, logger), async baseUrl => {
+  await withServer(createApp(config, logger, async () => {}), async baseUrl => {
     const invalid = await fetch(baseUrl + "/api/v1/health", {
       method: "POST", headers: { "Content-Type": "application/json" }, body: '{"password":',
     });
@@ -124,5 +124,23 @@ test("Zod middleware accepts valid input and returns bounded structured errors",
     const body = await invalid.json() as { error: { code: string; details: Array<{ field: string }> } };
     assert.equal(body.error.code, "VALIDATION_ERROR");
     assert.ok(body.error.details.some(detail => detail.field === "title"));
+  });
+});
+
+test("B2 readiness fails closed without a dependency probe", async () => {
+  await withServer(createApp(config, logger), async baseUrl => {
+    const response = await fetch(baseUrl + "/api/v1/ready");
+    assert.equal(response.status, 503);
+    assert.equal((await response.json() as { error: { code: string } }).error.code, "NOT_READY");
+  });
+});
+
+test("B2 readiness fails when database query fails", async () => {
+  const app = createApp(config, logger, async () => { throw new Error("private DB diagnostics"); });
+  await withServer(app, async baseUrl => {
+    const response = await fetch(baseUrl + "/api/v1/ready");
+    assert.equal(response.status, 503);
+    const body = await response.text();
+    assert.ok(!body.includes("private DB diagnostics"));
   });
 });

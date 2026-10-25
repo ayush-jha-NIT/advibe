@@ -35,10 +35,29 @@ jobs:
         run: npm run build
 
   backend-verify:
-    name: Express B1 API checks
+    name: Express B2 PostgreSQL checks
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: advibe_ci
+          POSTGRES_PASSWORD: ci_only_password
+          POSTGRES_DB: advibe_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U advibe_ci -d advibe_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      NODE_ENV: test
+      DB_TEST_ALLOWED: "true"
+      DATABASE_URL: postgresql://advibe_ci:ci_only_password@localhost:5432/advibe_ci?schema=public
+      DIRECT_URL: postgresql://advibe_ci:ci_only_password@localhost:5432/advibe_ci?schema=public
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -48,8 +67,14 @@ jobs:
           node-version: "22"
       - name: Install isolated backend dependencies
         run: npm install --prefix backend --no-audit --no-fund
-      - name: Backend lint, types, tests, compile and HTTP smoke
+      - name: Validate Prisma schema
+        run: npm --prefix backend run db:validate
+      - name: Apply versioned PostgreSQL migrations
+        run: npm --prefix backend run db:migrate:deploy
+      - name: Backend lint, types, DB integration, build, HTTP smoke
         run: npm --prefix backend run check
+      - name: Re-run migrations to verify idempotency
+        run: npm --prefix backend run db:migrate:deploy
 
   browser-smoke:
     name: Chromium release smoke

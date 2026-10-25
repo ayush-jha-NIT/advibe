@@ -7,13 +7,14 @@ import { HttpError } from "./lib/http-error.js";
 import { errorHandler, notFound } from "./middleware/error-handler.js";
 import { requestContext } from "./middleware/request-context.js";
 
-export function createApp(config: AppConfig, logger: Logger): Express {
+/** Every live API server supplies a database probe; omitted probes fail closed. */
+export function createApp(
+  config: AppConfig, logger: Logger, checkDatabase?: () => Promise<void>,
+): Express {
   const app = express();
   app.disable("x-powered-by");
   app.set("trust proxy", config.trustProxy);
-  // Readiness is an API-process check only: database, payments and devices do not exist in B1.
   app.locals.ready = true;
-
   app.use(requestContext(logger));
   app.use(helmet());
   app.use(cors({
@@ -27,19 +28,18 @@ export function createApp(config: AppConfig, logger: Logger): Express {
     maxAge: 600,
   }));
   app.use(express.json({ limit: "64kb", strict: true }));
-
-  // Matches the B0 OpenAPI health response schema.
   app.get("/api/v1/health", (_req, res) => {
     res.status(200).json({ data: { message: "ok" } });
   });
-  app.get("/api/v1/ready", (_req, res) => {
-    if (!app.locals.ready) {
-      throw new HttpError(503, "NOT_READY", "API is not accepting traffic");
+  app.get("/api/v1/ready", async (_req, res) => {
+    if (!app.locals.ready || !checkDatabase) {
+      throw new HttpError(503, "NOT_READY", "API or database is unavailable");
     }
+    try { await checkDatabase(); }
+    catch { throw new HttpError(503, "NOT_READY", "API or database is unavailable"); }
     res.status(200).json({ data: { message: "ready" } });
   });
-
-  // B2–B23 add modules above the terminal 404; never expose demo routes.
+  // B3-B23 add secured business routes; never turn demo routes into real successes.
   app.use(notFound);
   app.use(errorHandler(logger));
   return app;

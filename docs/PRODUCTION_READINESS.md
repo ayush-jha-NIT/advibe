@@ -1,6 +1,6 @@
 # AdVibe Production Readiness — Mandatory Backend and Launch Work
 
-**Status: frontend demonstration only, NOT production-ready. B0 contract and B1 isolated Express runtime implemented; B2–B23 pending.**
+**Status: frontend demonstration only, NOT production-ready. B0 contract, B1 Express runtime and B2 Prisma/PostgreSQL foundation implemented; B3–B23 pending. An AdVibe Neon database has not been provisioned.**
 
 Backend baseline: [B0 architecture](backend/B0_ARCHITECTURE.md), [database](backend/B0_DATABASE.md), [API migration map](backend/B0_API_MAPPING.md), [decisions](backend/B0_DECISIONS.md), and [versioned OpenAPI](../contracts/openapi.v1.json).
 

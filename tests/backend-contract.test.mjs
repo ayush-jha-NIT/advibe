@@ -120,7 +120,7 @@ test("B0/B1 documentation preserves production safety gates",()=>{
  assert.match(runtime,/B1 implements an isolated Node 22/,"B1 runtime must be documented");
  assert.match(runtime,/no database, authentication, payments, KYC/i,"B1 must disclose missing integrations");
  assert.equal(spec.paths["/health"].get["x-implementation-status"],"implemented-b1");
- assert.equal(spec.paths["/ready"].get["x-implementation-status"],"implemented-b1");
+ assert.equal(spec.paths["/ready"].get["x-implementation-status"],"implemented-b2");
  assert.equal(spec.paths["/ready"].get.responses["503"].content["application/json"].schema.$ref,"#/components/schemas/ErrorEnvelope");
 
  const roadmap=read("docs/backend/BACKEND_ROADMAP.md");
