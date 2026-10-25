@@ -46,7 +46,7 @@ CREATE TABLE "DriverApplication" (
   CONSTRAINT "DriverApplication_version_check" CHECK ("version" >= 0),
   CONSTRAINT "DriverApplication_submission_check"
     CHECK ((("state" = 'DRAFT') AND ("submittedAt" IS NULL)) OR
-      (("state" <> 'DRAFT') AND ("submittedAt" IS NOT NULL)),
+      (("state" <> 'DRAFT') AND ("submittedAt" IS NOT NULL))),
   CONSTRAINT "DriverApplication_vehicleCategory_requires_vehicle_check"
     CHECK ("vehicleId" IS NULL OR "vehicleCategory" IS NOT NULL),
   CONSTRAINT "DriverApplication_driverUserId_fkey" FOREIGN KEY ("driverUserId")
