@@ -1,6 +1,6 @@
 # AdVibe Production Readiness — Mandatory Backend and Launch Work
 
-**Status: complete frontend demonstration, NOT production-ready platform. Backend B0 has delivered design contracts only; B1–B23 are pending.**
+**Status: frontend demonstration only, NOT production-ready. B0 contract and B1 isolated Express runtime implemented; B2–B23 pending.**
 
 Backend baseline: [B0 architecture](backend/B0_ARCHITECTURE.md), [database](backend/B0_DATABASE.md), [API migration map](backend/B0_API_MAPPING.md), [decisions](backend/B0_DECISIONS.md), and [versioned OpenAPI](../contracts/openapi.v1.json).
 

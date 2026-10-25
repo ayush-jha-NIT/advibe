@@ -1,10 +1,13 @@
 # AdVibe Frontend
 
-## Backend implementation status (B0)
+## Backend implementation status (B1)
 
-**Backend B0 architecture and API planning is complete as a specification only.** The production backend is NOT running: current frontend remains a browser-local demonstration. Start B1–B23 implementation from [Backend roadmap](docs/backend/BACKEND_ROADMAP.md), [B0 architecture](docs/backend/B0_ARCHITECTURE.md), [relational database blueprint](docs/backend/B0_DATABASE.md), [API migration map](docs/backend/B0_API_MAPPING.md), [decisions register](docs/backend/B0_DECISIONS.md) and [versioned OpenAPI v1 contract](contracts/openapi.v1.json).
+**B1 isolated Express + TypeScript runtime implemented.** The API foundation provides health/readiness, environment checks, structured logging, request IDs, safe errors, Zod validation, security headers and CORS. See [B1 implementation](docs/backend/B1_IMPLEMENTATION.md) and [backend setup](backend/README.md).
 
-Run `npm run test:contracts` for structural contract checks; `npm run check` continues to verify the existing frontend. B0 introduces no real login, payouts, KYC or physical device integration. Demo environment: https://advibe-nu.vercel.app/ (access protection may apply).
+**Not production-ready:** Neon/Prisma, authentication, payments, KYC, payouts and device connectivity are not implemented. The existing Vercel frontend remains an isolated demonstration. B2–B23 are pending. [B0/B1 OpenAPI contract](contracts/openapi.v1.json).
+
+Backend checks: `npm install --prefix backend && npm --prefix backend run check`. Frontend checks: `npm run check`.
+
 
 Responsive four-portal frontend for AdVibe: Public Website, Advertiser Portal, Driver Partner Portal and Admin Portal.
 

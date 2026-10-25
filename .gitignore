@@ -35,3 +35,7 @@ pnpm-debug.log*
 coverage/
 playwright-report/
 test-results/
+
+# B1 backend artifacts
+/backend/node_modules/
+/backend/dist/

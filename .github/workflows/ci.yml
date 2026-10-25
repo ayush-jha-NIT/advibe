@@ -34,10 +34,27 @@ jobs:
       - name: Production build
         run: npm run build
 
+  backend-verify:
+    name: Express B1 API checks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install isolated backend dependencies
+        run: npm install --prefix backend --no-audit --no-fund
+      - name: Backend lint, types, tests, compile and HTTP smoke
+        run: npm --prefix backend run check
+
   browser-smoke:
     name: Chromium release smoke
     runs-on: ubuntu-latest
-    needs: verify
+    needs: [verify, backend-verify]
     timeout-minutes: 20
     permissions:
       contents: read

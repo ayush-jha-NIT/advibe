@@ -1,6 +1,6 @@
 # AdVibe production backend implementation roadmap (B0–B23)
 
-The previous 24 frontend parts are complete as a browser-only demonstration. Backend parts are NEW and must be verified individually. Do not confuse API contracts with deployed functionality.
+The 24 frontend parts remain a browser-only demonstration. B0 specification and B1 isolated Express runtime are implemented; B2–B23 remain pending. Do not confuse health endpoints with production business functionality.
 
 | Part | Scope | Acceptance evidence |
 | --- | --- | --- |

@@ -3,7 +3,7 @@
   "info": {
     "title": "AdVibe Backend API",
     "version": "0.1.0-b0",
-    "description": "B0 DESIGN CONTRACT ONLY; endpoints are NOT deployed or implemented. Canonical URI prefix /api/v1. See docs/backend/B0_ARCHITECTURE.md. No production payment, KYC or IoT traffic is enabled."
+    "description": "B0/B1 CONTRACT. Most planned endpoints are NOT deployed or implemented. B1 implements GET /health and GET /ready when the isolated Express server is started. Database, auth, payments, KYC and devices remain design-only."
   },
   "servers": [
     {
@@ -2168,7 +2168,7 @@
         ],
         "operationId": "getHealth",
         "summary": "Service liveness",
-        "description": "Service liveness B0 contract only; no runtime handler exists yet.",
+        "description": "B1 implemented liveness for the isolated Express API. Does not prove DB or gateway connectivity.",
         "x-backend-phase": "B1",
         "x-access-roles": [
           "public"
@@ -2219,7 +2219,8 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        }
+        },
+        "x-implementation-status": "implemented-b1"
       }
     },
     "/auth/register": {
@@ -8493,6 +8494,78 @@
             "$ref": "#/components/responses/ServerError"
           }
         }
+      }
+    },
+    "/ready": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "operationId": "getReadiness",
+        "summary": "API-process readiness",
+        "description": "Returns 200 while process accepts requests and 503 while draining. B1 has no DB or provider dependencies.",
+        "x-backend-phase": "B1",
+        "x-access-roles": [
+          "public"
+        ],
+        "x-trust-boundary": "public",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Successful authoritative response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/PublicMessage"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          },
+          "503": {
+            "description": "API not accepting traffic",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-status": "implemented-b1"
       }
     }
   }
