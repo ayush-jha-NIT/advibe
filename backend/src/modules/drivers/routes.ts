@@ -1,4 +1,4 @@
-import { Prisma, type DriverApplication, type PrismaClient, type Vehicle, type VehicleType, type DriverExperience } from "@prisma/client";
+import { Prisma, type DriverApplication, type Vehicle, type VehicleType, type DriverExperience } from "@prisma/client";
 import { Router, type NextFunction, type Request, type Response } from "express";
 import { z } from "zod";
 import type { AppConfig } from "../../config/env.js";
