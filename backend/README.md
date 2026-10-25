@@ -1,47 +1,28 @@
-# AdVibe backend B5: profiles, businesses and enquiries
+# AdVibe backend B6: driver onboarding and vehicles
 
-B0–B5 are implemented in the backend repository; the deployed Vercel UI is still demo-only. B5 uses B3 sessions and B4 MFA/RBAC and adds authenticated account profiles, advertiser business management, and public enquiries with consent and CAPTCHA verification.
+The repository implements B0–B6 with Node 22+, Express, Prisma and PostgreSQL 16+. The deployed Vercel frontend is still in demo mode and the real AdVibe Neon service is not provisioned.
 
-## Setup (Node 22+, PostgreSQL 16+)
+## Local setup
 
-Copy backend/.env.example to backend/.env and set the private DATABASE_URL, DIRECT_URL, AUTH_SECRET, MFA_ENCRYPTION_KEY and Resend settings. For B5 public enquiries also configure:
+Set private DATABASE_URL (pooled), DIRECT_URL (direct for Prisma Migrate), AUTH_SECRET (32+ characters), MFA_ENCRYPTION_KEY (separate 64 hex characters), approved CORS_ORIGINS and AUTH_WEB_ORIGIN in backend/.env. Production also requires verified Resend and Cloudflare Turnstile from B3–B5.
 
-- ENQUIRY_TURNSTILE_SECRET: private server-side Cloudflare Turnstile secret
-- ENQUIRY_TURNSTILE_HOSTNAME: the exact approved frontend hostname
-- Client Turnstile widget: action must be **enquiry**, and client sends its one-time token as captchaToken
+Run from project root:
+- npm install --prefix backend
+- npm --prefix backend run db:validate
+- npm --prefix backend run db:migrate:deploy
+- npm --prefix backend run dev
 
-Production API **refuses to start** without Turnstile configuration, and the public enquiry endpoint fails closed when CAPTCHA verification is unavailable. Use a real site-key, verified hostname and HTTPS in staging; never put the secret in a public Next.js environment variable.
+Use the new B6 forward-only migration on staging before production. Never db push/reset a shared DB.
 
-```bash
-npm install --prefix backend
-npm --prefix backend run db:validate
-npm --prefix backend run db:migrate:deploy
-npm --prefix backend run dev
-```
+B6 driver-only endpoints:
+- GET /api/v1/drivers/me: own safe driver profile
+- POST /api/v1/drivers/applications: start resumable private draft, requires CSRF and Idempotency-Key
+- GET /api/v1/drivers/applications: list own applications with cursor/limit
+- GET /api/v1/drivers/applications/{applicationId}: resume draft with current version
+- PATCH /api/v1/drivers/applications/{applicationId}: discriminated per-step input, sequential progression, optimistic expectedVersion
+- POST /api/v1/drivers/applications/{applicationId}/submit: atomic, idempotent submitted state and audit/outbox
+- GET/POST /api/v1/drivers/me/vehicles: private owned vehicles; registration token HMAC only, no raw plate; always pending review at creation
 
-The B5 migration (20261026010000_b5_accounts_business_enquiry) adds nullable account and legacy business city fields, business verification/archival metadata, and a consent-backed Enquiry table with constraints and indexes. Existing B2 businesses are preserved without inventing a city value.
+Submitted is NOT approved. An agreement template reference is not a legal signature; readiness is not KYC verification. B7 adds documents, consent and audited Admin review. B22 later migrates the Next.js frontend to live services.
 
-## Live backend routes: /api/v1
-
-| Method | Path | Authorization and effect |
-| --- | --- | --- |
-| GET | /me | Session-authenticated owner profile; no passwords, session secrets or MFA data |
-| PATCH | /me | CSRF-protected own displayName/city, audited |
-| POST | /businesses | Verified advertiser with CSRF; creates pending business + OWNER membership + audit + outbox in one DB transaction |
-| GET | /businesses | Current own active memberships; cursor pagination |
-| GET | /businesses/me | Backward-compatible first active membership; requires advertiser or Admin with explicit membership |
-| PATCH | /businesses/me | Advertiser owner updates first owned active business |
-| GET | /businesses/:businessId | Explicit current membership, otherwise 404 |
-| PATCH | /businesses/:businessId | Advertiser OWNER or MANAGER, current active membership and CSRF; never accepts owner or verification changes |
-| DELETE | /businesses/:businessId | Advertiser who owns business; CSRF; archives and revokes all memberships without deleting history |
-| POST | /enquiries | Public JSON POST, consent=true, verified Turnstile, PostgreSQL rate limits; persists DB enquiry and durable outbox event |
-
-Every authenticated operation derives the account from server-held, verified sessions and checks current role/membership in the database. No Admin override to read an unrelated tenant, no direct self-approval and no account role escalation. Business changes and enquiry writes preserve append-only audit/outbox requirements.
-
-Public enquiry responses do **not** return contact details or an internal enquiry identifier. The outbox is durable; a later worker (B20) must deliver notifications. There is no public enquiry listing or public access to stored PII.
-
-## Testing, production boundary and next steps
-
-CI uses disposable PostgreSQL 16, runs all Prisma migrations, validates B2–B5 plus real HTTP authorization and CAPTCHA-stub tests, and checks the original Next.js production build and Chromium smoke. To run backend checks yourself supply NODE_ENV=test and DB_TEST_ALLOWED=true with a **local** throwaway database named with _test or _ci, then `npm --prefix backend run check`.
-
-The production AdVibe Neon database, dedicated email sender, verified Turnstile widget, frontend real-API migration and production service are not provisioned/deployed. B6 driver onboarding is next; B22 later connects the frontend to the real backend.
+See docs/backend/B6_IMPLEMENTATION.md for state/step schema, transactions, threat boundaries and QA. Run npm --prefix backend run check only against disposable local PostgreSQL with NODE_ENV=test and DB_TEST_ALLOWED=true; the GitHub Actions pipeline provisions this automatically.

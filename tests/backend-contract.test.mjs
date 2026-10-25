@@ -107,7 +107,7 @@ test("existing portal navigation is completely covered by frontend-to-API migrat
  for(const path of ["/login","/signup","/verify","/forgot-password","/reset-password","/contact","/pricing"])
   assert.ok(map.includes("| "+path+" |"),"Missing public/auth mapping: "+path);
 });
-test("B0–B5 documentation preserves production safety gates",()=>{
+test("B0–B6 documentation preserves production safety gates",()=>{
  const docs=["B0_ARCHITECTURE.md","B0_DATABASE.md","B0_API_MAPPING.md","B0_DECISIONS.md","BACKEND_ROADMAP.md","B0_CONTRACT_RULES.md"];
  for(const filename of docs){
   const content=read("docs/backend/"+filename);
@@ -117,13 +117,22 @@ test("B0–B5 documentation preserves production safety gates",()=>{
  for(const topic of ["idempotency","exclusion","private","webhook","retention","settlement"])
   assert.match(blueprint,new RegExp(topic,"i"),"Missing DB risk topic "+topic);
  const runtime=read("backend/README.md");
- assert.match(runtime,/backend B5: profiles, businesses and enquiries/,"B5 runtime must be documented");
+ assert.match(runtime,/backend B6: driver onboarding and vehicles/,"B6 runtime must be documented");
  const b2Doc=read("docs/backend/B2_IMPLEMENTATION.md");
  const b3Doc=read("docs/backend/B3_IMPLEMENTATION.md");
  const b4Doc=read("docs/backend/B4_IMPLEMENTATION.md");
  assert.match(b4Doc,/Admin MFA with strict enrollment boundary/i,"B4 must require MFA enrollment");
  assert.match(b4Doc,/cross-business/i,"B4 must deny cross-business access");
  const b5Doc=read("docs/backend/B5_IMPLEMENTATION.md");
+ const b6Doc=read("docs/backend/B6_IMPLEMENTATION.md");
+ assert.match(b6Doc,/optimistic/i);
+ assert.match(b6Doc,/KYC/i);
+ assert.match(b6Doc,/one active draft/i);
+ for (const path of ["/drivers/applications","/drivers/applications/{applicationId}","/drivers/me/vehicles"]) {
+   for (const op of Object.values(spec.paths[path]))
+     assert.equal(op["x-implementation-status"],"implemented-b6");
+ }
+ assert.ok(spec.paths["/drivers/applications/{applicationId}"].get);
  assert.match(b5Doc,/CAPTCHA/i);
  assert.match(b5Doc,/tenant/i);
  assert.equal(spec.paths["/me"].get["x-implementation-status"],"implemented-b5");

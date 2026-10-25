@@ -1,10 +1,10 @@
 # AdVibe Frontend
 
-## Backend implementation status (B5)
+## Backend implementation status (B6)
 
-**B0–B5 implemented.** B5 adds authenticated account profiles, transactional advertiser business management, role-scoped membership reads and edits, soft archival, and consent/CAPTCHA-verified public enquiries. See [B5 implementation](docs/backend/B5_IMPLEMENTATION.md), [backend setup](backend/README.md).
+**B0–B6 implemented.** B6 adds driver-only persistent five-step onboarding drafts, owned vehicle registration, secure draft resume, idempotent create/submit and PostgreSQL state/ownership constraints. See [B6 implementation](docs/backend/B6_IMPLEMENTATION.md) and [backend setup](backend/README.md).
 
-**Not production-ready:** B3 auth endpoints are implemented and tested against disposable PostgreSQL in CI but are not connected to the deployed frontend. No dedicated AdVibe Neon project or verified Resend sender has been provisioned. Driver onboarding, payments, KYC, payouts and devices are pending B6–B23. Production Admin MFA requires operator provisioning and validated configuration. Demo credentials are not accepted by this backend.
+**Not production-ready:** B3 auth endpoints are implemented and tested against disposable PostgreSQL in CI but are not connected to the deployed frontend. No dedicated AdVibe Neon project or verified Resend sender has been provisioned. KYC review, payments, payouts and devices are pending B7–B23. Production Admin MFA requires operator provisioning and validated configuration. Demo credentials are not accepted by this backend.
 
 Backend checks require an isolated migrated test PostgreSQL DB; CI provisions it automatically. Frontend checks: `npm run check`.
 

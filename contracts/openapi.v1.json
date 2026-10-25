@@ -3,7 +3,7 @@
   "info": {
     "title": "AdVibe Backend API",
     "version": "0.1.0-b0",
-    "description": "B0–B5 contract. Auth, Admin MFA, account profiles, tenant-scoped business management and consent/CAPTCHA-verified public enquiries are implemented. Money, KYC, hardware and remaining business modules are NOT deployed or implemented."
+    "description": "B0–B6 contract: B6 driver-owned vehicle registration, persistent five-step drafts, optimistic saving and submission are implemented and tested. KYC evidence, review, device pairing, financial and booking operations remain NOT deployed or implemented."
   },
   "servers": [
     {
@@ -390,7 +390,17 @@
           "id",
           "state",
           "completedStep",
-          "submittedAt"
+          "version",
+          "city",
+          "experience",
+          "vehicleId",
+          "vehicleCategory",
+          "screenChoice",
+          "agreementTemplateVersion",
+          "confirmedReadiness",
+          "submittedAt",
+          "createdAt",
+          "updatedAt"
         ],
         "properties": {
           "id": {
@@ -410,13 +420,87 @@
           },
           "completedStep": {
             "type": "integer",
-            "minimum": 0
+            "minimum": 0,
+            "maximum": 5
           },
           "submittedAt": {
             "type": [
               "string",
               "null"
             ],
+            "format": "date-time"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "city": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 2,
+            "maxLength": 100
+          },
+          "experience": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "new",
+              "under_one",
+              "one_to_three",
+              "over_three",
+              null
+            ]
+          },
+          "vehicleId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "vehicleCategory": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "bike",
+              "auto",
+              "car",
+              null
+            ]
+          },
+          "screenChoice": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 2,
+            "maxLength": 80
+          },
+          "agreementTemplateVersion": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1,
+            "maxLength": 100,
+            "description": "Draft reference to proposed template only; not legal acceptance or verified signature"
+          },
+          "confirmedReadiness": {
+            "type": "boolean",
+            "description": "Driver's unverified readiness self-attestation, NOT KYC/device approval"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
             "format": "date-time"
           }
         },
@@ -428,7 +512,10 @@
           "id",
           "type",
           "model",
-          "verification"
+          "year",
+          "verification",
+          "registrationTokenPresent",
+          "createdAt"
         ],
         "properties": {
           "id": {
@@ -459,6 +546,17 @@
               "approved",
               "rejected"
             ]
+          },
+          "year": {
+            "type": "integer",
+            "minimum": 1990
+          },
+          "registrationTokenPresent": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
           }
         },
         "additionalProperties": false
@@ -1673,7 +1771,8 @@
           },
           "registrationToken": {
             "type": "string",
-            "description": "Provider token, not raw registration number"
+            "pattern": "^veh_tok_[A-Za-z0-9_-]{16,120}$",
+            "description": "Opaque provider registration token ONLY, not a raw vehicle registration plate; HMAC hashed in DB"
           }
         },
         "additionalProperties": false
@@ -1870,58 +1969,24 @@
         "additionalProperties": false
       },
       "DriverStepInput": {
-        "type": "object",
-        "required": [
-          "step"
-        ],
-        "properties": {
-          "step": {
-            "type": "integer",
-            "minimum": 1,
-            "maximum": 5
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/DriverStep1Input"
           },
-          "city": {
-            "type": "string",
-            "minLength": 2,
-            "maxLength": 100
+          {
+            "$ref": "#/components/schemas/DriverStep2Input"
           },
-          "experience": {
-            "type": "string",
-            "enum": [
-              "new",
-              "under_one",
-              "one_to_three",
-              "over_three"
-            ]
+          {
+            "$ref": "#/components/schemas/DriverStep3Input"
           },
-          "vehicleId": {
-            "type": "string",
-            "format": "uuid"
+          {
+            "$ref": "#/components/schemas/DriverStep4Input"
           },
-          "vehicleCategory": {
-            "type": "string",
-            "enum": [
-              "bike",
-              "auto",
-              "car"
-            ]
-          },
-          "screenChoice": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 80
-          },
-          "agreementTemplateVersion": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 100
-          },
-          "confirmedReadiness": {
-            "type": "boolean",
-            "description": "Not a verification decision; all KYC approvals require separate evidence review"
+          {
+            "$ref": "#/components/schemas/DriverStep5Input"
           }
-        },
-        "additionalProperties": false
+        ],
+        "description": "Exactly one step per PATCH. expectedVersion prevents stale writes; steps must be sequential."
       },
       "PaymentOrderInput": {
         "type": "object",
@@ -2313,6 +2378,143 @@
             ],
             "minLength": 1,
             "maxLength": 220
+          }
+        },
+        "additionalProperties": false
+      },
+      "DriverStep1Input": {
+        "type": "object",
+        "required": [
+          "step",
+          "expectedVersion",
+          "city",
+          "experience"
+        ],
+        "properties": {
+          "step": {
+            "type": "integer",
+            "const": 1
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "city": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100
+          },
+          "experience": {
+            "type": "string",
+            "enum": [
+              "new",
+              "under_one",
+              "one_to_three",
+              "over_three"
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "DriverStep2Input": {
+        "type": "object",
+        "required": [
+          "step",
+          "expectedVersion",
+          "vehicleId",
+          "vehicleCategory"
+        ],
+        "properties": {
+          "step": {
+            "type": "integer",
+            "const": 2
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "vehicleId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "vehicleCategory": {
+            "type": "string",
+            "enum": [
+              "bike",
+              "auto",
+              "car"
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "DriverStep3Input": {
+        "type": "object",
+        "required": [
+          "step",
+          "expectedVersion",
+          "screenChoice"
+        ],
+        "properties": {
+          "step": {
+            "type": "integer",
+            "const": 3
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "screenChoice": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 80
+          }
+        },
+        "additionalProperties": false
+      },
+      "DriverStep4Input": {
+        "type": "object",
+        "required": [
+          "step",
+          "expectedVersion",
+          "agreementTemplateVersion"
+        ],
+        "properties": {
+          "step": {
+            "type": "integer",
+            "const": 4
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "agreementTemplateVersion": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          }
+        },
+        "additionalProperties": false
+      },
+      "DriverStep5Input": {
+        "type": "object",
+        "required": [
+          "step",
+          "expectedVersion",
+          "confirmedReadiness"
+        ],
+        "properties": {
+          "step": {
+            "type": "integer",
+            "const": 5
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "confirmedReadiness": {
+            "type": "boolean",
+            "const": true
           }
         },
         "additionalProperties": false
@@ -3511,7 +3713,7 @@
         ],
         "operationId": "getOwnDriver",
         "summary": "Read driver partner profile",
-        "description": "Read driver partner profile B0 contract only; no runtime handler exists yet.",
+        "description": "Read driver partner profile; PostgreSQL-backed driver-owned B6 handler. User ID resolved exclusively from authenticated session.",
         "x-backend-phase": "B6",
         "x-access-roles": [
           "driver"
@@ -3566,7 +3768,8 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        }
+        },
+        "x-implementation-status": "implemented-b6"
       }
     },
     "/drivers/applications": {
@@ -3576,7 +3779,7 @@
         ],
         "operationId": "listOwnDriverApplications",
         "summary": "Read own applications",
-        "description": "Read own applications B0 contract only; no runtime handler exists yet.",
+        "description": "Read own applications; PostgreSQL-backed driver-owned B6 handler. User ID resolved exclusively from authenticated session.",
         "x-backend-phase": "B6",
         "x-access-roles": [
           "driver"
@@ -3645,7 +3848,8 @@
           {
             "$ref": "#/components/parameters/Limit"
           }
-        ]
+        ],
+        "x-implementation-status": "implemented-b6"
       },
       "post": {
         "tags": [
@@ -3653,7 +3857,7 @@
         ],
         "operationId": "createDriverApplication",
         "summary": "Start own five-step onboarding",
-        "description": "Start own five-step onboarding B0 contract only; no runtime handler exists yet.",
+        "description": "Start own five-step onboarding; PostgreSQL-backed driver-owned B6 handler. User ID resolved exclusively from authenticated session.",
         "x-backend-phase": "B6",
         "x-access-roles": [
           "driver"
@@ -3718,7 +3922,8 @@
           {
             "$ref": "#/components/parameters/IdempotencyKey"
           }
-        ]
+        ],
+        "x-implementation-status": "implemented-b6"
       }
     },
     "/drivers/applications/{applicationId}": {
@@ -3728,7 +3933,7 @@
         ],
         "operationId": "updateDriverApplication",
         "summary": "Save own onboarding draft",
-        "description": "B6 defines per-step discriminated schemas; no KYC raw IDs in generic JSON. B0 contract only; no runtime handler exists yet.",
+        "description": "Sequential draft step with expectedVersion, strict discriminated step fields; never updates submitted drafts.",
         "x-backend-phase": "B6",
         "x-access-roles": [
           "driver"
@@ -3808,6 +4013,82 @@
           {
             "$ref": "#/components/parameters/CsrfToken"
           }
+        ],
+        "x-implementation-status": "implemented-b6"
+      },
+      "get": {
+        "tags": [
+          "Driver"
+        ],
+        "operationId": "getOwnDriverApplication",
+        "summary": "Resume own driver application by ID",
+        "description": "Returns the persisted step data and optimistic version for the session owner; foreign IDs return 404.",
+        "x-backend-phase": "B6",
+        "x-access-roles": [
+          "driver"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful authoritative response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/DriverApplication"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "x-implementation-status": "implemented-b6",
+        "parameters": [
+          {
+            "name": "applicationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
         ]
       }
     },
@@ -3818,7 +4099,7 @@
         ],
         "operationId": "submitDriverApplication",
         "summary": "Submit own verified draft",
-        "description": "Submit own verified draft B0 contract only; no runtime handler exists yet.",
+        "description": "Idempotent draft->submitted only after all five steps. Does not approve KYC/vehicle or constitute a signed agreement.",
         "x-backend-phase": "B6",
         "x-access-roles": [
           "driver"
@@ -3892,7 +4173,8 @@
           {
             "$ref": "#/components/parameters/IdempotencyKey"
           }
-        ]
+        ],
+        "x-implementation-status": "implemented-b6"
       }
     },
     "/drivers/me/vehicles": {
@@ -3902,7 +4184,7 @@
         ],
         "operationId": "listOwnVehicles",
         "summary": "List driver-owned vehicles",
-        "description": "List driver-owned vehicles B0 contract only; no runtime handler exists yet.",
+        "description": "List driver-owned vehicles; PostgreSQL-backed driver-owned B6 handler. User ID resolved exclusively from authenticated session.",
         "x-backend-phase": "B6",
         "x-access-roles": [
           "driver"
@@ -3963,7 +4245,16 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        }
+        },
+        "x-implementation-status": "implemented-b6",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Cursor"
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          }
+        ]
       },
       "post": {
         "tags": [
@@ -3971,7 +4262,7 @@
         ],
         "operationId": "addOwnVehicle",
         "summary": "Create vehicle for review",
-        "description": "Create vehicle for review B0 contract only; no runtime handler exists yet.",
+        "description": "Register pending vehicle from vetted input, store only optional HMAC-hashed provider token. Never approve vehicle or store raw registration plate.",
         "x-backend-phase": "B6",
         "x-access-roles": [
           "driver"
@@ -4046,7 +4337,8 @@
           {
             "$ref": "#/components/parameters/IdempotencyKey"
           }
-        ]
+        ],
+        "x-implementation-status": "implemented-b6"
       }
     },
     "/drivers/documents/upload-intents": {

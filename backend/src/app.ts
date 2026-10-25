@@ -9,6 +9,7 @@ import { requestContext } from "./middleware/request-context.js";
 import { createAuthRouter, type AuthDependencies } from "./modules/auth/routes.js";
 import { createAccountsRouter } from "./modules/accounts/routes.js";
 import { createTurnstileVerifier, type CaptchaVerifier } from "./modules/enquiries/captcha.js";
+import { createDriverRouter } from "./modules/drivers/routes.js";
 
 /** Every live API server supplies a database probe; omitted probes fail closed. */
 export function createApp(
@@ -45,10 +46,11 @@ export function createApp(
   });
   if (auth) {
     app.use("/api/v1/auth", createAuthRouter(config, auth));
+    app.use("/api/v1/drivers", createDriverRouter(config, auth));
     app.use("/api/v1", createAccountsRouter(config, auth,
       verifyCaptcha ?? createTurnstileVerifier()));
   }
-  // B6-B23 add other scoped domain routes; demo routes remain disabled.
+  // B7-B23 add private KYC, device, pricing and payment routes; demo remains isolated.
   app.use(notFound);
   app.use(errorHandler(logger));
   return app;

@@ -79,6 +79,8 @@ model User {
   auditEvents     AuditEvent[]         @relation("AuditActor")
   mfaCredential   AdminMfaCredential?
   mfaChallenges   MfaLoginChallenge[]
+  driverApplications DriverApplication[]
+  driverVehicles  Vehicle[]
 
   @@index([status, createdAt])
 }
@@ -233,4 +235,75 @@ model Enquiry {
 
   @@index([status, createdAt])
   @@index([createdAt])
+}
+
+
+// B6: application drafts are private, driver-owned, and never self-approved.
+enum DriverApplicationState {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  CHANGES_REQUESTED
+}
+
+enum DriverExperience {
+  NEW
+  UNDER_ONE
+  ONE_TO_THREE
+  OVER_THREE
+}
+
+enum VehicleType {
+  BIKE
+  AUTO
+  CAR
+}
+
+enum VehicleVerification {
+  PENDING
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+}
+
+model Vehicle {
+  id                    String              @id @default(uuid()) @db.Uuid
+  driverUserId          String              @db.Uuid
+  type                  VehicleType
+  model                 String              @db.VarChar(100)
+  year                  Int
+  registrationTokenHash String?             @unique @db.Char(64)
+  verification          VehicleVerification @default(PENDING)
+  createdAt             DateTime            @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime            @updatedAt @db.Timestamptz(6)
+  driver                User                @relation(fields: [driverUserId], references: [id], onDelete: Restrict)
+  applications          DriverApplication[] @relation("ApplicationVehicle")
+
+  @@unique([id, driverUserId])
+  @@index([driverUserId, createdAt, id])
+}
+
+model DriverApplication {
+  id                       String                 @id @default(uuid()) @db.Uuid
+  driverUserId             String                 @db.Uuid
+  state                    DriverApplicationState @default(DRAFT)
+  completedStep            Int                    @default(0)
+  version                  Int                    @default(0)
+  city                     String?                @db.VarChar(100)
+  experience               DriverExperience?
+  vehicleId                String?                @db.Uuid
+  vehicleCategory          VehicleType?
+  screenChoice             String?                @db.VarChar(80)
+  agreementTemplateVersion String?                @db.VarChar(100)
+  confirmedReadiness       Boolean                @default(false)
+  submittedAt              DateTime?              @db.Timestamptz(6)
+  createdAt                DateTime               @default(now()) @db.Timestamptz(6)
+  updatedAt                DateTime               @updatedAt @db.Timestamptz(6)
+  driver                   User                   @relation(fields: [driverUserId], references: [id], onDelete: Restrict)
+  vehicle                  Vehicle?               @relation("ApplicationVehicle", fields: [vehicleId, driverUserId], references: [id, driverUserId], onDelete: Restrict)
+
+  @@index([driverUserId, createdAt, id])
+  @@index([state, submittedAt])
 }

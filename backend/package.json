@@ -14,7 +14,7 @@
     "lint": "eslint src tests",
     "test": "node --import tsx --test tests/app.test.ts tests/env.test.ts",
     "smoke": "node scripts/smoke.mjs",
-    "check": "npm run lint && npm run typecheck && npm run test && npm run test:db && npm run test:auth && npm run test:security && npm run test:accounts && npm run build && npm run smoke",
+    "check": "npm run lint && npm run typecheck && npm run test && npm run test:db && npm run test:auth && npm run test:security && npm run test:accounts && npm run test:drivers && npm run build && npm run smoke",
     "postinstall": "prisma generate --schema prisma/schema.prisma",
     "db:validate": "prisma validate --schema prisma/schema.prisma",
     "db:migrate:deploy": "prisma migrate deploy --schema prisma/schema.prisma",
@@ -24,7 +24,8 @@
     "test:auth": "node --import tsx --test tests/auth.integration.test.ts",
     "admin:mfa": "tsx src/modules/auth/operator-mfa.ts",
     "test:security": "node --import tsx --test tests/security.integration.test.ts",
-    "test:accounts": "node --import tsx --test tests/accounts.integration.test.ts"
+    "test:accounts": "node --import tsx --test tests/accounts.integration.test.ts",
+    "test:drivers": "node --import tsx --test tests/drivers.integration.test.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",
