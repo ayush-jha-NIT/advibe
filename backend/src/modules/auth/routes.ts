@@ -6,7 +6,9 @@ import type { AppConfig } from "../../config/env.js";
 import { HttpError } from "../../lib/http-error.js";
 import { validateBody } from "../../middleware/validate.js";
 import type { EmailSender } from "./email.js";
-import { emailSchema, loginSchema, registerSchema, resetSchema, verifySchema } from "./schemas.js";
+import { emailSchema, loginSchema, mfaVerifySchema, registerSchema, resetSchema, verifySchema } from "./schemas.js";
+import { decryptTotpSecret, verifyTotpStep } from "./mfa.js";
+import { requireBusinessMembership, requireRole, resolvePrincipal } from "./policy.js";
 import { CHALLENGE_LIFETIME_MS, RESET_LIFETIME_MS, SESSION_LIFETIME_MS,
   clearSessionCookie, constantTimeHexMatch, hashToken, mac, makeCode, makeResetSecret,
   makeSessionToken, readSessionCookie, setSessionCookie } from "./security.js";
@@ -54,8 +56,7 @@ async function getSession(req: Request, db: PrismaClient, settings: AuthSettings
   const principal = await resolvePrincipal(req, db, settings);
   return {
     session: {
-      id: principal.sessionId, userId: principal.userId,
-      expiresAt: principal.expiresAt,
+      id: principal.sessionId, userId: principal.userId, expiresAt: principal.expiresAt,
       user: { id: principal.userId, role: principal.role },
     },
     csrfToken: mac(settings, "csrf", principal.tokenHash),
@@ -193,7 +194,25 @@ export function createAuthRouter(
     if (!user || !user.passwordHash || !validPassword || user.status !== "ACTIVE" ||
         !user.emailVerifiedAt) throw invalid();
     if (user.role === "ADMIN") {
-      throw new HttpError(403, "ADMIN_MFA_REQUIRED", "Admin sign-in is disabled until MFA is implemented");
+      const enrolled = await db.adminMfaCredential.findUnique({ where: { userId: user.id } });
+      if (!enrolled?.enabledAt || !settings.mfaEncryptionKey) {
+        throw new HttpError(403, "ADMIN_MFA_REQUIRED", "Admin authenticator enrollment required");
+      }
+      const challengeId = randomUUID();
+      const ticket = makeSessionToken();
+      await db.$transaction(async tx => {
+        await tx.mfaLoginChallenge.updateMany({
+          where: { userId: user.id, consumedAt: null },
+          data: { consumedAt: new Date() },
+        });
+        await tx.mfaLoginChallenge.create({ data: {
+          id: challengeId, userId: user.id, tokenHash: hashToken(ticket),
+          expiresAt: new Date(Date.now() + 5 * 60_000),
+        } });
+      });
+      // No authenticated cookie or session is issued until a valid TOTP completes.
+      res.status(202).json({ data: { challengeId, ticket, message: "Authenticator code required" } });
+      return;
     }
     const token = makeSessionToken();
     const expiresAt = new Date(Date.now() + SESSION_LIFETIME_MS);
@@ -212,6 +231,82 @@ export function createAuthRouter(
     });
     setSessionCookie(res, token, settings);
     res.status(201).json({ data: safeUser(user, expiresAt, mac(settings, "csrf", hashToken(token))) });
+  }));
+
+  router.post("/mfa/verify", guard, validateBody(mfaVerifySchema), asyncRoute(async (req, res) => {
+    const { challengeId, ticket, code } = mfaVerifySchema.parse(req.body);
+    await takeAuthRateSlot(db, settings, "mfa-ip", requestIp(req), 30, 900);
+    await takeAuthRateSlot(db, settings, "mfa-challenge", challengeId, 7, 900);
+    const pending = await db.mfaLoginChallenge.findUnique({
+      where: { id: challengeId }, include: { user: { include: { mfaCredential: true } } },
+    });
+    if (!pending || pending.consumedAt || pending.expiresAt <= new Date() ||
+        pending.attempts >= 5 || pending.user.role !== "ADMIN" ||
+        pending.user.status !== "ACTIVE" || !pending.user.emailVerifiedAt ||
+        !pending.user.passwordHash || !pending.user.mfaCredential?.enabledAt ||
+        !constantTimeHexMatch(pending.tokenHash, hashToken(ticket))) {
+      throw invalid("Invalid or expired MFA challenge");
+    }
+    const secret = decryptTotpSecret(settings, pending.userId, pending.user.mfaCredential.secretCipher);
+    const step = verifyTotpStep(secret, code);
+    if (step === null) {
+      await db.mfaLoginChallenge.updateMany({
+        where: { id: challengeId, consumedAt: null, attempts: { lt: 5 } },
+        data: { attempts: { increment: 1 } },
+      });
+      throw invalid("Invalid or expired MFA challenge");
+    }
+    const token = makeSessionToken();
+    const expiresAt = new Date(Date.now() + SESSION_LIFETIME_MS);
+    const verifiedAt = new Date();
+    await db.$transaction(async tx => {
+      const consumed = await tx.mfaLoginChallenge.updateMany({
+        where: { id: challengeId, consumedAt: null, attempts: { lt: 5 },
+          expiresAt: { gt: new Date() } },
+        data: { consumedAt: verifiedAt },
+      });
+      if (consumed.count !== 1) throw invalid("MFA challenge already used");
+      const accepted = await tx.adminMfaCredential.updateMany({
+        where: { userId: pending.userId, enabledAt: { not: null }, lastUsedStep: { lt: step } },
+        data: { lastUsedStep: step },
+      });
+      if (accepted.count !== 1) throw invalid("Authenticator code already used");
+      await tx.session.create({ data: {
+        userId: pending.userId, tokenHash: hashToken(token), expiresAt,
+        mfaVerifiedAt: verifiedAt,
+      } });
+      await tx.auditEvent.create({ data: {
+        actorUserId: pending.userId, action: "auth.admin_mfa_login",
+        resourceType: "user", resourceId: pending.userId,
+      } });
+    });
+    setSessionCookie(res, token, settings);
+    res.status(201).json({
+      data: safeUser(pending.user, expiresAt, mac(settings, "csrf", hashToken(token))),
+    });
+  }));
+
+  // B4 read-only access checks are server-scoped, not caller-selected role claims.
+  router.get("/permissions", asyncRoute(async (req, res) => {
+    const principal = await resolvePrincipal(req, db, settings);
+    const memberships = await db.businessMembership.findMany({
+      where: { userId: principal.userId, revokedAt: null },
+      select: { businessId: true, role: true },
+      orderBy: { createdAt: "desc" },
+    });
+    res.json({ data: { role: principal.role.toLowerCase(), businesses: memberships } });
+  }));
+  router.get("/permissions/businesses/:businessId", asyncRoute(async (req, res) => {
+    const principal = await resolvePrincipal(req, db, settings);
+    const businessId = req.params.businessId;
+    if (typeof businessId !== "string") throw new HttpError(404, "NOT_FOUND", "Business not found");
+    const role = await requireBusinessMembership(db, principal, businessId);
+    res.json({ data: { businessId, role: role.toLowerCase() } });
+  }));
+  router.get("/admin-security", asyncRoute(async (req, res) => {
+    const principal = await resolvePrincipal(req, db, settings);
+    requireRole(principal, "ADMIN");
+    res.json({ data: { userId: principal.userId, mfaVerified: true } });
   }));
 
   router.get("/session", asyncRoute(async (req, res) => {
