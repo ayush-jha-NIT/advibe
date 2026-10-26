@@ -265,9 +265,9 @@ export function createTelemetryRouter(config:AppConfig,auth:AuthDependencies):Ro
       serviceDate:window.serviceDate,count:1});
     }
     if(await tx.playbackProof.count({where:{screenId:cred.screenId,
-     slotBucket:{in:events.map(e=>e.slotBucket)}}}))
+     slotBucket:{in:events.map(e=>new Date(e.slotBucket))}}}))
      throw new HttpError(409,"PLAYBACK_BUCKET_CONFLICT","Playback time bucket already counted");
-    if(new Set(events.map(e=>e.slotBucket.toISOString())).size!==events.length)
+    if(new Set(events.map(e=>new Date(e.slotBucket).toISOString())).size!==events.length)
      throw new HttpError(409,"PLAYBACK_BUCKET_CONFLICT","Multiple events for one screen bucket");
     await tx.playbackProof.createMany({data:events});
     for(const a of totals.values())await tx.exposureAggregate.upsert({
