@@ -1,4 +1,4 @@
-import { type PrismaClient, type DriverPayout } from "@prisma/client";
+import { type PrismaClient } from "@prisma/client";
 import { serializableTransaction } from "../../db/transaction.js";
 import { HttpError } from "../../lib/http-error.js";
 import { validTransfer,type PayoutGateway,type RemoteTransfer } from "./provider.js";
