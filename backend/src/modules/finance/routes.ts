@@ -229,8 +229,8 @@ export function createFinanceRouter(config:AppConfig,auth:AuthDependencies,
     verifiedPaymentsPaise:incoming,confirmedRefundsPaise:refunded,
     providerRefundsPaise:remoteRefunded,
     evidenceHash:createHash("sha256").update(randomUUID()+":"+JSON.stringify({
-     order:remote,payments,refunds:observed.map(x=>({...x,amountPaise:String(x.amountPaise)})),
-     status:state})).digest("hex"),checkedByUserId:p.userId}});
+     order:remote,payments,refunds:observed,status:state},
+     (_key,value:unknown)=>typeof value==="bigint"?value.toString():value)).digest("hex"),checkedByUserId:p.userId}});
    if(!matched)await tx.paymentOrder.update({where:{id:order.id},
     data:{requiresResolution:true}});
    await tx.auditEvent.create({data:{actorUserId:p.userId,
