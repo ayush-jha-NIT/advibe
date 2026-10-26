@@ -3,7 +3,7 @@ import * as React from "react";
 import Link from "next/link";
 import {usePathname,useRouter} from "next/navigation";
 import {portalNavigation,type PortalRole} from "@/config/navigation";
-import {api,apiPage,downloadApiCsv,liveSession,newIdempotencyKey,ApiError,
+import {api,apiPage,downloadApiCsv,liveSession,newIdempotencyKey,
  type LiveSession} from "@/services/api-client";
 type Row=Record<string,unknown>;
 type Result={rows:Row[];nextCursor:string|null;summary:Row|null};
@@ -111,6 +111,7 @@ function SafeTable({rows,onSelect}:{rows:Row[];onSelect?:(row:Row)=>void}){
  </div>;
 }
 function CampaignForm({session,onDone}:{session:LiveSession;onDone:()=>void}){
+ const router=useRouter();
  const [businesses,setBusinesses]=React.useState<Row[]>([]);
  const [creatives,setCreatives]=React.useState<Row[]>([]);
  const [businessId,setBusinessId]=React.useState("");
@@ -127,7 +128,7 @@ function CampaignForm({session,onDone}:{session:LiveSession;onDone:()=>void}){
    const result=await api<{id:string}>("/campaigns",{method:"POST",
     csrfToken:session.csrfToken,idempotencyKey:newIdempotencyKey(),
     body:{businessId,creativeId,title,startDate:from,endDate:to,weekdays:days}});
-   onDone();window.location.href="/advertiser/campaigns/"+result.id;
+   onDone();router.push("/advertiser/campaigns/"+result.id);
   }catch(err){setError(err instanceof Error?err.message:"Campaign creation failed");}
   finally{setSaving(false);}
  }
