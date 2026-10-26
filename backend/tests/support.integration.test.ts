@@ -30,7 +30,7 @@ test("B20 support RBAC, maintenance, durable notifications, lease/retry/dead let
  const tag=randomUUID().slice(0,8);
  const hash=await argon2.hash("B20-Long-Support-Password!",{type:argon2.argon2id});
  const users=await Promise.all(["driver","otherDriver","owner","stranger","admin"].map(async kind=>
-  db.user.create({data:{email:"b20-"+kind+"-"+tag+"@example.invalid",
+  db.user.create({data:{email:"b20-"+kind.toLowerCase()+"-"+tag+"@example.invalid",
    displayName:"B20 "+kind,passwordHash:hash,emailVerifiedAt:new Date(),
    status:"ACTIVE",role:kind==="admin"?"ADMIN":kind==="owner"||kind==="stranger"?
    "ADVERTISER":"DRIVER"}})));
