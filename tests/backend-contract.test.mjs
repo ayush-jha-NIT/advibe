@@ -215,3 +215,32 @@ test("B0–B14 documentation preserves production safety gates",()=>{
  const roadmap=read("docs/backend/BACKEND_ROADMAP.md");
  for(let p=0;p<=23;p++)assert.ok(roadmap.includes("B"+p+" |"),"Missing B"+p+" milestone");
 });
+
+
+test("B15 delivery activation, pause/resume and screen inspection have explicit contracts",()=>{
+ const required=[
+  ["/admin/reservations/holds/{holdId}/delivery/activate","post"],
+  ["/reservations/holds/{holdId}/delivery","get"],
+  ["/reservations/holds/{holdId}/delivery/pause","post"],
+  ["/reservations/holds/{holdId}/delivery/resume","post"],
+  ["/admin/screens/{screenId}/delivery","get"]
+ ];
+ for(const [path,method] of required){
+  const op=spec.paths[path]?.[method];
+  assert.ok(op,method+" "+path);
+  assert.equal(op["x-backend-phase"],"B15");
+  assert.equal(op["x-implementation-status"],"implemented-b15");
+  if(method==="post"){
+   assert.equal(op["x-csrf-required"],true);
+   assert.equal(op["x-idempotency-required"],true);
+  }
+ }
+ assert.deepEqual(spec.paths["/admin/reservations/holds/{holdId}/delivery/activate"].post["x-access-roles"],["admin"]);
+ assert.deepEqual(spec.components.schemas.DeliveryPauseInput.required,["expectedRevision","reason"]);
+ const state=spec.components.schemas.DeliveryPlan.properties.status.enum;
+ assert.deepEqual(state,["scheduled","active","paused","completed"]);
+ const doc=read("docs/backend/B15_IMPLEMENTATION.md");
+ assert.match(doc,/SERIALIZABLE/);
+ assert.match(doc,/IANA/);
+ assert.match(doc,/B16/);
+});
