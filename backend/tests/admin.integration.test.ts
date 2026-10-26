@@ -107,7 +107,7 @@ test("B21 MFA admin reports, least-privileged user status changes and audit expo
   assert.equal(await db.session.count({where:{userId:driver.id,revokedAt:null}}),0);
   assert.equal((await get("/me",motorist)).status,401);
   assert.equal((await patch(changePath,staff,suspended,"b21-suspend-"+tag)).status,200);
-  assert.equal((await patch(changePath,staff,{...suspended,status:"ACTIVE"},
+  assert.equal((await patch(changePath,staff,{...suspended,reason:suspended.reason+" amended"},
    "b21-suspend-"+tag)).status,409);
   assert.equal((await patch(changePath,staff,suspended,"b21-resuspend-"+tag)).status,409);
   const decisionRow=await db.accountStatusDecision.findUniqueOrThrow({
