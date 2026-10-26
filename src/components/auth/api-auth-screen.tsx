@@ -41,7 +41,7 @@ export function ApiAuthScreen({mode}:{mode:Mode}){
      method:"POST",body:{role,email:email.trim().toLowerCase(),password,displayName}});
     setChallengeId(result.challengeId);setPassword("");
     setNotice("Verification code sent. Continue below.");
-   }else if(mode==="verify"||mode==="signup"){
+   }else if(mode==="verify"){
     await api("/auth/verify",{method:"POST",body:{challengeId,code}});
     router.replace("/login");router.refresh();
    }else if(mode==="forgot"){
