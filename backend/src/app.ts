@@ -23,12 +23,14 @@ import { createReservationRouter } from "./modules/reservations/routes.js";
 import { createPaymentRoutes,type PaymentDependencies } from "./modules/payments/routes.js";
 import { createDeliveryRouter } from "./modules/delivery/routes.js";
 import { createTelemetryRouter } from "./modules/telemetry/routes.js";
+import { createEarningsRoutes,type EarningsDependencies } from "./modules/earnings/routes.js";
 
 /** Every live API server supplies a database probe; omitted probes fail closed. */
 export function createApp(
   config: AppConfig, logger: Logger, checkDatabase?: () => Promise<void>, auth?: AuthDependencies,
   verifyCaptcha?: CaptchaVerifier, kyc?: KycDependencies, creative?: CreativeDependencies,
   payment?: PaymentDependencies, player?:PlayerDependencies,
+  earnings?:EarningsDependencies,
 ): Express {
   const app = express();
   app.disable("x-powered-by");
@@ -47,8 +49,11 @@ export function createApp(
     maxAge: 600,
   }));
   const paymentRoutes=auth?createPaymentRoutes(config,auth,payment):undefined;
+  const earningsRoutes=auth?createEarningsRoutes(config,auth,earnings):undefined;
   if(paymentRoutes)app.use("/api/v1/webhooks/cashfree/payments",
     express.raw({type:"application/json",limit:"64kb"}),paymentRoutes.webhooks);
+  if(earningsRoutes)app.use("/api/v1/webhooks/cashfree/payouts",
+    express.raw({type:"application/json",limit:"32kb"}),earningsRoutes.webhooks);
   app.use(express.json({ limit: "64kb", strict: true }));
   app.get("/api/v1/health", (_req, res) => {
     res.status(200).json({ data: { message: "ok" } });
@@ -67,6 +72,7 @@ export function createApp(
     app.use("/api/v1", createKycRouter(config, auth, kyc));
     app.use("/api/v1", createDeviceRouter(config, auth, player));
     app.use("/api/v1", createTelemetryRouter(config, auth));
+    if(earningsRoutes)app.use("/api/v1",earningsRoutes.api);
     app.use("/api/v1", createGeoRouter(config, auth));
     app.use("/api/v1", createCreativeRouter(config, auth, creative));
     app.use("/api/v1", createPricingAdminRouter(config, auth));
@@ -79,7 +85,7 @@ export function createApp(
     app.use("/api/v1", createAccountsRouter(config, auth,
       verifyCaptcha ?? createTurnstileVerifier()));
   }
-  // B18-B23 add earnings, refunds and releases; demo frontend remains isolated.
+  // B19-B23 add tax, invoice, support and production release; demo mode unchanged.
   app.use(notFound);
   app.use(errorHandler(logger));
   return app;
