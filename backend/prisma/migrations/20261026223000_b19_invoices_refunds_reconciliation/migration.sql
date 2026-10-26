@@ -2,7 +2,7 @@
 CREATE TYPE "RefundState" AS ENUM ('QUEUED','SUBMITTED','SUCCEEDED','NEEDS_REVIEW');
 CREATE TYPE "ReconciliationState" AS ENUM ('MATCHED','MISMATCH');
 CREATE TABLE "FinanceInvoiceSequence"(
- "financialYear" VARCHAR(4) NOT NULL PRIMARY KEY,
+ "financialYear" VARCHAR(8) NOT NULL PRIMARY KEY,
  "nextNumber" INTEGER NOT NULL DEFAULT 1,
  CONSTRAINT "FinanceInvoiceSequence_positive" CHECK("nextNumber" BETWEEN 1 AND 1000000)
 );
