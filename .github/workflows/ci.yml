@@ -35,7 +35,7 @@ jobs:
         run: npm run build
 
   backend-verify:
-    name: Express B12 campaign drafts, approvals and isolation checks
+    name: Express B13 inventory hold contention and expiration checks
     runs-on: ubuntu-latest
     permissions:
       contents: read

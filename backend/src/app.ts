@@ -18,6 +18,7 @@ import { createPricingAdminRouter } from "./modules/pricing/admin.js";
 import { createDiscountRouter } from "./modules/pricing/discounts.js";
 import { createQuoteRouter } from "./modules/pricing/quotes.js";
 import { createCampaignRouter } from "./modules/campaigns/routes.js";
+import { createReservationRouter } from "./modules/reservations/routes.js";
 
 /** Every live API server supplies a database probe; omitted probes fail closed. */
 export function createApp(
@@ -63,10 +64,11 @@ export function createApp(
     app.use("/api/v1", createDiscountRouter(config, auth));
     app.use("/api/v1", createQuoteRouter(config, auth));
     app.use("/api/v1", createCampaignRouter(config, auth));
+    app.use("/api/v1", createReservationRouter(config, auth));
     app.use("/api/v1", createAccountsRouter(config, auth,
       verifyCaptcha ?? createTurnstileVerifier()));
   }
-  // B13-B23 add booking, payment and playback routes; frontend demo remains isolated.
+  // B14-B23 add confirmed bookings, payments and playback; frontend demo remains isolated.
   app.use(notFound);
   app.use(errorHandler(logger));
   return app;

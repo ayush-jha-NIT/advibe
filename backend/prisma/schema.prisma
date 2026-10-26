@@ -136,6 +136,7 @@ model Business {
   creatives     Creative[]
   quotes        PriceQuote[]
   campaigns     Campaign[]
+  reservationHolds ReservationHold[]
 
   @@index([ownerUserId])
   @@index([archivedAt, createdAt])
@@ -436,6 +437,8 @@ model Screen {
   updatedAt      DateTime          @updatedAt @db.Timestamptz(6)
   vehicle        Vehicle           @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
   credential     DeviceCredential?
+  inventorySlots InventorySlot[]
+  holdItems      ReservationHoldItem[]
   challenges     DevicePairingChallenge[]
   manifests      DeviceManifestVersion[]
   // B11 prices refer to immutable snapshots, never mutable screen records.
@@ -747,6 +750,7 @@ model PriceQuote {
   createdAt         DateTime  @default(now()) @db.Timestamptz(6)
   expiresAt         DateTime  @db.Timestamptz(6)
   business          Business  @relation(fields: [businessId], references: [id], onDelete: Restrict)
+  reservationHolds  ReservationHold[]
 
   @@index([businessId, createdAt, id])
   @@index([expiresAt])
@@ -792,6 +796,7 @@ model Campaign {
   business        Business      @relation(fields: [ownerBusinessId], references: [id], onDelete: Restrict)
   creative        Creative      @relation(fields: [creativeId, ownerBusinessId], references: [id, ownerBusinessId], onDelete: Restrict)
   submissions     CampaignSubmission[]
+  reservationHolds ReservationHold[]
 
   @@index([ownerBusinessId, createdAt, id])
   @@index([status, submittedAt, id])
@@ -823,4 +828,62 @@ model CampaignReview {
 
   @@unique([campaignId, submissionNumber])
   @@index([adminUserId, createdAt])
+}
+
+
+// B13 temporary capacity holds. One active row per entire screen calendar day.
+// Expired/released holds retain their immutable historical items; active slots are freed.
+enum ReservationHoldState {
+  HELD
+  EXPIRED
+  RELEASED
+  CONFIRMED
+}
+
+model ReservationHold {
+  id              String               @id @default(uuid()) @db.Uuid
+  businessId      String               @db.Uuid
+  campaignId      String               @db.Uuid
+  quoteId         String               @db.Uuid
+  createdByUserId String               @db.Uuid
+  state           ReservationHoldState @default(HELD)
+  expiresAt       DateTime             @db.Timestamptz(6)
+  releasedAt      DateTime?            @db.Timestamptz(6)
+  confirmedAt     DateTime?            @db.Timestamptz(6)
+  createdAt       DateTime             @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime             @updatedAt @db.Timestamptz(6)
+  business        Business             @relation(fields: [businessId], references: [id], onDelete: Restrict)
+  campaign        Campaign             @relation(fields: [campaignId], references: [id], onDelete: Restrict)
+  quote           PriceQuote           @relation(fields: [quoteId], references: [id], onDelete: Restrict)
+  items           ReservationHoldItem[]
+  activeSlots     InventorySlot[]
+
+  @@index([businessId, createdAt, id])
+  @@index([campaignId, createdAt, id])
+  @@index([state, expiresAt])
+}
+
+model ReservationHoldItem {
+  id          String          @id @default(uuid()) @db.Uuid
+  holdId      String          @db.Uuid
+  screenId    String          @db.Uuid
+  serviceDate DateTime        @db.Date
+  createdAt   DateTime        @default(now()) @db.Timestamptz(6)
+  hold        ReservationHold @relation(fields: [holdId], references: [id], onDelete: Restrict)
+  screen      Screen          @relation(fields: [screenId], references: [id], onDelete: Restrict)
+
+  @@unique([holdId, screenId, serviceDate])
+  @@index([screenId, serviceDate])
+}
+
+model InventorySlot {
+  screenId    String          @db.Uuid
+  serviceDate DateTime        @db.Date
+  holdId      String          @db.Uuid
+  createdAt   DateTime        @default(now()) @db.Timestamptz(6)
+  screen      Screen          @relation(fields: [screenId], references: [id], onDelete: Restrict)
+  hold        ReservationHold @relation(fields: [holdId], references: [id], onDelete: Restrict)
+
+  @@id([screenId, serviceDate])
+  @@index([holdId])
 }

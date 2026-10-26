@@ -3,7 +3,7 @@
   "info": {
     "title": "AdVibe Backend API",
     "version": "0.1.0-b0",
-    "description": "B0–B12 repository implementations include advertiser campaign drafts, immutable review submissions, Admin decisions and audit. Campaign approval is NOT deployed payment, booking, ad scheduling or actual playback."
+    "description": "B0–B13 are repository and PostgreSQL CI implementations. B13 provides temporary exclusive screen-day holds, expiry reclaim, ownership checks and release. Live deployment, confirmed booking/payment and real playback are NOT deployed or implemented."
   },
   "servers": [
     {
@@ -1058,7 +1058,13 @@
           "id",
           "campaignId",
           "expiresAt",
-          "state"
+          "state",
+          "quoteId",
+          "businessId",
+          "items",
+          "paymentStatus",
+          "allocationPolicy",
+          "createdAt"
         ],
         "properties": {
           "id": {
@@ -1081,6 +1087,47 @@
               "confirmed",
               "released"
             ]
+          },
+          "businessId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "quoteId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "paymentStatus": {
+            "type": "string",
+            "const": "unpaid"
+          },
+          "allocationPolicy": {
+            "type": "string",
+            "const": "EXCLUSIVE_SCREEN_DAY"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "screenId",
+                "serviceDate"
+              ],
+              "properties": {
+                "screenId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "serviceDate": {
+                  "type": "string",
+                  "format": "date"
+                }
+              }
+            }
           }
         },
         "additionalProperties": false
@@ -1093,7 +1140,11 @@
           "screenId",
           "startDate",
           "endDate",
-          "status"
+          "status",
+          "holdId",
+          "holdState",
+          "paymentStatus",
+          "expiresAt"
         ],
         "properties": {
           "id": {
@@ -1123,6 +1174,27 @@
               "confirmed",
               "cancelled"
             ]
+          },
+          "holdId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "holdState": {
+            "type": "string",
+            "enum": [
+              "held",
+              "expired",
+              "released",
+              "confirmed"
+            ]
+          },
+          "paymentStatus": {
+            "type": "string",
+            "const": "unpaid"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
           }
         },
         "additionalProperties": false
@@ -3954,6 +4026,19 @@
           "reviewedAt": {
             "type": "string",
             "format": "date-time"
+          }
+        }
+      },
+      "HoldBookingMeta": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "holdCount"
+        ],
+        "properties": {
+          "holdCount": {
+            "type": "integer",
+            "minimum": 0
           }
         }
       }
@@ -8098,7 +8183,7 @@
         ],
         "operationId": "holdCapacity",
         "summary": "Create short-lived transactional capacity holds",
-        "description": "Create short-lived transactional capacity holds B0 contract only; no runtime handler exists yet.",
+        "description": "B13 provisional, exclusive full-screen calendar-day hold, owner-scoped, PostgreSQL unique allocation and expiry. NOT a paid or confirmed booking; B14 handles payment confirmation.",
         "x-backend-phase": "B13",
         "x-access-roles": [
           "advertiser"
@@ -8173,7 +8258,8 @@
           {
             "$ref": "#/components/parameters/IdempotencyKey"
           }
-        ]
+        ],
+        "x-implementation-status": "implemented-b13"
       }
     },
     "/reservations/holds/{holdId}": {
@@ -8183,7 +8269,7 @@
         ],
         "operationId": "getOwnHold",
         "summary": "Read owned hold and expiry",
-        "description": "Read owned hold and expiry B0 contract only; no runtime handler exists yet.",
+        "description": "B13 provisional, exclusive full-screen calendar-day hold, owner-scoped, PostgreSQL unique allocation and expiry. NOT a paid or confirmed booking; B14 handles payment confirmation.",
         "x-backend-phase": "B13",
         "x-access-roles": [
           "advertiser"
@@ -8249,7 +8335,8 @@
               "format": "uuid"
             }
           }
-        ]
+        ],
+        "x-implementation-status": "implemented-b13"
       },
       "delete": {
         "tags": [
@@ -8257,7 +8344,7 @@
         ],
         "operationId": "releaseHold",
         "summary": "Release owned tentative capacity",
-        "description": "Release owned tentative capacity B0 contract only; no runtime handler exists yet.",
+        "description": "B13 provisional, exclusive full-screen calendar-day hold, owner-scoped, PostgreSQL unique allocation and expiry. NOT a paid or confirmed booking; B14 handles payment confirmation.",
         "x-backend-phase": "B13",
         "x-access-roles": [
           "advertiser"
@@ -8314,7 +8401,7 @@
           }
         },
         "x-csrf-required": true,
-        "x-idempotency-required": true,
+        "x-idempotency-required": false,
         "parameters": [
           {
             "name": "holdId",
@@ -8327,11 +8414,9 @@
           },
           {
             "$ref": "#/components/parameters/CsrfToken"
-          },
-          {
-            "$ref": "#/components/parameters/IdempotencyKey"
           }
-        ]
+        ],
+        "x-implementation-status": "implemented-b13"
       }
     },
     "/campaigns/{campaignId}/bookings": {
@@ -8341,7 +8426,7 @@
         ],
         "operationId": "getCampaignBookings",
         "summary": "List bookings for owned campaign or Admin",
-        "description": "List bookings for owned campaign or Admin B0 contract only; no runtime handler exists yet.",
+        "description": "B13 provisional, exclusive full-screen calendar-day hold, owner-scoped, PostgreSQL unique allocation and expiry. NOT a paid or confirmed booking; B14 handles payment confirmation.",
         "x-backend-phase": "B13",
         "x-access-roles": [
           "advertiser",
@@ -8371,7 +8456,7 @@
                       }
                     },
                     "meta": {
-                      "$ref": "#/components/schemas/CursorMeta"
+                      "$ref": "#/components/schemas/HoldBookingMeta"
                     }
                   },
                   "additionalProperties": false
@@ -8414,7 +8499,8 @@
               "format": "uuid"
             }
           }
-        ]
+        ],
+        "x-implementation-status": "implemented-b13"
       }
     },
     "/payments/orders": {

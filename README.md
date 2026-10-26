@@ -1,10 +1,10 @@
 # AdVibe Frontend
 
-## Backend implementation status (B12)
+## Backend implementation status (B13)
 
-**B0–B12 implemented.** B12 adds business-scoped campaign drafts, revision-protected editing, immutable creative evidence on submission, Admin MFA moderation, changes-requested resubmission and audit/outbox events. See [B12 implementation](docs/backend/B12_IMPLEMENTATION.md) and [backend setup](backend/README.md).
+**B0–B13 implemented.** B13 adds PostgreSQL-constrained temporary exclusive screen-day reservations, quote and campaign eligibility, atomic release and expiry, tenant-scoped booking history and operator sweeper. See [B13 implementation](docs/backend/B13_IMPLEMENTATION.md) and [backend setup](backend/README.md).
 
-**Not production-ready:** B3 auth endpoints are implemented and tested against disposable PostgreSQL in CI but are not connected to the deployed frontend. No dedicated AdVibe Neon project or verified Resend sender has been provisioned. Booking, payments, scheduling and payouts remain pending B13–B23. B7 KYC requires external private storage, scanning and reviewed legal policy before live deployment. Production Admin MFA requires operator provisioning and validated configuration. Demo credentials are not accepted by this backend.
+**Not production-ready:** B3 auth endpoints are implemented and tested against disposable PostgreSQL in CI but are not connected to the deployed frontend. No dedicated AdVibe Neon project or verified Resend sender has been provisioned. Confirmed bookings, payments, scheduling and payouts remain pending B14–B23. B7 KYC requires external private storage, scanning and reviewed legal policy before live deployment. Production Admin MFA requires operator provisioning and validated configuration. Demo credentials are not accepted by this backend.
 
 Backend checks require an isolated migrated test PostgreSQL DB; CI provisions it automatically. Frontend checks: `npm run check`.
 
