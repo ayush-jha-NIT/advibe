@@ -35,7 +35,7 @@ jobs:
         run: npm run build
 
   backend-verify:
-    name: Express B17 consented GPS trips and qualified playback checks
+    name: Express B18 financial ledger and verified payout reconciliations
     runs-on: ubuntu-latest
     permissions:
       contents: read
