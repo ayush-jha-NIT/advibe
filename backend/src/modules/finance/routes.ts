@@ -5,7 +5,7 @@ import type {AppConfig} from "../../config/env.js";
 import type {AuthDependencies} from "../auth/routes.js";
 import {resolvePrincipal,requireRole,requireBusinessMembership} from "../auth/policy.js";
 import {mutation} from "../pricing/guard.js";
-import {integerPaise} from "../pricing/money.js";
+import {integerPaise,bpsAmount} from "../pricing/money.js";
 import {executeIdempotent} from "../drivers/idempotency.js";
 import {serializableTransaction} from "../../db/transaction.js";
 import {HttpError} from "../../lib/http-error.js";
@@ -87,6 +87,10 @@ export function createFinanceRouter(config:AppConfig,auth:AuthDependencies,
      order.business.archivedAt||order.currency.trim()!=="INR")
      throw new HttpError(409,"INVOICE_ORDER_NOT_PAYABLE","Confirmed paid order required");
     const q=order.quote;
+    const taxPolicy=await tx.taxPolicy.findUnique({where:{version:q.taxPolicyVersion}});
+    if(!taxPolicy||bpsAmount(q.taxablePaise,taxPolicy.taxBps)!==q.taxPaise)
+     throw new HttpError(409,"INVOICE_TAX_POLICY_INVALID",
+      "Quoted tax basis points must match immutable approved policy version");
     if(q.currency.trim()!=="INR"||q.totalPaise!==order.amountPaise||
      q.taxablePaise+q.taxPaise!==q.totalPaise||
      q.subtotalPaise-q.discountPaise!==q.taxablePaise||
