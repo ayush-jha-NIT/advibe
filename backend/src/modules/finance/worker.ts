@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto";
 import type { Prisma,PrismaClient } from "@prisma/client";
 import { HttpError } from "../../lib/http-error.js";
 import { serializableTransaction } from "../../db/transaction.js";
