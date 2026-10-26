@@ -14,7 +14,7 @@
     "lint": "eslint src tests",
     "test": "node --import tsx --test tests/app.test.ts tests/env.test.ts",
     "smoke": "node scripts/smoke.mjs",
-    "check": "npm run lint && npm run typecheck && npm run test && npm run test:db && npm run test:auth && npm run test:security && npm run test:accounts && npm run test:drivers && npm run test:kyc && npm run test:devices && npm run test:geo && npm run test:creatives && npm run test:pricing && npm run test:campaigns && npm run test:reservations && npm run test:payments && npm run test:delivery && npm run test:player && npm run test:telemetry && npm run test:earnings && npm run build && npm run smoke",
+    "check": "npm run lint && npm run typecheck && npm run test && npm run test:db && npm run test:auth && npm run test:security && npm run test:accounts && npm run test:drivers && npm run test:kyc && npm run test:devices && npm run test:geo && npm run test:creatives && npm run test:pricing && npm run test:campaigns && npm run test:reservations && npm run test:payments && npm run test:delivery && npm run test:player && npm run test:telemetry && npm run test:earnings && npm run test:finance && npm run build && npm run smoke",
     "postinstall": "prisma generate --schema prisma/schema.prisma",
     "db:validate": "prisma validate --schema prisma/schema.prisma",
     "db:migrate:deploy": "prisma migrate deploy --schema prisma/schema.prisma",
@@ -42,7 +42,9 @@
     "test:telemetry": "node --import tsx --test tests/telemetry.integration.test.ts",
     "gps:purge": "node --env-file-if-exists=.env --import tsx scripts/purge-gps.ts",
     "test:earnings": "node --import tsx --test tests/earnings.integration.test.ts",
-    "payouts:reconcile": "node --env-file-if-exists=.env --import tsx scripts/reconcile-payouts.ts"
+    "payouts:reconcile": "node --env-file-if-exists=.env --import tsx scripts/reconcile-payouts.ts",
+    "test:finance": "node --import tsx --test tests/finance.integration.test.ts",
+    "refunds:reconcile": "node --env-file-if-exists=.env --import tsx scripts/reconcile-refunds.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",
