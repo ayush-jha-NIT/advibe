@@ -33,3 +33,8 @@ See [B15 implementation](../docs/backend/B15_IMPLEMENTATION.md). Schedule `DELIV
 ## Backend B16: signed device playlist gateway
 
 See [B16 implementation](../docs/backend/B16_IMPLEMENTATION.md). Positive production manifests require DEVICE_PLAYBACK_ENABLED=true, DEVICE_FLEET_APPROVED=true, a pinned Ed25519 signing key, and private versioned S3 media. Playback reports are not verified exposures.
+
+
+## Backend B17: consent-led trip GPS and playback evidence
+
+See [B17 implementation](../docs/backend/B17_IMPLEMENTATION.md). Production GPS requires documented D09 privacy approval and purpose-specific consent; raw samples are purged using the protected `gps:purge` job. Counted events are authenticated device reports, **not verified human impressions**.
