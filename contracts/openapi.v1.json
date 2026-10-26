@@ -1553,8 +1553,11 @@
             "items": {
               "type": "object",
               "required": [
+                "campaignId",
                 "creativeId",
                 "mediaUrl",
+                "sha256",
+                "mimeType",
                 "startAt",
                 "endAt"
               ],
@@ -1574,11 +1577,24 @@
                 "endAt": {
                   "type": "string",
                   "format": "date-time"
+                },
+                "campaignId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "sha256": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                },
+                "mimeType": {
+                  "type": "string",
+                  "minLength": 3,
+                  "maxLength": 80
                 }
               },
               "additionalProperties": false
             },
-            "description": "B8 returns strictly an empty list; scheduling/creative signing is B15/B16."
+            "description": "B16 server-verified, screen-scoped active windows only; short-lived presigned processed-media references. Not exposure evidence."
           },
           "signature": {
             "type": "string",
@@ -1976,6 +1992,18 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 100
+          },
+          "manifestVersion": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "playbackState": {
+            "type": "string",
+            "enum": [
+              "IDLE",
+              "PLAYING",
+              "ERROR"
+            ]
           }
         },
         "additionalProperties": false
@@ -6956,8 +6984,8 @@
         ],
         "operationId": "readSignedEmptyManifest",
         "summary": "read Signed Empty Manifest",
-        "description": "Implemented B8 identity/provisioning API. Pairing is NOT hardware certification or permission to play ads.",
-        "x-backend-phase": "B8",
+        "description": "B16 device Ed25519 signature and replay guard; manifest expiry, private media and reported (unverified) heartbeat playback state.",
+        "x-backend-phase": "B16",
         "x-access-roles": [
           "device"
         ],
@@ -7014,7 +7042,7 @@
         },
         "x-idempotency-required": false,
         "parameters": [],
-        "x-implementation-status": "implemented-b8",
+        "x-implementation-status": "implemented-b16",
         "x-csrf-required": false,
         "x-device-signature-required": true
       }
@@ -13135,8 +13163,8 @@
         ],
         "operationId": "acceptAuthenticatedDeviceHeartbeat",
         "summary": "accept Authenticated Device Heartbeat",
-        "description": "Implemented B8 identity/provisioning API. Pairing is NOT hardware certification or permission to play ads.",
-        "x-backend-phase": "B8",
+        "description": "B16 device Ed25519 signature and replay guard; manifest expiry, private media and reported (unverified) heartbeat playback state.",
+        "x-backend-phase": "B16",
         "x-access-roles": [
           "device"
         ],
@@ -13203,7 +13231,7 @@
         },
         "x-idempotency-required": false,
         "parameters": [],
-        "x-implementation-status": "implemented-b8",
+        "x-implementation-status": "implemented-b16",
         "x-csrf-required": false,
         "x-device-signature-required": true
       }
@@ -15506,6 +15534,103 @@
           }
         ],
         "x-implementation-status": "implemented-b15"
+      }
+    },
+    "/admin/devices/{screenId}/player-status": {
+      "get": {
+        "tags": [
+          "Devices"
+        ],
+        "operationId": "getAdminDevicePlayerStatus",
+        "summary": "Read Admin device status and unverified playback claim",
+        "description": "MFA Admin-only device diagnostics; not verified impressions or earnings.",
+        "x-backend-phase": "B16",
+        "x-access-roles": [
+          "admin"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Authoritative delivery state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Successful authoritative response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Campaign"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "parameters": [
+          {
+            "name": "screenId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "x-implementation-status": "implemented-b16"
       }
     }
   }
