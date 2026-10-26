@@ -16,7 +16,9 @@ export function ApiAuthScreen({mode}:{mode:Mode}){
  const [loading,setLoading]=React.useState(false),[error,setError]=React.useState("");
  const [notice,setNotice]=React.useState("");
  const [resetToken,setResetToken]=React.useState("");
- React.useEffect(()=>{if(mode==="reset")setResetToken(location.hash.replace(/^#token=/,""));},[mode]);
+ React.useEffect(()=>{if(mode!=="reset")return;let active=true;
+  void Promise.resolve().then(()=>{if(active)setResetToken(location.hash.replace(/^#token=/,""));});
+  return ()=>{active=false;};},[mode]);
  async function submit(event:React.FormEvent<HTMLFormElement>){
   event.preventDefault();setLoading(true);setError("");setNotice("");
   try{
