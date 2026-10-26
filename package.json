@@ -12,7 +12,8 @@
     "check": "npm run lint && npm run typecheck && npm run test:demo && npm run build",
     "health:deployment": "node scripts/deployment-health.mjs",
     "test:browser": "node scripts/release-smoke.mjs",
-    "test:contracts": "node --test tests/backend-contract.test.mjs"
+    "test:contracts": "node --test tests/backend-contract.test.mjs",
+    "test:live-browser": "node scripts/b22-live-browser.mjs"
   },
   "dependencies": {
     "next": "16.4.2",
