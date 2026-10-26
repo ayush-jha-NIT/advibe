@@ -81,6 +81,9 @@ jobs:
   browser-smoke:
     name: Chromium release smoke
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.56.1-noble
+      options: --ipc=host
     needs: [verify, backend-verify]
     timeout-minutes: 20
     permissions:
@@ -97,8 +100,6 @@ jobs:
           node-version: "22"
       - name: Install dependencies
         run: npm install --no-audit --no-fund
-      - name: Install Chromium and system libraries
-        run: npx playwright install --with-deps chromium
       - name: Production build
         run: npm run build
       - name: Serve build and run browser smoke
