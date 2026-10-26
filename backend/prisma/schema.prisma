@@ -145,6 +145,7 @@ model Business {
   reservationHolds ReservationHold[]
   paymentOrders PaymentOrder[]
   deliveryPlans DeliveryPlan[]
+  financeInvoices FinanceInvoice[]
 
   @@index([ownerUserId])
   @@index([archivedAt, createdAt])
@@ -950,6 +951,9 @@ model PaymentOrder {
   payments           PaymentAttempt[]
   webhookEvents      PaymentWebhookEvent[]
   deliveryPlan       DeliveryPlan?
+  invoice FinanceInvoice?
+  refunds PaymentRefund[]
+  reconciliationEvents FinanceReconciliationEvent[]
 
   @@index([businessId,createdAt,id])
   @@index([state,createdAt])
@@ -1233,4 +1237,108 @@ model PayoutWebhookEvent {
  receivedAt DateTime @default(now()) @db.Timestamptz(6)
  payout DriverPayout @relation(fields:[payoutId],references:[id],onDelete:Restrict)
  @@index([payoutId,receivedAt])
+}
+
+
+// B19: legally gated invoice snapshots, idempotent refunds, credit notes and provider checks.
+enum RefundState {
+  QUEUED
+  SUBMITTED
+  SUCCEEDED
+  NEEDS_REVIEW
+}
+
+enum ReconciliationState {
+  MATCHED
+  MISMATCH
+}
+
+model FinanceInvoiceSequence {
+  financialYear String @id @db.VarChar(4)
+  nextNumber Int @default(1)
+}
+
+model FinanceInvoice {
+  id String @id @default(uuid()) @db.Uuid
+  paymentOrderId String @unique @db.Uuid
+  businessId String @db.Uuid
+  invoiceNumber String @unique @db.VarChar(16)
+  financialYear String @db.VarChar(4)
+  issuedAt DateTime @default(now()) @db.Timestamptz(6)
+  supplierName String @db.VarChar(220)
+  supplierAddress String @db.VarChar(500)
+  supplierGstin String @db.Char(15)
+  supplierStateCode String @db.Char(2)
+  recipientName String @db.VarChar(220)
+  recipientAddress String @db.VarChar(500)
+  recipientGstin String? @db.Char(15)
+  recipientStateCode String @db.Char(2)
+  placeOfSupplyCode String @db.Char(2)
+  sacCode String @db.VarChar(12)
+  description String @db.VarChar(250)
+  taxPolicyVersion String @db.VarChar(80)
+  taxMode String @db.VarChar(12)
+  subtotalPaise BigInt @db.BigInt
+  discountPaise BigInt @db.BigInt
+  taxablePaise BigInt @db.BigInt
+  cgstPaise BigInt @db.BigInt
+  sgstPaise BigInt @db.BigInt
+  igstPaise BigInt @db.BigInt
+  totalPaise BigInt @db.BigInt
+  createdByUserId String @db.Uuid
+  order PaymentOrder @relation(fields:[paymentOrderId],references:[id],onDelete:Restrict)
+  business Business @relation(fields:[businessId],references:[id],onDelete:Restrict)
+  creditNotes FinanceCreditNote[]
+  @@index([businessId,issuedAt,id])
+}
+
+model PaymentRefund {
+  id String @id @default(uuid()) @db.Uuid
+  paymentOrderId String @db.Uuid
+  providerRefundId String @unique @db.VarChar(100)
+  amountPaise BigInt @db.BigInt
+  reason String @db.VarChar(500)
+  policyReference String @db.VarChar(140)
+  reviewedByUserId String @db.Uuid
+  state RefundState @default(QUEUED)
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  succeededAt DateTime? @db.Timestamptz(6)
+  order PaymentOrder @relation(fields:[paymentOrderId],references:[id],onDelete:Restrict)
+  creditNote FinanceCreditNote?
+  @@index([paymentOrderId,state,createdAt])
+  @@index([state,createdAt])
+}
+
+model FinanceCreditNote {
+  id String @id @default(uuid()) @db.Uuid
+  invoiceId String @db.Uuid
+  refundId String @unique @db.Uuid
+  noteNumber String @unique @db.VarChar(16)
+  issuedAt DateTime @default(now()) @db.Timestamptz(6)
+  amountPaise BigInt @db.BigInt
+  taxablePaise BigInt @db.BigInt
+  cgstPaise BigInt @db.BigInt
+  sgstPaise BigInt @db.BigInt
+  igstPaise BigInt @db.BigInt
+  invoice FinanceInvoice @relation(fields:[invoiceId],references:[id],onDelete:Restrict)
+  refund PaymentRefund @relation(fields:[refundId],references:[id],onDelete:Restrict)
+  @@index([invoiceId,issuedAt])
+}
+
+model FinanceReconciliationEvent {
+  id String @id @default(uuid()) @db.Uuid
+  paymentOrderId String @db.Uuid
+  providerOrderId String @db.VarChar(90)
+  state ReconciliationState
+  expectedPaise BigInt @db.BigInt
+  providerPaise BigInt @db.BigInt
+  verifiedPaymentsPaise BigInt @db.BigInt
+  confirmedRefundsPaise BigInt @db.BigInt
+  providerRefundsPaise BigInt @db.BigInt
+  evidenceHash String @unique @db.Char(64)
+  checkedByUserId String @db.Uuid
+  checkedAt DateTime @default(now()) @db.Timestamptz(6)
+  order PaymentOrder @relation(fields:[paymentOrderId],references:[id],onDelete:Restrict)
+  @@index([paymentOrderId,checkedAt])
+  @@index([state,checkedAt])
 }
