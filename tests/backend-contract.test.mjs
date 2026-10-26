@@ -83,7 +83,8 @@ test("payments, bookings and KYC stay behind authoritative input boundaries",()=
  for(const [path,method] of requiredIdempotent)assert.equal(get(path,method)["x-idempotency-required"],true,path);
  const req=(path)=>get(path)?.requestBody?.content?.["application/json"]?.schema?.$ref;
  assert.equal(req("/payments/orders"),"#/components/schemas/PaymentOrderInput");
- assert.deepEqual(spec.components.schemas.PaymentOrderInput.required,["campaignId","quoteId","reservationHoldId"]);
+ assert.deepEqual(spec.components.schemas.PaymentOrderInput.required,["campaignId","quoteId","reservationHoldId","customerPhone"]);
+ assert.match(spec.components.schemas.PaymentOrderInput.properties.customerPhone.pattern,/6-9/,"Cashfree phone validation required");
  assert.ok(!Object.hasOwn(spec.components.schemas.PaymentOrderInput.properties,"amountPaise"),"Client must not set charge amount");
  assert.equal(req("/admin/refunds"),"#/components/schemas/RefundInput");
  assert.deepEqual(spec.paths["/admin/bookings/confirm"].post["x-access-roles"],["admin"]);
