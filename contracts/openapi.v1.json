@@ -3,7 +3,7 @@
   "info": {
     "title": "AdVibe Backend API",
     "version": "0.1.0-b0",
-    "description": "B0–B9 implemented in repository. B9 curated city, circular zone and published location catalog with PostgreSQL GiST bounding and exact spherical search; public inventory is not bookable. B10–B23 production media, booking, payments, delivery and payout modules NOT deployed or implemented."
+    "description": "B0–B10 implemented in repository and test CI. B10 private creative upload intents, verified private-object storage, isolated worker AV/FFmpeg transcoding, and Admin-only moderation. Real storage/worker deployment and live creative delivery are NOT configured."
   },
   "servers": [
     {
@@ -694,16 +694,60 @@
           "state": {
             "type": "string",
             "enum": [
+              "pending_upload",
               "uploaded",
-              "scanning",
-              "rejected",
-              "ready"
+              "processing",
+              "ready",
+              "rejected"
             ]
           },
           "mimeType": {
             "type": "string",
             "minLength": 1,
             "maxLength": 100
+          },
+          "businessId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sizeBytes": {
+            "type": "integer",
+            "minimum": 16,
+            "maximum": 104857600
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "processedMimeType": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "width": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "height": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "durationMs": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "failureCode": {
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
         "additionalProperties": false
@@ -746,6 +790,13 @@
           "mediaAssetId": {
             "type": "string",
             "format": "uuid"
+          },
+          "reviewReason": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 1000
           }
         },
         "additionalProperties": false
@@ -1845,7 +1896,8 @@
         "required": [
           "contentType",
           "sizeBytes",
-          "sha256"
+          "sha256",
+          "businessId"
         ],
         "properties": {
           "contentType": {
@@ -1860,6 +1912,10 @@
           "sha256": {
             "type": "string",
             "pattern": "^[a-fA-F0-9]{64}$"
+          },
+          "businessId": {
+            "type": "string",
+            "format": "uuid"
           }
         },
         "additionalProperties": false
@@ -1869,7 +1925,8 @@
         "required": [
           "title",
           "placement",
-          "mediaAssetId"
+          "mediaAssetId",
+          "businessId"
         ],
         "properties": {
           "title": {
@@ -1889,6 +1946,10 @@
             ]
           },
           "mediaAssetId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "businessId": {
             "type": "string",
             "format": "uuid"
           }
@@ -3317,6 +3378,76 @@
           "bookable": {
             "type": "boolean",
             "const": false
+          }
+        }
+      },
+      "CreativeIntentResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "assetId",
+          "uploadUrl",
+          "expiresAt",
+          "requiredHeaders"
+        ],
+        "properties": {
+          "assetId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "uploadUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "requiredHeaders": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "CreativeReviewInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "decision",
+          "reason"
+        ],
+        "properties": {
+          "decision": {
+            "type": "string",
+            "enum": [
+              "approved",
+              "rejected"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 1000
+          }
+        }
+      },
+      "CreativePreviewUrl": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "url",
+          "expiresInSeconds"
+        ],
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "expiresInSeconds": {
+            "type": "integer",
+            "const": 60
           }
         }
       }
@@ -6187,7 +6318,7 @@
         ],
         "operationId": "createCreativeUploadIntent",
         "summary": "Get private media upload URL",
-        "description": "Get private media upload URL B0 contract only; no runtime handler exists yet.",
+        "description": "B10 database-backed scoped creative ingestion and immutable moderation. Upload or browser metadata alone never implies approval.",
         "x-backend-phase": "B10",
         "x-access-roles": [
           "advertiser"
@@ -6210,7 +6341,7 @@
                   ],
                   "properties": {
                     "data": {
-                      "$ref": "#/components/schemas/UploadIntent"
+                      "$ref": "#/components/schemas/CreativeIntentResult"
                     }
                   },
                   "additionalProperties": false
@@ -6262,7 +6393,8 @@
           {
             "$ref": "#/components/parameters/IdempotencyKey"
           }
-        ]
+        ],
+        "x-implementation-status": "implemented-b10"
       }
     },
     "/creatives": {
@@ -6272,7 +6404,7 @@
         ],
         "operationId": "listOwnCreatives",
         "summary": "List advertiser-owned creative records",
-        "description": "List advertiser-owned creative records B0 contract only; no runtime handler exists yet.",
+        "description": "B10 database-backed scoped creative ingestion and immutable moderation. Upload or browser metadata alone never implies approval.",
         "x-backend-phase": "B10",
         "x-access-roles": [
           "advertiser",
@@ -6342,7 +6474,8 @@
           {
             "$ref": "#/components/parameters/Limit"
           }
-        ]
+        ],
+        "x-implementation-status": "implemented-b10"
       },
       "post": {
         "tags": [
@@ -6350,7 +6483,7 @@
         ],
         "operationId": "createCreative",
         "summary": "Create creative pending moderation",
-        "description": "Create creative pending moderation B0 contract only; no runtime handler exists yet.",
+        "description": "B10 database-backed scoped creative ingestion and immutable moderation. Upload or browser metadata alone never implies approval.",
         "x-backend-phase": "B10",
         "x-access-roles": [
           "advertiser"
@@ -6425,7 +6558,8 @@
           {
             "$ref": "#/components/parameters/IdempotencyKey"
           }
-        ]
+        ],
+        "x-implementation-status": "implemented-b10"
       }
     },
     "/creatives/{creativeId}": {
@@ -6435,7 +6569,7 @@
         ],
         "operationId": "getCreative",
         "summary": "Fetch owned or Admin-authorized creative",
-        "description": "Fetch owned or Admin-authorized creative B0 contract only; no runtime handler exists yet.",
+        "description": "B10 database-backed scoped creative ingestion and immutable moderation. Upload or browser metadata alone never implies approval.",
         "x-backend-phase": "B10",
         "x-access-roles": [
           "advertiser",
@@ -6502,7 +6636,8 @@
               "format": "uuid"
             }
           }
-        ]
+        ],
+        "x-implementation-status": "implemented-b10"
       }
     },
     "/admin/creatives/{creativeId}/decision": {
@@ -6512,7 +6647,7 @@
         ],
         "operationId": "adminReviewCreative",
         "summary": "Record verified creative moderation decision",
-        "description": "Record verified creative moderation decision B0 contract only; no runtime handler exists yet.",
+        "description": "B10 database-backed scoped creative ingestion and immutable moderation. Upload or browser metadata alone never implies approval.",
         "x-backend-phase": "B10",
         "x-access-roles": [
           "admin"
@@ -6573,7 +6708,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ReviewInput"
+                "$ref": "#/components/schemas/CreativeReviewInput"
               }
             }
           }
@@ -6596,7 +6731,8 @@
           {
             "$ref": "#/components/parameters/IdempotencyKey"
           }
-        ]
+        ],
+        "x-implementation-status": "implemented-b10"
       }
     },
     "/pricing/rules": {
@@ -13085,6 +13221,247 @@
           }
         ],
         "x-implementation-status": "implemented-b9",
+        "x-csrf-required": false,
+        "x-idempotency-required": false
+      }
+    },
+    "/creatives/assets/{assetId}/complete": {
+      "post": {
+        "tags": [
+          "Creatives"
+        ],
+        "operationId": "completePrivateCreativeUpload",
+        "summary": "complete Private Creative Upload",
+        "description": "B10 private tenant-scoped media processing state; raw storage paths are never exposed.",
+        "x-backend-phase": "B10",
+        "x-access-roles": [
+          "advertiser"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful authoritative response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/MediaAsset"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "x-csrf-required": true,
+        "x-idempotency-required": false,
+        "parameters": [
+          {
+            "name": "assetId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "x-implementation-status": "implemented-b10"
+      }
+    },
+    "/creatives/assets/{assetId}": {
+      "get": {
+        "tags": [
+          "Creatives"
+        ],
+        "operationId": "getOwnedMediaProcessingStatus",
+        "summary": "get Owned Media Processing Status",
+        "description": "B10 private tenant-scoped media processing state; raw storage paths are never exposed.",
+        "x-backend-phase": "B10",
+        "x-access-roles": [
+          "advertiser",
+          "admin"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful authoritative response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/MediaAsset"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "parameters": [
+          {
+            "name": "assetId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "x-implementation-status": "implemented-b10",
+        "x-csrf-required": false,
+        "x-idempotency-required": false
+      }
+    },
+    "/admin/creatives/{creativeId}/preview-url": {
+      "get": {
+        "tags": [
+          "Creatives"
+        ],
+        "operationId": "getAdminCreativePreviewUrl",
+        "summary": "get Admin Creative Preview Url",
+        "description": "B10 private tenant-scoped media processing state; raw storage paths are never exposed.",
+        "x-backend-phase": "B10",
+        "x-access-roles": [
+          "admin"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful authoritative response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/CreativePreviewUrl"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "parameters": [
+          {
+            "name": "creativeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "x-implementation-status": "implemented-b10",
         "x-csrf-required": false,
         "x-idempotency-required": false
       }

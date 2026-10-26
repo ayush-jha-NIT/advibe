@@ -107,7 +107,7 @@ test("existing portal navigation is completely covered by frontend-to-API migrat
  for(const path of ["/login","/signup","/verify","/forgot-password","/reset-password","/contact","/pricing"])
   assert.ok(map.includes("| "+path+" |"),"Missing public/auth mapping: "+path);
 });
-test("B0–B9 documentation preserves production safety gates",()=>{
+test("B0–B10 documentation preserves production safety gates",()=>{
  const docs=["B0_ARCHITECTURE.md","B0_DATABASE.md","B0_API_MAPPING.md","B0_DECISIONS.md","BACKEND_ROADMAP.md","B0_CONTRACT_RULES.md"];
  for(const filename of docs){
   const content=read("docs/backend/"+filename);
@@ -117,7 +117,7 @@ test("B0–B9 documentation preserves production safety gates",()=>{
  for(const topic of ["idempotency","exclusion","private","webhook","retention","settlement"])
   assert.match(blueprint,new RegExp(topic,"i"),"Missing DB risk topic "+topic);
  const runtime=read("backend/README.md");
- assert.match(runtime,/Backend B9: geographic catalog and inventory/,"B9 runtime must be documented");
+ assert.match(runtime,/Backend B10: private creative ingestion and moderation/,"B10 runtime must be documented");
  const b2Doc=read("docs/backend/B2_IMPLEMENTATION.md");
  const b3Doc=read("docs/backend/B3_IMPLEMENTATION.md");
  const b4Doc=read("docs/backend/B4_IMPLEMENTATION.md");
@@ -128,6 +128,13 @@ test("B0–B9 documentation preserves production safety gates",()=>{
  const b7Doc=read("docs/backend/B7_IMPLEMENTATION.md");
  const b8Doc=read("docs/backend/B8_IMPLEMENTATION.md");
  const b9Doc=read("docs/backend/B9_IMPLEMENTATION.md");
+ const b10Doc=read("docs/backend/B10_IMPLEMENTATION.md");
+ assert.match(b10Doc,/ClamAV/);
+ assert.match(b10Doc,/FFmpeg/);
+ assert.match(b10Doc,/fail.closed/i);
+ for(const path of ["/creatives/upload-intents","/creatives","/creatives/{creativeId}","/admin/creatives/{creativeId}/decision"])
+   for(const op of Object.values(spec.paths[path]))
+     assert.equal(op["x-implementation-status"],"implemented-b10");
  assert.match(b9Doc,/GiST/);
  assert.match(b9Doc,/NOT_BOOKABLE/);
  assert.match(b9Doc,/published/i);

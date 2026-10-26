@@ -35,7 +35,7 @@ jobs:
         run: npm run build
 
   backend-verify:
-    name: Express B9 geographic catalog and spatial query checks
+    name: Express B10 secure creative media and moderation checks
     runs-on: ubuntu-latest
     permissions:
       contents: read

@@ -132,6 +132,8 @@ model Business {
   updatedAt    DateTime             @updatedAt @db.Timestamptz(6)
   owner        User                 @relation("BusinessOwner", fields: [ownerUserId], references: [id], onDelete: Restrict)
   memberships  BusinessMembership[]
+  mediaAssets  MediaAsset[]
+  creatives     Creative[]
 
   @@index([ownerUserId])
   @@index([archivedAt, createdAt])
@@ -564,4 +566,89 @@ model Location {
   @@unique([zoneId, slug])
   @@index([zoneId, state, id])
   @@index([state, id])
+}
+
+
+// B10: private, verified media chain. No self-approved creative or public storage key.
+enum CreativeAssetState {
+  PENDING_UPLOAD
+  UPLOADED
+  PROCESSING
+  READY
+  REJECTED
+}
+
+enum CreativeApproval {
+  PENDING
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+}
+
+model MediaAsset {
+  id                String             @id @default(uuid()) @db.Uuid
+  businessId        String             @db.Uuid
+  uploaderUserId    String             @db.Uuid
+  state             CreativeAssetState @default(PENDING_UPLOAD)
+  mimeType          String             @db.VarChar(80)
+  expectedBytes     Int
+  expectedSha256    String             @db.Char(64)
+  sourceKey         String             @unique @db.VarChar(350)
+  sourceVersionId   String?            @db.VarChar(200)
+  uploadExpiresAt   DateTime           @db.Timestamptz(6)
+  uploadedAt        DateTime?          @db.Timestamptz(6)
+  scannedAt         DateTime?          @db.Timestamptz(6)
+  processedAt       DateTime?          @db.Timestamptz(6)
+  sourceSha256      String?            @db.Char(64)
+  processedKey      String?            @unique @db.VarChar(350)
+  processedVersionId String?           @db.VarChar(200)
+  processedSha256   String?            @db.Char(64)
+  processedMimeType String?            @db.VarChar(80)
+  width             Int?
+  height            Int?
+  durationMs        Int?
+  failureCode       String?            @db.VarChar(100)
+  processAttempts   Int                @default(0)
+  createdAt         DateTime           @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime           @updatedAt @db.Timestamptz(6)
+  business          Business           @relation(fields: [businessId], references: [id], onDelete: Restrict)
+  creatives         Creative[]
+
+  @@unique([id, businessId])
+  @@index([businessId, state, createdAt, id])
+  @@index([state, uploadedAt])
+}
+
+model Creative {
+  id              String           @id @default(uuid()) @db.Uuid
+  ownerBusinessId String           @db.Uuid
+  title           String           @db.VarChar(180)
+  placement       ScreenPlacement
+  mediaAssetId    String           @db.Uuid
+  approval        CreativeApproval @default(PENDING)
+  reviewedByUserId String?         @db.Uuid
+  reviewedAt      DateTime?        @db.Timestamptz(6)
+  reviewReason    String?          @db.VarChar(1000)
+  createdAt       DateTime         @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime         @updatedAt @db.Timestamptz(6)
+  business        Business         @relation(fields: [ownerBusinessId], references: [id], onDelete: Restrict)
+  asset           MediaAsset       @relation(fields: [mediaAssetId, ownerBusinessId], references: [id, businessId], onDelete: Restrict)
+  decisions       CreativeReview[]
+
+  @@index([ownerBusinessId, createdAt, id])
+  @@index([approval, createdAt])
+}
+
+model CreativeReview {
+  id          String           @id @default(uuid()) @db.Uuid
+  creativeId  String           @db.Uuid
+  adminUserId String           @db.Uuid
+  decision    CreativeApproval
+  reason      String           @db.VarChar(1000)
+  sourceSha256 String          @db.Char(64)
+  processedSha256 String       @db.Char(64)
+  createdAt   DateTime         @default(now()) @db.Timestamptz(6)
+  creative    Creative         @relation(fields: [creativeId], references: [id], onDelete: Restrict)
+
+  @@index([creativeId, createdAt])
 }

@@ -13,11 +13,12 @@ import { createDriverRouter } from "./modules/drivers/routes.js";
 import { createKycRouter, type KycDependencies } from "./modules/kyc/routes.js";
 import { createDeviceRouter } from "./modules/devices/routes.js";
 import { createGeoRouter } from "./modules/geo/routes.js";
+import { createCreativeRouter, type CreativeDependencies } from "./modules/creatives/routes.js";
 
 /** Every live API server supplies a database probe; omitted probes fail closed. */
 export function createApp(
   config: AppConfig, logger: Logger, checkDatabase?: () => Promise<void>, auth?: AuthDependencies,
-  verifyCaptcha?: CaptchaVerifier, kyc?: KycDependencies,
+  verifyCaptcha?: CaptchaVerifier, kyc?: KycDependencies, creative?: CreativeDependencies,
 ): Express {
   const app = express();
   app.disable("x-powered-by");
@@ -53,10 +54,11 @@ export function createApp(
     app.use("/api/v1", createKycRouter(config, auth, kyc));
     app.use("/api/v1", createDeviceRouter(config, auth));
     app.use("/api/v1", createGeoRouter(config, auth));
+    app.use("/api/v1", createCreativeRouter(config, auth, creative));
     app.use("/api/v1", createAccountsRouter(config, auth,
       verifyCaptcha ?? createTurnstileVerifier()));
   }
-  // B10-B23 add creative, playback scheduling and payment routes; demo remains isolated.
+  // B11-B23 add pricing, booking, playback and payment routes; demo remains isolated.
   app.use(notFound);
   app.use(errorHandler(logger));
   return app;
