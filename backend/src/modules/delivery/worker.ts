@@ -1,5 +1,5 @@
 
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient, DeliveryState } from "@prisma/client";
 import { serializableTransaction } from "../../db/transaction.js";
 import { lockScreens } from "../reservations/core.js";
 import { HttpError } from "../../lib/http-error.js";
@@ -17,7 +17,7 @@ export async function reconcileDeliveryPlans(db:PrismaClient,limit=100):Promise<
    if(!old||!["SCHEDULED","ACTIVE"].includes(old.state))return false;
    await lockScreens(tx,old.windows.map(w=>w.screenId));
    const now=new Date();
-   let next=effectiveDeliveryState(old.windows,now);
+   let next:DeliveryState=effectiveDeliveryState(old.windows,now);
    if(next!=="COMPLETED"){
     try{await deliveryEvidence(tx,old.reservationHoldId,now);}
     catch(e){
