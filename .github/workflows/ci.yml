@@ -35,7 +35,7 @@ jobs:
         run: npm run build
 
   backend-verify:
-    name: Express B19 tax invoices, refunds and provider reconciliation
+    name: Express B20 support, maintenance and leased-notification jobs
     runs-on: ubuntu-latest
     permissions:
       contents: read
