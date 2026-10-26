@@ -4825,6 +4825,199 @@
             "type": "integer"
           }
         }
+      },
+      "B21Report": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "period",
+          "counts",
+          "financial",
+          "currency",
+          "definition",
+          "limitations"
+        ],
+        "properties": {
+          "period": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "counts": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer"
+            }
+          },
+          "financial": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$"
+            }
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "INR"
+            ]
+          },
+          "definition": {
+            "type": "string"
+          },
+          "limitations": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      },
+      "B21AdminAccount": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "displayName",
+          "email",
+          "role",
+          "status",
+          "verified",
+          "createdAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "admin",
+              "advertiser",
+              "driver"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "active",
+              "suspended",
+              "closed"
+            ]
+          },
+          "verified": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "B21StatusInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "expectedStatus",
+          "status",
+          "reason"
+        ],
+        "properties": {
+          "expectedStatus": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "SUSPENDED"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "SUSPENDED"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 20,
+            "maxLength": 500
+          }
+        }
+      },
+      "B21StatusDecision": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "administratorUserId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string"
+          },
+          "previousStatus": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "B21Audit": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "actorUserId",
+          "action",
+          "resourceType",
+          "resourceId",
+          "createdAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "actorUserId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "action": {
+            "type": "string"
+          },
+          "resourceType": {
+            "type": "string"
+          },
+          "resourceId": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
       }
     },
     "responses": {
@@ -10978,9 +11171,10 @@
           "Reports"
         ],
         "operationId": "getAdminReport",
-        "summary": "Read Admin aggregate operational report",
-        "description": "Read Admin aggregate operational report B0 contract only; no runtime handler exists yet.",
+        "summary": "Read verified PostgreSQL operational and monetary KPI report",
+        "description": "B21 MFA-only admin record, export, status decision and audit contract. No raw secrets or protected body metadata.",
         "x-backend-phase": "B21",
+        "x-implementation-status": "implemented-b21",
         "x-access-roles": [
           "admin"
         ],
@@ -10992,7 +11186,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful authoritative response",
+            "description": "Bounded authorized result",
             "content": {
               "application/json": {
                 "schema": {
@@ -11000,12 +11194,12 @@
                   "required": [
                     "data"
                   ],
+                  "additionalProperties": true,
                   "properties": {
                     "data": {
-                      "$ref": "#/components/schemas/Report"
+                      "$ref": "#/components/schemas/B21Report"
                     }
-                  },
-                  "additionalProperties": false
+                  }
                 }
               }
             }
@@ -11034,7 +11228,10 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        }
+        },
+        "parameters": [],
+        "x-csrf-required": false,
+        "x-idempotency-required": false
       }
     },
     "/admin/accounts": {
@@ -11212,9 +11409,10 @@
           "Audit"
         ],
         "operationId": "listAuditEvents",
-        "summary": "Read restricted audit events",
-        "description": "Read restricted audit events B0 contract only; no runtime handler exists yet.",
+        "summary": "Read redacted immutable admin audit events",
+        "description": "B21 MFA-only admin record, export, status decision and audit contract. No raw secrets or protected body metadata.",
         "x-backend-phase": "B21",
+        "x-implementation-status": "implemented-b21",
         "x-access-roles": [
           "admin"
         ],
@@ -11226,7 +11424,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful authoritative response",
+            "description": "Bounded authorized result",
             "content": {
               "application/json": {
                 "schema": {
@@ -11234,18 +11432,15 @@
                   "required": [
                     "data"
                   ],
+                  "additionalProperties": true,
                   "properties": {
                     "data": {
                       "type": "array",
                       "items": {
-                        "$ref": "#/components/schemas/AuditEvent"
+                        "$ref": "#/components/schemas/B21Audit"
                       }
-                    },
-                    "meta": {
-                      "$ref": "#/components/schemas/CursorMeta"
                     }
-                  },
-                  "additionalProperties": false
+                  }
                 }
               }
             }
@@ -11277,12 +11472,14 @@
         },
         "parameters": [
           {
-            "$ref": "#/components/parameters/Cursor"
+            "$ref": "#/components/parameters/Limit"
           },
           {
-            "$ref": "#/components/parameters/Limit"
+            "$ref": "#/components/parameters/Cursor"
           }
-        ]
+        ],
+        "x-csrf-required": false,
+        "x-idempotency-required": false
       }
     },
     "/auth/mfa/challenge": {
@@ -18708,6 +18905,388 @@
             }
           }
         }
+      }
+    },
+    "/admin/reports/export": {
+      "get": {
+        "tags": [
+          "Reports"
+        ],
+        "operationId": "exportAdminReportCsv",
+        "summary": "Download bounded formula-safe and audited KPI CSV",
+        "description": "B21 MFA-only admin record, export, status decision and audit contract. No raw secrets or protected body metadata.",
+        "x-backend-phase": "B21",
+        "x-implementation-status": "implemented-b21",
+        "x-access-roles": [
+          "admin"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bounded authorized result",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "parameters": [],
+        "x-csrf-required": false,
+        "x-idempotency-required": false
+      }
+    },
+    "/admin/users": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "operationId": "listAdminAccounts",
+        "summary": "Search paginated administrative account roster",
+        "description": "B21 MFA-only admin record, export, status decision and audit contract. No raw secrets or protected body metadata.",
+        "x-backend-phase": "B21",
+        "x-implementation-status": "implemented-b21",
+        "x-access-roles": [
+          "admin"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bounded authorized result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": true,
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/B21AdminAccount"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Limit"
+          },
+          {
+            "$ref": "#/components/parameters/Cursor"
+          }
+        ],
+        "x-csrf-required": false,
+        "x-idempotency-required": false
+      }
+    },
+    "/admin/users/{userId}/status": {
+      "patch": {
+        "tags": [
+          "Admin"
+        ],
+        "operationId": "adminChangeUserStatus",
+        "summary": "Audited idempotent suspension or reactivation, never role change",
+        "description": "B21 MFA-only admin record, export, status decision and audit contract. No raw secrets or protected body metadata.",
+        "x-backend-phase": "B21",
+        "x-implementation-status": "implemented-b21",
+        "x-access-roles": [
+          "admin"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bounded authorized result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": true,
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/B21StatusDecision"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "x-csrf-required": true,
+        "x-idempotency-required": true,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/B21StatusInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/users/{userId}/decisions": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "operationId": "listAccountStatusDecisions",
+        "summary": "Read append-only account status decision history",
+        "description": "B21 MFA-only admin record, export, status decision and audit contract. No raw secrets or protected body metadata.",
+        "x-backend-phase": "B21",
+        "x-implementation-status": "implemented-b21",
+        "x-access-roles": [
+          "admin"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bounded authorized result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": true,
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/B21StatusDecision"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          },
+          {
+            "$ref": "#/components/parameters/Cursor"
+          }
+        ],
+        "x-csrf-required": false,
+        "x-idempotency-required": false
+      }
+    },
+    "/admin/audit-events/export": {
+      "get": {
+        "tags": [
+          "Audit"
+        ],
+        "operationId": "exportAdminAuditCsv",
+        "summary": "Download bounded and audited redacted audit CSV",
+        "description": "B21 MFA-only admin record, export, status decision and audit contract. No raw secrets or protected body metadata.",
+        "x-backend-phase": "B21",
+        "x-implementation-status": "implemented-b21",
+        "x-access-roles": [
+          "admin"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bounded authorized result",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "parameters": [],
+        "x-csrf-required": false,
+        "x-idempotency-required": false
       }
     }
   }
