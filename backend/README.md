@@ -38,3 +38,8 @@ See [B16 implementation](../docs/backend/B16_IMPLEMENTATION.md). Positive produc
 ## Backend B17: consent-led trip GPS and playback evidence
 
 See [B17 implementation](../docs/backend/B17_IMPLEMENTATION.md). Production GPS requires documented D09 privacy approval and purpose-specific consent; raw samples are purged using the protected `gps:purge` job. Counted events are authenticated device reports, **not verified human impressions**.
+
+
+## B18 reviewed earnings, immutable ledger and verified payouts
+
+See [B18 implementation](../docs/backend/B18_IMPLEMENTATION.md). Financial policy and D05/D07 approvals are required to activate production payouts. B17 device telemetry never auto-generates payable impressions; an MFA Admin independently reviews service evidence. A configured payout provider must independently confirm transfers before settlement is marked PAID. Never store raw bank details or call these simulated transfers live settlement.
