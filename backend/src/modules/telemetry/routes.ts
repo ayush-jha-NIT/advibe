@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { Prisma, type PrismaClient } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { Router,type Request,type Response,type NextFunction } from "express";
 import { z } from "zod";
 import type { AppConfig } from "../../config/env.js";
