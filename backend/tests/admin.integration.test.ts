@@ -42,7 +42,7 @@ test("B21 MFA admin reports, least-privileged user status changes and audit expo
    emailVerifiedAt:name==="unverified"?null:new Date(),
    passwordHash:hash,role:name==="admin"||name==="secondadmin"?"ADMIN":
     name==="driver"?"DRIVER":"ADVERTISER"}})));
- const [administrator,secondAdmin,driver,advertiser,unverified]=users as
+ const [administrator,secondAdmin,driver,,unverified]=users as
   [User,User,User,User,User];
  for(const user of [administrator,secondAdmin]){
   await db.adminMfaCredential.create({data:{userId:user.id,
