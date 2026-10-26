@@ -1254,7 +1254,7 @@ enum ReconciliationState {
 }
 
 model FinanceInvoiceSequence {
-  financialYear String @id @db.VarChar(4)
+  financialYear String @id @db.VarChar(8)
   nextNumber Int @default(1)
 }
 
