@@ -49,7 +49,7 @@ test("B16 signed device playlists, heartbeat claims and immediate pause/revocati
   }});
   return {cookie:"advibe_dev_session="+token,csrf:mac(settings,"csrf",hashToken(token))};
  }));
- const [alice,,staff]=credentials as Auth[];
+ const [alice,,staff]=credentials as [Auth,Auth,Auth,Auth];
  const business=await db.business.create({data:{
   ownerUserId:owner.id,slug:"b16-"+seed,displayName:"B16 Agency"}});
  const otherBusiness=await db.business.create({data:{
