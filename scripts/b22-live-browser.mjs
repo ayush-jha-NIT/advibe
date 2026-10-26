@@ -91,8 +91,10 @@ try{
    assert.ok(mutations.some(x=>x.path.endsWith("/read")));
   }else{
    await ensure(page,"/advertiser/create-campaign");
-   await page.getByLabel("Business",{exact:true}).selectOption(ownerId);
-   await page.getByLabel("Approved or uploaded creative").selectOption(creativeId);
+   console.log("Advertiser creation route:",page.url(),"content:",(await page.locator("body").innerText()).slice(0,1100));
+   await page.getByRole("button",{name:"Save campaign draft"}).waitFor({timeout:15000});
+   await page.locator("select").first().selectOption(ownerId);
+   await page.locator("select").nth(1).selectOption(creativeId);
    await page.getByLabel("Campaign title").fill("Example verified draft");
    await page.getByLabel("Start").fill("2027-01-12");
    await page.getByLabel("End (within 60 days)").fill("2027-01-19");
