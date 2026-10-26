@@ -66,7 +66,7 @@ async function authenticateDevice(req:Request,db:PrismaClient){
     throw new HttpError(401,"DEVICE_AUTH_REQUIRED","Invalid device signature");
   return {credential,nonce};
 }
-async function performSigned<T>(req:Request,db:PrismaClient,
+export async function performSigned<T>(req:Request,db:PrismaClient,
   action:(tx:Prisma.TransactionClient,cred:DeviceCredential)=>Promise<T>):Promise<T>{
   const {credential,nonce}=await authenticateDevice(req,db);
   return serializableTransaction(db,async tx=>{
