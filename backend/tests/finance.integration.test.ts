@@ -309,7 +309,7 @@ test("B19 issued immutable tax documents, refund safety, provider reconciliation
   assert.equal(allNotes.reduce((sum,x)=>sum+x.taxablePaise,0n),stored.taxablePaise);
   assert.equal((await post("/admin/refunds",refundInput,staff,"b19-overrefund-"+seed)).status,409);
   assert.equal((await get("/payments/orders/"+firstOrder.id+"/refunds",bob)).status,404);
-  const ownRefunds=(await (await get("/payments/orders/"+firstOrder.id+"/refunds",alice)).json()
+  const ownRefunds=((await (await get("/payments/orders/"+firstOrder.id+"/refunds",alice)).json())
    as {data:Array<{status:string;providerRefundId?:string}>}).data;
   assert.equal(ownRefunds.length,2);
   assert.equal(ownRefunds[0]?.providerRefundId,undefined);
