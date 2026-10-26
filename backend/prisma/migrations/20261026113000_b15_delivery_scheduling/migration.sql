@@ -36,6 +36,7 @@ CREATE TABLE "DeliveryWindow" (
  CONSTRAINT "DeliveryWindow_duration_check" CHECK("startsAt"<"endsAt")
 );
 CREATE UNIQUE INDEX "DeliveryWindow_planId_screenId_serviceDate_key" ON "DeliveryWindow"("planId","screenId","serviceDate");
+CREATE UNIQUE INDEX "DeliveryWindow_holdId_screenId_serviceDate_key" ON "DeliveryWindow"("holdId","screenId","serviceDate");
 CREATE INDEX "DeliveryWindow_screenId_startsAt_endsAt_idx" ON "DeliveryWindow"("screenId","startsAt","endsAt");
 CREATE INDEX "DeliveryWindow_planId_startsAt_idx" ON "DeliveryWindow"("planId","startsAt");
 CREATE FUNCTION b15_validate_plan() RETURNS trigger LANGUAGE plpgsql AS $$

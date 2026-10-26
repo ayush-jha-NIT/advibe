@@ -1009,6 +1009,7 @@ model DeliveryWindow {
   plan              DeliveryPlan    @relation(fields:[planId],references:[id],onDelete:Restrict)
   item              ReservationHoldItem @relation(fields:[holdId,screenId,serviceDate],references:[holdId,screenId,serviceDate],onDelete:Restrict)
   @@unique([planId,screenId,serviceDate])
+  @@unique([holdId,screenId,serviceDate])
   @@index([screenId,startsAt,endsAt])
   @@index([planId,startsAt])
 }
