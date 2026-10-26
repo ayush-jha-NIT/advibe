@@ -752,6 +752,7 @@ model PriceQuote {
   expiresAt         DateTime  @db.Timestamptz(6)
   business          Business  @relation(fields: [businessId], references: [id], onDelete: Restrict)
   reservationHolds  ReservationHold[]
+  paymentOrders     PaymentOrder[]
 
   @@index([businessId, createdAt, id])
   @@index([expiresAt])
@@ -798,6 +799,7 @@ model Campaign {
   creative        Creative      @relation(fields: [creativeId, ownerBusinessId], references: [id, ownerBusinessId], onDelete: Restrict)
   submissions     CampaignSubmission[]
   reservationHolds ReservationHold[]
+  paymentOrders PaymentOrder[]
 
   @@index([ownerBusinessId, createdAt, id])
   @@index([status, submittedAt, id])
