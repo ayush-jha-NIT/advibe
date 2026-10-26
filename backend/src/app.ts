@@ -25,6 +25,7 @@ import { createDeliveryRouter } from "./modules/delivery/routes.js";
 import { createTelemetryRouter } from "./modules/telemetry/routes.js";
 import { createEarningsRoutes,type EarningsDependencies } from "./modules/earnings/routes.js";
 import { createFinanceRouter,type FinanceDependencies } from "./modules/finance/routes.js";
+import { createSupportRouter } from "./modules/support/routes.js";
 
 /** Every live API server supplies a database probe; omitted probes fail closed. */
 export function createApp(
@@ -75,6 +76,7 @@ export function createApp(
     app.use("/api/v1", createTelemetryRouter(config, auth));
     if(earningsRoutes)app.use("/api/v1",earningsRoutes.api);
     app.use("/api/v1",createFinanceRouter(config,auth,finance));
+    app.use("/api/v1",createSupportRouter(config,auth));
     app.use("/api/v1", createGeoRouter(config, auth));
     app.use("/api/v1", createCreativeRouter(config, auth, creative));
     app.use("/api/v1", createPricingAdminRouter(config, auth));
@@ -87,7 +89,7 @@ export function createApp(
     app.use("/api/v1", createAccountsRouter(config, auth,
       verifyCaptcha ?? createTurnstileVerifier()));
   }
-  // B20-B23 add support, admin reports, integration and production release; demo remains isolated.
+  // B21-B23 add admin reports, portal API migration and production release; demo remains isolated.
   app.use(notFound);
   app.use(errorHandler(logger));
   return app;
