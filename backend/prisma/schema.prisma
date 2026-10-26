@@ -81,6 +81,11 @@ model User {
   mfaChallenges   MfaLoginChallenge[]
   driverApplications DriverApplication[]
   driverVehicles  Vehicle[]
+  earningPolicies EarningPolicy[]
+  earningReviews DriverEarning[] @relation("EarningReviewer")
+  driverEarnings DriverEarning[] @relation("EarningDriver")
+  driverSettlements DriverSettlement[] @relation("SettlementDriver")
+  driverBeneficiaries PayoutBeneficiary[]
   gpsConsents GpsConsent[]
   reviewedKycDocuments DriverDocument[] @relation("DocumentReviewer")
   driverReviewDecisions DriverApplicationReview[] @relation("ApplicationReviewer")
@@ -1086,6 +1091,7 @@ model PlaybackProof {
   slotBucket DateTime @db.Timestamptz(6)
   methodVersion String @default("b17-v1") @db.VarChar(40)
   createdAt DateTime @default(now()) @db.Timestamptz(6)
+  earning DriverEarning?
   trip TripSession @relation(fields:[tripId],references:[id],onDelete:Restrict)
   credential DeviceCredential @relation(fields:[credentialId],references:[id],onDelete:Restrict)
   @@unique([credentialId,eventId])
@@ -1105,4 +1111,110 @@ model ExposureAggregate {
   updatedAt DateTime @updatedAt @db.Timestamptz(6)
   @@unique([campaignId,zoneId,serviceDate,methodVersion])
   @@index([businessId,serviceDate])
+}
+
+
+// B18 financial commitments are authorized participation reviews, not automatic B17 ad views.
+enum SettlementState { READY PAYOUT_PENDING PAID NEEDS_REVIEW }
+enum PayoutState { QUEUED SUBMITTED PAID NEEDS_REVIEW }
+enum BeneficiaryState { VERIFIED REJECTED }
+enum DriverLedgerKind { EARNING PAYOUT }
+
+model EarningPolicy {
+ id String @id @default(uuid()) @db.Uuid
+ version String @unique @db.VarChar(80)
+ paisePerReviewedEvent BigInt @db.BigInt
+ activatedByUserId String @db.Uuid
+ createdAt DateTime @default(now()) @db.Timestamptz(6)
+ activatedBy User @relation(fields:[activatedByUserId],references:[id],onDelete:Restrict)
+ earnings DriverEarning[]
+}
+
+model DriverEarning {
+ id String @id @default(uuid()) @db.Uuid
+ driverUserId String @db.Uuid
+ sourceProofId String @unique @db.Uuid
+ policyId String @db.Uuid
+ reviewedByUserId String @db.Uuid
+ evidenceReference String @db.VarChar(140)
+ amountPaise BigInt @db.BigInt
+ settlementId String? @db.Uuid
+ createdAt DateTime @default(now()) @db.Timestamptz(6)
+ driver User @relation("EarningDriver",fields:[driverUserId],references:[id],onDelete:Restrict)
+ proof PlaybackProof @relation(fields:[sourceProofId],references:[id],onDelete:Restrict)
+ policy EarningPolicy @relation(fields:[policyId],references:[id],onDelete:Restrict)
+ reviewer User @relation("EarningReviewer",fields:[reviewedByUserId],references:[id],onDelete:Restrict)
+ settlement DriverSettlement? @relation(fields:[settlementId],references:[id],onDelete:Restrict)
+ ledger DriverLedgerEntry?
+ @@index([driverUserId,settlementId,createdAt])
+ @@index([settlementId])
+}
+
+model DriverLedgerEntry {
+ id String @id @default(uuid()) @db.Uuid
+ driverUserId String @db.Uuid
+ kind DriverLedgerKind
+ amountPaise BigInt @db.BigInt
+ earningId String? @unique @db.Uuid
+ payoutId String? @unique @db.Uuid
+ createdAt DateTime @default(now()) @db.Timestamptz(6)
+ earning DriverEarning? @relation(fields:[earningId],references:[id],onDelete:Restrict)
+ payout DriverPayout? @relation(fields:[payoutId],references:[id],onDelete:Restrict)
+ @@index([driverUserId,createdAt,id])
+}
+
+model DriverSettlement {
+ id String @id @default(uuid()) @db.Uuid
+ driverUserId String @db.Uuid
+ periodStart DateTime @db.Date
+ periodEnd DateTime @db.Date
+ grossPaise BigInt @db.BigInt
+ state SettlementState @default(READY)
+ createdAt DateTime @default(now()) @db.Timestamptz(6)
+ paidAt DateTime? @db.Timestamptz(6)
+ driver User @relation("SettlementDriver",fields:[driverUserId],references:[id],onDelete:Restrict)
+ earnings DriverEarning[]
+ payout DriverPayout?
+ @@unique([driverUserId,periodStart,periodEnd])
+ @@index([driverUserId,state,createdAt])
+}
+
+model PayoutBeneficiary {
+ id String @id @default(uuid()) @db.Uuid
+ driverUserId String @db.Uuid
+ provider String @db.VarChar(32)
+ providerToken String @db.VarChar(160)
+ state BeneficiaryState
+ verifiedAt DateTime?
+ createdAt DateTime @default(now()) @db.Timestamptz(6)
+ driver User @relation(fields:[driverUserId],references:[id],onDelete:Restrict)
+ payouts DriverPayout[]
+ @@unique([driverUserId,provider,providerToken])
+ @@index([driverUserId,state])
+}
+
+model DriverPayout {
+ id String @id @default(uuid()) @db.Uuid
+ settlementId String @unique @db.Uuid
+ beneficiaryId String @db.Uuid
+ providerReference String @unique @db.VarChar(100)
+ amountPaise BigInt @db.BigInt
+ state PayoutState @default(QUEUED)
+ createdAt DateTime @default(now()) @db.Timestamptz(6)
+ paidAt DateTime? @db.Timestamptz(6)
+ settlement DriverSettlement @relation(fields:[settlementId],references:[id],onDelete:Restrict)
+ beneficiary PayoutBeneficiary @relation(fields:[beneficiaryId],references:[id],onDelete:Restrict)
+ ledger DriverLedgerEntry?
+ webhookEvents PayoutWebhookEvent[]
+ @@index([state,createdAt])
+}
+
+model PayoutWebhookEvent {
+ id String @id @default(uuid()) @db.Uuid
+ payoutId String @db.Uuid
+ eventHash String @unique @db.Char(64)
+ eventType String @db.VarChar(64)
+ receivedAt DateTime @default(now()) @db.Timestamptz(6)
+ payout DriverPayout @relation(fields:[payoutId],references:[id],onDelete:Restrict)
+ @@index([payoutId,receivedAt])
 }
