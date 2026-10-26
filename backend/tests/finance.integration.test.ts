@@ -316,7 +316,7 @@ test("B19 issued immutable tax documents, refund safety, provider reconciliation
   assert.equal((await get("/payments/orders/"+firstOrder.id+"/credit-notes",alice)).status,200);
   assert.equal((await get("/admin/finance/reconciliation",alice)).status,403);
   const good=await post("/admin/finance/reconcile/"+firstOrder.id,{},staff);
-  assert.equal(good.status,200,JSON.stringify(await good.json()));
+  assert.equal(good.status,200);
   const checked=(await good.json() as {data:{state:string;confirmedRefundsPaise:number}}).data;
   assert.equal(checked.state,"matched");
   assert.equal(checked.confirmedRefundsPaise,18700);
