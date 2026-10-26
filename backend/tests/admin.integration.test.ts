@@ -81,10 +81,10 @@ test("B21 MFA admin reports, least-privileged user status changes and audit expo
   assert.equal((await get("/admin/users?limit=99",staff)).status,422);
   assert.equal((await get("/admin/users?cursor=not-a-uuid",staff)).status,422);
   assert.equal((await get("/admin/users?role=OWNER",staff)).status,422);
-  const usersList=await get("/admin/users?search=b21-"+tag,staff);
+  const usersList=await get("/admin/users?search=b21-",staff);
   assert.equal(usersList.status,200);
   const visible=(await usersList.json() as {data:Array<Record<string,unknown>>}).data;
-  assert.ok(Array.isArray(visible));
+  assert.ok(visible.length>=5);
   assert.ok(visible.every(x=>!Object.hasOwn(x,"passwordHash")&&
    !Object.hasOwn(x,"mfaCredential")&&!Object.hasOwn(x,"session")));
   const suspended={expectedStatus:"ACTIVE",status:"SUSPENDED",
@@ -100,7 +100,7 @@ test("B21 MFA admin reports, least-privileged user status changes and audit expo
   assert.equal((await patch("/admin/users/"+driver.id+"/status",staff,
    {...suspended,reason:"short"},"b21-short-"+tag)).status,422);
   const created=await patch(changePath,staff,suspended,"b21-suspend-"+tag);
-  assert.equal(created.status,200,JSON.stringify(await created.json()));
+  assert.equal(created.status,200);
   const decision=(await created.json() as {data:{id:string;status:string}}).data;
   assert.equal(decision.status,"suspended");
   assert.equal((await db.user.findUniqueOrThrow({where:{id:driver.id}})).status,"SUSPENDED");
