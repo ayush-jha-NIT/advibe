@@ -18972,7 +18972,7 @@
         "tags": [
           "Admin"
         ],
-        "operationId": "listAdminAccounts",
+        "operationId": "listAdminUserRosterV21",
         "summary": "Search paginated administrative account roster",
         "description": "B21 MFA-only admin record, export, status decision and audit contract. No raw secrets or protected body metadata.",
         "x-backend-phase": "B21",
