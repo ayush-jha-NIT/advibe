@@ -172,7 +172,7 @@ export function createFinanceRouter(config:AppConfig,auth:AuthDependencies,
     if(BigInt(input.amountPaise)>order.amountPaise-allocated)
      throw new HttpError(409,"REFUND_EXCEEDS_PAYMENT","Total refunds exceed verified collected funds");
     const row=await tx.paymentRefund.create({data:{
-     paymentOrderId:order.id,providerRefundId:"adv_b19_"+randomUUID().replaceAll("-",""),
+     paymentOrderId:order.id,providerRefundId:"advb19"+randomUUID().replaceAll("-",""),
      amountPaise:BigInt(input.amountPaise),reason:input.reason,
      policyReference:input.policyReference,reviewedByUserId:p.userId}});
     await tx.auditEvent.create({data:{actorUserId:p.userId,
