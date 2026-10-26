@@ -117,7 +117,7 @@ test("B0–B8 documentation preserves production safety gates",()=>{
  for(const topic of ["idempotency","exclusion","private","webhook","retention","settlement"])
   assert.match(blueprint,new RegExp(topic,"i"),"Missing DB risk topic "+topic);
  const runtime=read("backend/README.md");
- assert.match(runtime,/backend B8: device identity and secure pairing/,"B8 runtime must be documented");
+ assert.match(runtime,/Backend B8: device provisioning and secure pairing/,"B8 runtime must be documented");
  const b2Doc=read("docs/backend/B2_IMPLEMENTATION.md");
  const b3Doc=read("docs/backend/B3_IMPLEMENTATION.md");
  const b4Doc=read("docs/backend/B4_IMPLEMENTATION.md");

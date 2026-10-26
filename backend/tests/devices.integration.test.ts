@@ -84,7 +84,7 @@ test("B8 approved screen, key possession pairing, signed heartbeats and revocati
     assert.equal((await send("POST","/admin/devices/screens",driverSession,provision,"no-"+seed)).status,403);
     assert.equal((await send("POST","/admin/devices/screens",adminSession,provision,"no-csrf-"+seed,false)).status,403);
     assert.equal((await send("POST","/admin/devices/screens",adminSession,
-      {...provision,vehicleId:otherVehicle.id},"foreign-"+seed)).status,409);
+      {...provision,vehicleId:otherVehicle.id,placement:"bike_rear"},"foreign-"+seed)).status,409);
     assert.equal((await send("POST","/admin/devices/screens",adminSession,
       {...provision,placement:"bike_rear"},"bad-place-"+seed)).status,422);
     assert.equal((await send("POST","/admin/devices/screens",adminSession,provision)).status,422);
