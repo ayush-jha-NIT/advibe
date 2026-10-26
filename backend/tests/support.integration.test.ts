@@ -139,7 +139,7 @@ test("B20 support RBAC, maintenance, durable notifications, lease/retry/dead let
   assert.equal((await patch("/admin/maintenance/"+caseFile.id,driverAuth,{
    expectedState:"OPEN",state:"IN_PROGRESS"})).status,403);
   assert.equal((await patch("/admin/maintenance/"+caseFile.id,adminAuth,{
-   expectedState:"OPEN",state:"RESOLVED"})).status,409);
+   expectedState:"OPEN",state:"RESOLVED"})).status,422);
   assert.equal((await patch("/admin/maintenance/"+caseFile.id,adminAuth,{
    expectedState:"OPEN",state:"IN_PROGRESS"})).status,200);
   assert.equal((await patch("/admin/maintenance/"+caseFile.id,adminAuth,{
