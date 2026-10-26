@@ -1,4 +1,8 @@
 import { Prisma, type PrismaClient, type DeviceCredential } from "@prisma/client";
+import type { PlayerDependencies } from "./player.js";
+import { issuePlaylist } from "./player.js";
+import { createCreativeStorage } from "../creatives/storage.js";
+import { lockScreens } from "../reservations/core.js";
 import { Router, type Request, type Response, type NextFunction } from "express";
 import { z } from "zod";
 import type { AppConfig } from "../../config/env.js";
@@ -66,6 +70,7 @@ async function performSigned<T>(req:Request,db:PrismaClient,
   action:(tx:Prisma.TransactionClient,cred:DeviceCredential)=>Promise<T>):Promise<T>{
   const {credential,nonce}=await authenticateDevice(req,db);
   return serializableTransaction(db,async tx=>{
+    await lockScreens(tx,[credential.screenId]);
     const latest=await tx.deviceCredential.findUnique({where:{id:credential.id},include:{screen:true}});
     if(!latest||latest.revokedAt||latest.screen.state!=="PAIRED")
       throw new HttpError(401,"DEVICE_REVOKED","Device identity revoked");
@@ -79,7 +84,7 @@ async function performSigned<T>(req:Request,db:PrismaClient,
   });
 }
 
-export function createDeviceRouter(config:AppConfig,auth:AuthDependencies):Router{
+export function createDeviceRouter(config:AppConfig,auth:AuthDependencies,player:PlayerDependencies={}):Router{
   const {db,settings}=auth;const router=Router();
   const admin=async(req:Request)=>{
     const p=await resolvePrincipal(req,db,settings);requireRole(p,"ADMIN");return p;
@@ -207,13 +212,27 @@ export function createDeviceRouter(config:AppConfig,auth:AuthDependencies):Route
   }));
   router.get("/devices/manifest",handle(async(req,res)=>{
     const result=await performSigned(req,db,async(tx,cred)=>{
-      const m=await tx.deviceManifestVersion.findFirst({where:{screenId:cred.screenId,
-        expiresAt:{gt:new Date()}},orderBy:{version:"desc"}});
-      if(!m)throw new HttpError(503,"MANIFEST_UNAVAILABLE","No valid signed manifest");
-      return {screenId:m.screenId,version:m.version,
-        expiresAt:m.expiresAt.toISOString(),entries:[],signature:m.signature};
+      return issuePlaylist(tx,cred,config,player.media??createCreativeStorage());
     });
-    res.set("Cache-Control","no-store").json({data:result});
+    res.set("Cache-Control","no-store, max-age=0").json({data:result});
+  }));
+  router.get("/admin/devices/:screenId/player-status",handle(async(req,res)=>{
+    await admin(req);
+    const screenId=id(req,"screenId");
+    const screen=await db.screen.findUnique({where:{id:screenId}});
+    if(!screen)throw new HttpError(404,"NOT_FOUND","Screen unavailable");
+    const credential=await db.deviceCredential.findUnique({where:{screenId}});
+    const last=credential?await db.deviceHeartbeat.findFirst({where:{
+      credentialId:credential.id},orderBy:[{receivedAt:"desc"},{id:"desc"}]}):null;
+    res.set("Cache-Control","no-store").json({data:{
+      screenId,state:screen.state.toLowerCase(),paired:!!credential&&!credential.revokedAt,
+      lastTrustedHeartbeatAt:last?.receivedAt.toISOString()??null,
+      deviceObservedAt:last?.observedAt.toISOString()??null,
+      firmwareVersion:last?.firmwareVersion??null,
+      reportedPlaybackState:last?.playbackState?.toLowerCase()??null,
+      reportedManifestVersion:last?.manifestVersion??null,
+      verifiedImpressions:0,
+    }});
   }));
   router.post("/devices/heartbeat",validateBody(heartbeatInput),handle(async(req,res)=>{
     const input=heartbeatInput.parse(req.body);
@@ -222,9 +241,26 @@ export function createDeviceRouter(config:AppConfig,auth:AuthDependencies):Route
       throw new HttpError(422,"STALE_HEARTBEAT","Heartbeat too old");
     const eventId=await performSigned(req,db,async(tx,cred)=>{
       if(input.screenId!==cred.screenId)throw new HttpError(403,"DEVICE_SCREEN_MISMATCH","Wrong screen");
+      if(input.playbackState==="PLAYING"||input.manifestVersion!==undefined){
+        if(!input.manifestVersion)
+          throw new HttpError(422,"PLAYER_MANIFEST_REQUIRED","Playback requires manifest version");
+        const manifest=await tx.deviceManifestVersion.findUnique({where:{
+          screenId_version:{screenId:cred.screenId,version:input.manifestVersion}}});
+        if(!manifest||manifest.expiresAt<observedAt)
+          throw new HttpError(409,"PLAYER_MANIFEST_EXPIRED","Manifest missing or expired");
+        if(input.playbackState==="PLAYING"){
+          if(manifest.expiresAt<=new Date()||!Array.isArray(manifest.entries)||!manifest.entries.length)
+            throw new HttpError(409,"PLAYER_NOT_AUTHORIZED","Current nonempty manifest required");
+          const count=await tx.deliveryWindow.count({where:{
+            screenId:cred.screenId,startsAt:{lte:observedAt},endsAt:{gt:observedAt},
+            plan:{state:"ACTIVE"}}});
+          if(!count)throw new HttpError(409,"PLAYER_NOT_AUTHORIZED","Delivery is not active");
+        }
+      }
       try{
         const row=await tx.deviceHeartbeat.create({data:{credentialId:cred.id,
-          deviceEventId:input.deviceEventId,observedAt,firmwareVersion:input.firmwareVersion}});
+          deviceEventId:input.deviceEventId,observedAt,firmwareVersion:input.firmwareVersion,
+          manifestVersion:input.manifestVersion,playbackState:input.playbackState}});
         return row.id;
       }catch(e){
         if(e instanceof Prisma.PrismaClientKnownRequestError&&e.code==="P2002")
