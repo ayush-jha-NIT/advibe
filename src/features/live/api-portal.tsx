@@ -127,7 +127,7 @@ function CampaignForm({session,onDone}:{session:LiveSession;onDone:()=>void}){
    const result=await api<{id:string}>("/campaigns",{method:"POST",
     csrfToken:session.csrfToken,idempotencyKey:newIdempotencyKey(),
     body:{businessId,creativeId,title,startDate:from,endDate:to,weekdays:days}});
-   onDone();location.assign("/advertiser/campaigns/"+result.id);
+   onDone();window.location.href="/advertiser/campaigns/"+result.id;
   }catch(err){setError(err instanceof Error?err.message:"Campaign creation failed");}
   finally{setSaving(false);}
  }
@@ -182,7 +182,8 @@ export function ApiPortal({role}:{role:PortalRole}){
  const [authError,setAuthError]=React.useState("");
  const [loading,setLoading]=React.useState(true),[error,setError]=React.useState("");
  const [data,setData]=React.useState<Result>({rows:[],summary:null,nextCursor:null});
- const [cursor,setCursor]=React.useState(""),[refresh,setRefresh]=React.useState(0);
+ const [cursor,setCursor]=React.useState(""),[cursorPath,setCursorPath]=React.useState(""),[refresh,setRefresh]=React.useState(0);
+ const activeCursor=cursorPath===pathname?cursor:"";
  const [selected,setSelected]=React.useState<Row|null>(null);
  const [busy,setBusy]=React.useState(false);
  const section=pathname.split("/")[2]??"home";
@@ -196,13 +197,12 @@ export function ApiPortal({role}:{role:PortalRole}){
   .finally(()=>{if(!ac.signal.aborted)setLoading(false);});
   return ()=>ac.abort();
  },[role]);
- React.useEffect(()=>{setCursor("");setSelected(null);},[endpoint,pathname]);
  React.useEffect(()=>{
   if(!session||!endpoint)return;
   const ac=new AbortController();
   Promise.resolve().then(()=>{
    setLoading(true);setError("");
-   const url=endpoint+(cursor?(endpoint.includes("?")?"&":"?")+"cursor="+cursor:"");
+   const url=endpoint+(activeCursor?(endpoint.includes("?")?"&":"?")+"cursor="+activeCursor:"");
    return apiPage<Row>(url,ac.signal).then(payload=>{
     if(!ac.signal.aborted){
      const result=meaningfulRows(payload.data);
@@ -212,7 +212,7 @@ export function ApiPortal({role}:{role:PortalRole}){
   }).catch(e=>{if(!ac.signal.aborted){setError(e instanceof Error?e.message:"Live data unavailable");setData({rows:[],summary:null,nextCursor:null});}})
   .finally(()=>{if(!ac.signal.aborted)setLoading(false);});
   return ()=>ac.abort();
- },[session,endpoint,cursor,refresh]);
+ },[session,endpoint,activeCursor,refresh]);
  async function signOut(){
   if(!session)return;
   setBusy(true);
@@ -260,7 +260,7 @@ export function ApiPortal({role}:{role:PortalRole}){
   </header>
   <div className="mx-auto flex max-w-[1500px] flex-col md:flex-row">
    <nav aria-label={role+" portal navigation"} className="flex max-h-[220px] gap-1 overflow-auto border-b border-blue-100 bg-[#092b53] p-3 text-white md:sticky md:top-[64px] md:h-[calc(100dvh-64px)] md:max-h-none md:w-60 md:min-w-60 md:flex-col md:border-r md:border-b-0">
-    {nav.map(item=><Link key={item.href} href={item.href}
+    {nav.map(item=><Link key={item.href} href={item.href} onClick={()=>{setSelected(null);setCursor("");setCursorPath(item.href);}}
      className={"shrink-0 rounded-lg px-3 py-2.5 text-xs font-semibold hover:bg-[#285784] "+(pathname===item.href?"bg-[#1768d3]":"")}
      aria-current={pathname===item.href?"page":undefined}>{item.label}</Link>)}
    </nav>
@@ -281,8 +281,8 @@ export function ApiPortal({role}:{role:PortalRole}){
      <>{data.summary&&<SafeSummary data={data.summary}/>}
       {data.rows.length>0&&<SafeTable rows={data.rows} onSelect={management}/>}
       {!data.summary&&!data.rows.length&&<p className="rounded-xl border border-dashed border-slate-300 bg-white p-6 text-sm">No records returned by this account&apos;s backend endpoint.</p>}
-      {data.nextCursor&&<button className={outline} onClick={()=>setCursor(data.nextCursor!)}>Next page</button>}
-      {cursor&&<button className={outline} onClick={()=>setCursor("")}>First page</button>}
+      {data.nextCursor&&<button className={outline} onClick={()=>{setCursorPath(pathname);setCursor(data.nextCursor!);}}>Next page</button>}
+      {activeCursor&&<button className={outline} onClick={()=>setCursor("")}>First page</button>}
      </>}
     {selected&&<section className="rounded-xl border border-blue-200 bg-white p-5">
      <div className="flex justify-between"><h2 className="font-bold">Selected live record</h2><button className="text-sm text-blue-700" onClick={()=>setSelected(null)}>Close</button></div>
