@@ -1115,10 +1115,26 @@ model ExposureAggregate {
 
 
 // B18 financial commitments are authorized participation reviews, not automatic B17 ad views.
-enum SettlementState { READY PAYOUT_PENDING PAID NEEDS_REVIEW }
-enum PayoutState { QUEUED SUBMITTED PAID NEEDS_REVIEW }
-enum BeneficiaryState { VERIFIED REJECTED }
-enum DriverLedgerKind { EARNING PAYOUT }
+enum SettlementState {
+  READY
+  PAYOUT_PENDING
+  PAID
+  NEEDS_REVIEW
+}
+enum PayoutState {
+  QUEUED
+  SUBMITTED
+  PAID
+  NEEDS_REVIEW
+}
+enum BeneficiaryState {
+  VERIFIED
+  REJECTED
+}
+enum DriverLedgerKind {
+  EARNING
+  PAYOUT
+}
 
 model EarningPolicy {
  id String @id @default(uuid()) @db.Uuid
