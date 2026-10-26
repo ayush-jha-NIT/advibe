@@ -170,6 +170,8 @@ test("B16 signed device playlists, heartbeat claims and immediate pause/revocati
    {cookie:staff.cookie})).status,401);
   assert.equal((await deviceSend("GET","/devices/manifest",undefined,
    {key:generateKeyPairSync("ed25519").privateKey})).status,401);
+  assert.equal((await deviceSend("GET","/devices/manifest")).status,503);
+  assert.equal((await adminPost("/admin/devices/"+screens[0]!.id+"/manifests/empty",{})).status,201);
   const stop=await readManifest();
   assert.deepEqual(stop.entries,[]);checkSignature(stop);
   assert.equal(signedGets,0);
