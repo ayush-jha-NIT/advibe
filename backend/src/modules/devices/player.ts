@@ -66,6 +66,6 @@ export async function issuePlaylist(tx:Tx,cred:DeviceCredential,config:AppConfig
  const manifest=signPlaylist(signer,cred.screenId,(prior?.version??0)+1,expiresAt,entries);
  await tx.deviceManifestVersion.create({data:{
   screenId:cred.screenId,version:manifest.version,expiresAt,
-  entries:manifest.entries,signature:manifest.signature}});
+  entries:manifest.entries as unknown as Prisma.InputJsonValue,signature:manifest.signature}});
  return manifest;
 }
