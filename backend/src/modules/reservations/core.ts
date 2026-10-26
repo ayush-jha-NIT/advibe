@@ -1,4 +1,4 @@
-import { Prisma,type PrismaClient } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { HttpError } from "../../lib/http-error.js";
 import { selectedServiceDates,equalSets } from "./schemas.js";
 import { dateString } from "../pricing/schemas.js";
