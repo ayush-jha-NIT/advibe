@@ -35,7 +35,7 @@ jobs:
         run: npm run build
 
   backend-verify:
-    name: Express B20 support, maintenance and leased-notification jobs
+    name: Express B21 admin reports, users and append-only audit
     runs-on: ubuntu-latest
     permissions:
       contents: read
