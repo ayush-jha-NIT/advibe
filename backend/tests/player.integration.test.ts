@@ -49,7 +49,7 @@ test("B16 signed device playlists, heartbeat claims and immediate pause/revocati
   }});
   return {cookie:"advibe_dev_session="+token,csrf:mac(settings,"csrf",hashToken(token))};
  }));
- const [alice,bob,staff,motorist]=credentials as Auth[];
+ const [alice,,staff]=credentials as Auth[];
  const business=await db.business.create({data:{
   ownerUserId:owner.id,slug:"b16-"+seed,displayName:"B16 Agency"}});
  const otherBusiness=await db.business.create({data:{
@@ -120,7 +120,7 @@ test("B16 signed device playlists, heartbeat claims and immediate pause/revocati
    serviceDate:atUtc(firstDate)}});
   return {hold,campaign,quote};
  }
- const first=await readyHold(screens[0]!.id),second=await readyHold(screens[1]!.id);
+ const first=await readyHold(screens[0]!.id);
 
  const manifestKey=generateKeyPairSync("ed25519");
  const oldKey=process.env.DEVICE_MANIFEST_SIGNING_KEY_PKCS8_B64;
