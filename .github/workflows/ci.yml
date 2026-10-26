@@ -78,6 +78,61 @@ jobs:
       - name: Re-run migrations to verify idempotency
         run: npm --prefix backend run db:migrate:deploy
 
+  live-portal-smoke:
+    name: B22 authenticated API-mode cross-portal Chromium
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.56.1-noble
+      options: --ipc=host
+    needs: [verify, backend-verify]
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      NEXT_PUBLIC_DEMO_MODE: "false"
+      ADVIBE_BACKEND_ORIGIN: "https://api.example.invalid"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Assert API-mode proxy, auth and portal boundaries
+        run: node --test tests/b22-api-integration.test.mjs
+      - name: Build authenticated API frontend
+        run: npm run build
+      - name: Run cross-role API mode browser smoke with intercepted contract data
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run start -- --port 3101 >/tmp/advibe-b22-next.log 2>&1 &
+          server=$!
+          trap 'kill "$server" 2>/dev/null || true' EXIT
+          ready=0
+          for i in $(seq 1 60); do
+            if curl --silent --fail --output /dev/null http://127.0.0.1:3101; then
+              ready=1
+              break
+            fi
+            sleep 2
+          done
+          if [ "$ready" -ne 1 ]; then
+            cat /tmp/advibe-b22-next.log
+            exit 1
+          fi
+          BASE_URL=http://127.0.0.1:3101 npm run test:live-browser
+      - name: Save live browser failure screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: b22-live-browser-failures
+          path: test-results/
+          if-no-files-found: ignore
+
   browser-smoke:
     name: Chromium release smoke
     runs-on: ubuntu-latest
