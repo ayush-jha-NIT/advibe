@@ -1342,3 +1342,109 @@ model FinanceReconciliationEvent {
   @@index([paymentOrderId,checkedAt])
   @@index([state,checkedAt])
 }
+
+// B20: role-scoped support, screen maintenance, in-app notifications and leased durable jobs.
+enum SupportCategory {
+  GENERAL
+  BILLING
+  DEVICE
+}
+enum SupportStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+enum TicketMessageVisibility {
+  PUBLIC
+  INTERNAL
+}
+enum MaintenanceStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+}
+enum NotificationKind {
+  SUPPORT
+  MAINTENANCE
+}
+enum JobState {
+  PENDING
+  LEASED
+  COMPLETED
+  DEAD
+}
+model SupportTicket {
+  id String @id @default(uuid()) @db.Uuid
+  createdByUserId String @db.Uuid
+  businessId String? @db.Uuid
+  screenId String? @db.Uuid
+  category SupportCategory
+  status SupportStatus @default(OPEN)
+  subject String @db.VarChar(160)
+  description String @db.VarChar(2000)
+  version Int @default(1)
+  assignedToUserId String? @db.Uuid
+  resolvedAt DateTime? @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+  messages SupportMessage[]
+  maintenance ScreenMaintenance?
+  @@index([createdByUserId,createdAt,id])
+  @@index([businessId,createdAt,id])
+  @@index([status,createdAt,id])
+}
+model SupportMessage {
+  id String @id @default(uuid()) @db.Uuid
+  ticketId String @db.Uuid
+  authorUserId String @db.Uuid
+  visibility TicketMessageVisibility @default(PUBLIC)
+  body String @db.VarChar(2000)
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  ticket SupportTicket @relation(fields:[ticketId],references:[id],onDelete:Restrict)
+  @@index([ticketId,createdAt,id])
+}
+model ScreenMaintenance {
+  id String @id @default(uuid()) @db.Uuid
+  ticketId String @unique @db.Uuid
+  screenId String @db.Uuid
+  openedByUserId String @db.Uuid
+  state MaintenanceStatus @default(OPEN)
+  resolutionNote String? @db.VarChar(1500)
+  openedAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+  resolvedAt DateTime? @db.Timestamptz(6)
+  ticket SupportTicket @relation(fields:[ticketId],references:[id],onDelete:Restrict)
+  @@index([screenId,state])
+}
+model UserNotification {
+  id String @id @default(uuid()) @db.Uuid
+  recipientUserId String @db.Uuid
+  ticketId String @db.Uuid
+  kind NotificationKind
+  dedupeKey String @unique @db.VarChar(160)
+  title String @db.VarChar(120)
+  body String @db.VarChar(300)
+  readAt DateTime? @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  @@index([recipientUserId,createdAt,id])
+  @@index([recipientUserId,readAt,createdAt])
+}
+model DurableJob {
+  id String @id @default(uuid()) @db.Uuid
+  dedupeKey String @unique @db.VarChar(160)
+  recipientUserId String @db.Uuid
+  ticketId String @db.Uuid
+  kind NotificationKind
+  title String @db.VarChar(120)
+  body String @db.VarChar(300)
+  state JobState @default(PENDING)
+  attempts Int @default(0)
+  availableAt DateTime @default(now()) @db.Timestamptz(6)
+  leaseToken String? @db.Uuid
+  leaseUntil DateTime? @db.Timestamptz(6)
+  lastError String? @db.VarChar(160)
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  completedAt DateTime? @db.Timestamptz(6)
+  @@index([state,availableAt,leaseUntil])
+}
