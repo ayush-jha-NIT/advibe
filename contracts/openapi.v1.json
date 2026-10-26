@@ -3,7 +3,7 @@
   "info": {
     "title": "AdVibe Backend API",
     "version": "0.1.0-b0",
-    "description": "B0–B14 source/CI modules. B14 Cashfree order creation, authenticated exact-amount provider reads, raw signed webhooks and atomic reservation conversion; no production merchant credentials or live payment deployment. Refunds, invoices and settlement audits remain B19, not implemented."
+    "description": "B0–B14 source/CI modules. B14 Cashfree order creation, authenticated exact-amount provider reads, raw signed webhooks and atomic reservation conversion; production merchant credentials and live charges are NOT deployed. Refunds, invoices and settlement audits remain B19, not implemented."
   },
   "servers": [
     {
@@ -10922,7 +10922,7 @@
           }
         },
         "x-csrf-required": true,
-        "x-idempotency-required": false,
+        "x-idempotency-required": true,
         "parameters": [
           {
             "name": "holdId",
@@ -10935,6 +10935,9 @@
           },
           {
             "$ref": "#/components/parameters/CsrfToken"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
           }
         ],
         "x-implementation-status": "implemented-b14"

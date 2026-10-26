@@ -113,6 +113,9 @@ export function createPaymentRoutes(config:AppConfig,auth:AuthDependencies,
  api.post("/reservations/holds/:holdId/confirm",safe(async(req,res)=>{
   const p=await resolvePrincipal(req,db,settings);requireRole(p,"ADVERTISER");
   mutation(req,config,p,settings.secret);supported(config);
+  const idem=req.get("idempotency-key");
+  if(!idem||!/^[A-Za-z0-9][A-Za-z0-9_-]{7,127}$/.test(idem))
+   throw new HttpError(422,"IDEMPOTENCY_REQUIRED","Valid Idempotency-Key required");
   const id=uuid.safeParse(req.params.holdId);
   if(!id.success)throw new HttpError(404,"NOT_FOUND","Hold unavailable");
   if(Object.keys(req.body??{}).length)

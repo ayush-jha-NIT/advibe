@@ -1,4 +1,4 @@
-# AdVibe Backend B14: Cashfree verified payment and booking confirmation
+# AdVibe Backend B14: Cashfree signed payments and booking confirmation
 
 B0–B14 are implemented in source and test CI using disposable PostgreSQL 16 and an injected Cashfree adapter. No real Cashfree merchant account, live payments, refund disbursements or production Neon instance are configured here. The deployed Next.js site remains a demo.
 

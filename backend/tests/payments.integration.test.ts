@@ -13,7 +13,7 @@ import { encryptTotpSecret } from "../src/modules/auth/mfa.js";
 import { loadAuthSettings } from "../src/modules/auth/settings.js";
 import { atUtc,dateString } from "../src/modules/pricing/schemas.js";
 import { verifyWebhook } from "../src/modules/payments/verify.js";
-import { decimalPaise,type CashfreeGateway,type CashfreeVerifiedPayment } from "../src/modules/payments/provider.js";
+import { decimalPaise,type CashfreeGateway } from "../src/modules/payments/provider.js";
 const uri=process.env.DATABASE_URL;
 if(process.env.NODE_ENV!=="test"||process.env.DB_TEST_ALLOWED!=="true"||!uri)
  throw new Error("B14 tests require isolated local PostgreSQL");
@@ -200,7 +200,7 @@ test("B14 Cashfree orders, verified webhooks, duplicate and expired-hold protect
   const providerOrder=orders.get(databaseOrder.providerOrderId)!;
   const signed=raw(databaseOrder.providerOrderId,providerOrder.paymentId);
   assert.equal((await webhook(signed,false)).status,401);
-  assert.equal((await post("/reservations/holds/"+first.hold.id+"/confirm",{},alice)).status,409);
+  assert.equal((await post("/reservations/holds/"+first.hold.id+"/confirm",{},alice,"reconcile-before-"+seed)).status,409);
   assert.equal((await db.reservationHold.findUniqueOrThrow({where:{id:first.hold.id}})).state,"HELD");
   providerOrder.status="PAID";
   assert.equal((await webhook(signed)).status,200);
@@ -211,7 +211,7 @@ test("B14 Cashfree orders, verified webhooks, duplicate and expired-hold protect
   assert.equal((await db.paymentOrder.findUniqueOrThrow({where:{id:firstOrder.id}})).state,"PAID");
   assert.equal(await db.paymentAttempt.count({where:{paymentOrderId:firstOrder.id}}),1);
   assert.equal(await db.paymentWebhookEvent.count({where:{paymentOrderId:firstOrder.id}}),1);
-  assert.equal((await post("/reservations/holds/"+first.hold.id+"/confirm",{},alice)).status,200);
+  assert.equal((await post("/reservations/holds/"+first.hold.id+"/confirm",{},alice,"reconcile-after-"+seed)).status,200);
   assert.equal((await send("DELETE","/reservations/holds/"+first.hold.id,alice,{})).status,409);
   const activeSlot=await db.inventorySlot.findFirstOrThrow({where:{holdId:first.hold.id}});
   await assert.rejects(db.inventorySlot.delete({where:{screenId_serviceDate:{
@@ -229,7 +229,7 @@ test("B14 Cashfree orders, verified webhooks, duplicate and expired-hold protect
   const paidLate=await db.paymentOrder.findUniqueOrThrow({where:{id:secondOrderId}});
   assert.equal(paidLate.state,"PAID_UNALLOCATED");assert.equal(paidLate.requiresResolution,true);
   assert.equal((await db.reservationHold.findUniqueOrThrow({where:{id:second.hold.id}})).state,"HELD");
-  assert.equal((await post("/reservations/holds/"+second.hold.id+"/confirm",{},alice)).status,200);
+  assert.equal((await post("/reservations/holds/"+second.hold.id+"/confirm",{},alice,"reconcile-late-"+seed)).status,200);
   assert.ok((await db.outboxEvent.findMany({where:{
    aggregateType:"payment_order",aggregateId:secondOrderId,
    eventType:"payment.paid_unallocated"}})).length===1);
