@@ -170,7 +170,11 @@ export function createTelemetryRouter(config:AppConfig,auth:AuthDependencies):Ro
     const {trip}=await readyTrip(tx,cred.screenId,input.consentGrantId,now);
     const previous=await tx.gpsSample.findFirst({where:{tripId:trip.id},
      orderBy:[{observedAt:"desc"},{id:"desc"}]});
-    let prev=previous;const data:Prisma.GpsSampleCreateManyInput[]=[];
+    let prev:{latitude:number;longitude:number;observedAt:Date}|null=previous;
+    const data:Prisma.GpsSampleCreateManyInput[]=[];
+    if(await tx.gpsSample.count({where:{credentialId:cred.id,
+     eventId:{in:input.events.map(e=>e.eventId)}}}))
+     throw new HttpError(409,"GPS_EVENT_REPLAY","GPS event already ingested");
     for(const event of input.events){
      const observedAt=new Date(event.observedAt);assertTime(now,observedAt);
      if(observedAt<trip.startedAt||observedAt>=trip.consent.expiresAt)
@@ -180,7 +184,7 @@ export function createTelemetryRouter(config:AppConfig,auth:AuthDependencies):Ro
      data.push({id:randomUUID(),credentialId:cred.id,tripId:trip.id,
       eventId:event.eventId,observedAt,latitude:event.lat,longitude:event.lng,
       accuracyMeters:event.accuracyMeters});
-     prev={latitude:event.lat,longitude:event.lng,observedAt} as typeof previous;
+     prev={latitude:event.lat,longitude:event.lng,observedAt};
     }
     await tx.gpsSample.createMany({data});
     return {accepted:data.length,tripId:trip.id};
@@ -211,6 +215,9 @@ export function createTelemetryRouter(config:AppConfig,auth:AuthDependencies):Ro
     })).safeParse(manifest.entries);
     if(!entries.success)
      throw new HttpError(409,"PLAYBACK_MANIFEST_INVALID","Invalid signed manifest entries");
+    if(await tx.playbackProof.count({where:{credentialId:cred.id,
+     eventId:{in:input.events.map(e=>e.deviceEventId)}}}))
+     throw new HttpError(409,"PLAYBACK_EVENT_REPLAY","Playback event already ingested");
     const events:Prisma.PlaybackProofCreateManyInput[]=[];
     const totals=new Map<string,{campaignId:string;businessId:string;
      zoneId:string;serviceDate:Date;count:number}>();
@@ -257,6 +264,11 @@ export function createTelemetryRouter(config:AppConfig,auth:AuthDependencies):Ro
       businessId:window.plan.businessId,zoneId:zone.id,
       serviceDate:window.serviceDate,count:1});
     }
+    if(await tx.playbackProof.count({where:{screenId:cred.screenId,
+     slotBucket:{in:events.map(e=>e.slotBucket)}}}))
+     throw new HttpError(409,"PLAYBACK_BUCKET_CONFLICT","Playback time bucket already counted");
+    if(new Set(events.map(e=>e.slotBucket.toISOString())).size!==events.length)
+     throw new HttpError(409,"PLAYBACK_BUCKET_CONFLICT","Multiple events for one screen bucket");
     await tx.playbackProof.createMany({data:events});
     for(const a of totals.values())await tx.exposureAggregate.upsert({
      where:{campaignId_zoneId_serviceDate_methodVersion:{
