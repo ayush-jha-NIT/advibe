@@ -16,4 +16,6 @@ export const heartbeatInput=z.strictObject({
   deviceEventId:z.string().min(8).max(128).regex(/^[A-Za-z0-9_-]+$/),
   observedAt:z.iso.datetime({offset:true}),
   firmwareVersion:z.string().trim().min(1).max(100).regex(/^[A-Za-z0-9][A-Za-z0-9.+_-]*$/),
+  manifestVersion:z.int().min(1).optional(),
+  playbackState:z.enum(["IDLE","PLAYING","ERROR"]).optional(),
 });
