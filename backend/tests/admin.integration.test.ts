@@ -131,7 +131,7 @@ test("B21 MFA admin reports, least-privileged user status changes and audit expo
   assert.equal((await get("/admin/users/"+driver.id+"/decisions",advertiserAuth)).status,403);
   const since=new Date().toISOString().slice(0,10);
   const query="?from="+since+"&to="+since;
-  assert.equal((await get("/admin/audit-events"+query,motorist)).status,403);
+  assert.equal((await get("/admin/audit-events"+query,advertiserAuth)).status,403);
   const audit=await get("/admin/audit-events"+query+"&action=admin.account_suspended",staff);
   assert.equal(audit.status,200);
   const rows=(await audit.json() as {data:Array<Record<string,unknown>>}).data;
@@ -152,7 +152,7 @@ test("B21 MFA admin reports, least-privileged user status changes and audit expo
   assert.equal((await db.auditEvent.count({where:{
    action:"admin.audit_exported",actorUserId:administrator.id}})),1);
   assert.equal((await get("/admin/reports",staffTwo)).status,200);
-  assert.equal((await get("/admin/reports",motorist)).status,403);
+  assert.equal((await get("/admin/reports",advertiserAuth)).status,403);
   assert.equal((await get("/admin/reports?from=nope",staff)).status,422);
   assert.equal((await get("/admin/reports/export?from=2025-01-01&to=2026-10-26",staff)).status,422);
   const reportFile=await get("/admin/reports/export"+query,staff);
