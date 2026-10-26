@@ -20,6 +20,7 @@ import { createQuoteRouter } from "./modules/pricing/quotes.js";
 import { createCampaignRouter } from "./modules/campaigns/routes.js";
 import { createReservationRouter } from "./modules/reservations/routes.js";
 import { createPaymentRoutes,type PaymentDependencies } from "./modules/payments/routes.js";
+import { createDeliveryRouter } from "./modules/delivery/routes.js";
 
 /** Every live API server supplies a database probe; omitted probes fail closed. */
 export function createApp(
@@ -71,10 +72,11 @@ export function createApp(
     app.use("/api/v1", createCampaignRouter(config, auth));
     app.use("/api/v1", createReservationRouter(config, auth));
     if(paymentRoutes)app.use("/api/v1",paymentRoutes.api);
+    app.use("/api/v1",createDeliveryRouter(config,auth));
     app.use("/api/v1", createAccountsRouter(config, auth,
       verifyCaptcha ?? createTurnstileVerifier()));
   }
-  // B15-B23 add delivery scheduling, refunds, invoices and payouts; demo remains isolated.
+  // B16-B23 add signed playlists, refunds, invoices and payouts; demo remains isolated.
   app.use(notFound);
   app.use(errorHandler(logger));
   return app;
