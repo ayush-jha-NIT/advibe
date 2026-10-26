@@ -14,7 +14,7 @@
     "lint": "eslint src tests",
     "test": "node --import tsx --test tests/app.test.ts tests/env.test.ts",
     "smoke": "node scripts/smoke.mjs",
-    "check": "npm run lint && npm run typecheck && npm run test && npm run test:db && npm run test:auth && npm run test:security && npm run test:accounts && npm run test:drivers && npm run test:kyc && npm run test:devices && npm run test:geo && npm run test:creatives && npm run build && npm run smoke",
+    "check": "npm run lint && npm run typecheck && npm run test && npm run test:db && npm run test:auth && npm run test:security && npm run test:accounts && npm run test:drivers && npm run test:kyc && npm run test:devices && npm run test:geo && npm run test:creatives && npm run test:pricing && npm run build && npm run smoke",
     "postinstall": "prisma generate --schema prisma/schema.prisma",
     "db:validate": "prisma validate --schema prisma/schema.prisma",
     "db:migrate:deploy": "prisma migrate deploy --schema prisma/schema.prisma",
@@ -30,7 +30,8 @@
     "test:devices": "node --import tsx --test tests/devices.integration.test.ts",
     "test:geo": "node --import tsx --test tests/geo.integration.test.ts",
     "creative:worker": "node --env-file-if-exists=.env --import tsx scripts/process-creatives.ts",
-    "test:creatives": "node --import tsx --test tests/creatives.integration.test.ts"
+    "test:creatives": "node --import tsx --test tests/creatives.integration.test.ts",
+    "test:pricing": "node --import tsx --test tests/pricing.integration.test.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",

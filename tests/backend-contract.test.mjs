@@ -107,7 +107,7 @@ test("existing portal navigation is completely covered by frontend-to-API migrat
  for(const path of ["/login","/signup","/verify","/forgot-password","/reset-password","/contact","/pricing"])
   assert.ok(map.includes("| "+path+" |"),"Missing public/auth mapping: "+path);
 });
-test("B0–B10 documentation preserves production safety gates",()=>{
+test("B0–B11 documentation preserves production safety gates",()=>{
  const docs=["B0_ARCHITECTURE.md","B0_DATABASE.md","B0_API_MAPPING.md","B0_DECISIONS.md","BACKEND_ROADMAP.md","B0_CONTRACT_RULES.md"];
  for(const filename of docs){
   const content=read("docs/backend/"+filename);
@@ -117,7 +117,7 @@ test("B0–B10 documentation preserves production safety gates",()=>{
  for(const topic of ["idempotency","exclusion","private","webhook","retention","settlement"])
   assert.match(blueprint,new RegExp(topic,"i"),"Missing DB risk topic "+topic);
  const runtime=read("backend/README.md");
- assert.match(runtime,/Backend B10: private creative ingestion and moderation/,"B10 runtime must be documented");
+ assert.match(runtime,/Backend B11: versioned rates and immutable quote estimates/,"B11 runtime must be documented");
  const b2Doc=read("docs/backend/B2_IMPLEMENTATION.md");
  const b3Doc=read("docs/backend/B3_IMPLEMENTATION.md");
  const b4Doc=read("docs/backend/B4_IMPLEMENTATION.md");
@@ -129,6 +129,13 @@ test("B0–B10 documentation preserves production safety gates",()=>{
  const b8Doc=read("docs/backend/B8_IMPLEMENTATION.md");
  const b9Doc=read("docs/backend/B9_IMPLEMENTATION.md");
  const b10Doc=read("docs/backend/B10_IMPLEMENTATION.md");
+ const b11Doc=read("docs/backend/B11_IMPLEMENTATION.md");
+ assert.match(b11Doc,/D04/);
+ assert.match(b11Doc,/NOT_BOOKED/);
+ assert.match(b11Doc,/append.only/i);
+ for(const path of ["/pricing/rules","/pricing/quotes","/admin/pricing/rules/{ruleId}"])
+  for(const op of Object.values(spec.paths[path]))
+   assert.equal(op["x-implementation-status"],"implemented-b11");
  assert.match(b10Doc,/ClamAV/);
  assert.match(b10Doc,/FFmpeg/);
  assert.match(b10Doc,/fail.closed/i);

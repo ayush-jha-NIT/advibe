@@ -14,6 +14,9 @@ import { createKycRouter, type KycDependencies } from "./modules/kyc/routes.js";
 import { createDeviceRouter } from "./modules/devices/routes.js";
 import { createGeoRouter } from "./modules/geo/routes.js";
 import { createCreativeRouter, type CreativeDependencies } from "./modules/creatives/routes.js";
+import { createPricingAdminRouter } from "./modules/pricing/admin.js";
+import { createDiscountRouter } from "./modules/pricing/discounts.js";
+import { createQuoteRouter } from "./modules/pricing/quotes.js";
 
 /** Every live API server supplies a database probe; omitted probes fail closed. */
 export function createApp(
@@ -55,10 +58,13 @@ export function createApp(
     app.use("/api/v1", createDeviceRouter(config, auth));
     app.use("/api/v1", createGeoRouter(config, auth));
     app.use("/api/v1", createCreativeRouter(config, auth, creative));
+    app.use("/api/v1", createPricingAdminRouter(config, auth));
+    app.use("/api/v1", createDiscountRouter(config, auth));
+    app.use("/api/v1", createQuoteRouter(config, auth));
     app.use("/api/v1", createAccountsRouter(config, auth,
       verifyCaptcha ?? createTurnstileVerifier()));
   }
-  // B11-B23 add pricing, booking, playback and payment routes; demo remains isolated.
+  // B12-B23 add campaigns, booking, playback and payment routes; demo remains isolated.
   app.use(notFound);
   app.use(errorHandler(logger));
   return app;

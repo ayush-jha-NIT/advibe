@@ -1,27 +1,30 @@
-# AdVibe Backend B10: private creative ingestion and moderation
+# AdVibe Backend B11: versioned rates and immutable quote estimates
 
-B0–B10 source and isolated PostgreSQL tests are implemented. The Vercel frontend remains a demo; dedicated AdVibe production Neon, private creative media storage and processing worker are NOT deployed.
+B0–B11 are implemented as repository code and tested against disposable PostgreSQL 16 in GitHub Actions. The deployed Vercel frontend remains **demo-only**. There is no deployed AdVibe production database, certified screen inventory, confirmed tax policy or payment integration.
 
-Run npm install --prefix backend and npm --prefix backend run db:migrate:deploy against a provisioned PostgreSQL instance. Fresh CI migrations run through 20261026060000_b10_creative_media. For a disposable localhost test database with NODE_ENV=test and DB_TEST_ALLOWED=true use npm --prefix backend run check.
+Backend setup remains Node 22+, Prisma 6, PostgreSQL 16, DATABASE_URL / DIRECT_URL, AUTH_SECRET and MFA_ENCRYPTION_KEY, with all earlier B7–B10 vendor dependencies configured separately. Migration 20261026070000_b11_pricing_quotes adds versioned RateRule/RateRevision, TaxPolicy, DiscountPolicy and append-only PriceQuote snapshots.
 
-Private creative upload pipeline requires:
-- CREATIVE_S3_BUCKET and CREATIVE_S3_REGION: private encrypted versioned S3, least privilege IAM
-- CREATIVE_WORKER_ENABLED=true in dedicated scheduled worker only
-- Patched ClamAV (clamscan + current signatures), FFmpeg and ffprobe installed in worker container
-- Source files checked by actual SHA-256 and magic/metadata/codec; never expose unreviewed files publicly
-- Legal content moderation policy, retention/lifecycle strategy, rate limits and queue monitoring for production
+Run:
+- npm install --prefix backend
+- npm --prefix backend run db:validate
+- npm --prefix backend run db:migrate:deploy
+- npm --prefix backend run dev
+- For **disposable localhost** PostgreSQL only, NODE_ENV=test and DB_TEST_ALLOWED=true, npm --prefix backend run check
 
-Worker entry point: npm --prefix backend run creative:worker. The web server never runs FFmpeg or ClamAV. This source code does not deploy either binary.
+B11 policy/quote endpoints:
+- GET /api/v1/pricing/rules
+- POST /api/v1/admin/pricing/rules
+- PUT /api/v1/admin/pricing/rules/:ruleId
+- GET/POST /api/v1/admin/pricing/tax-policies
+- GET/POST /api/v1/admin/pricing/discounts
+- POST /api/v1/pricing/quotes
+- GET /api/v1/pricing/quotes/:quoteId
+- GET /api/v1/pricing/quotes?businessId=...
 
-Authenticated B10 routes:
-POST /api/v1/creatives/upload-intents
-POST /api/v1/creatives/assets/:assetId/complete
-GET /api/v1/creatives/assets/:assetId
-POST/GET /api/v1/creatives
-GET /api/v1/creatives/:creativeId
-GET /api/v1/admin/creatives/:creativeId/preview-url
-POST /api/v1/admin/creatives/:creativeId/decision
+Admin updates require a currently enrolled MFA session; creation requires CSRF and idempotency. Advertisers may quote only their current business-owned screen candidates at published sites. Quotes are immutable non-binding estimates marked NOT_BOOKED; no reservation or delivery is implied.
 
-All writable business routes use current database membership, strict CSRF/origin rules and idempotent creation. Only processed READY assets from the same business can be used in a PENDING creative; only MFA Admins can inspect processed asset via short-lived private URL and record moderation decisions. No ad is scheduled or served.
+### Production tax gate
 
-See docs/backend/B10_IMPLEMENTATION.md for state-machine, worker runtime and security/privacy boundaries. Next B11: exact-paise pricing and quote snapshots. Production payments/scheduling and frontend integration remain B12–B22.
+Review D04 with an Indian tax/finance advisor. Enter an effective TaxPolicy with explicit sourceReference and non-demo rate. Production quote creation is blocked unless PRICING_TAX_POLICY_APPROVED=true is explicitly configured in secure deployment configuration after the real approval. Never copy the demo 18% tax assumption.
+
+See docs/backend/B11_IMPLEMENTATION.md for exact integer arithmetic, revision history, policy expiry, venue-local dates, and limitations. B12 is campaigns, B13 is booking capacity, B14 is payments and invoices.

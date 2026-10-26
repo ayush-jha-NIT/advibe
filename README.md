@@ -1,10 +1,10 @@
 # AdVibe Frontend
 
-## Backend implementation status (B10)
+## Backend implementation status (B11)
 
-**B0–B10 implemented.** B10 adds private creative upload intents, verified media processing with isolated ClamAV/FFmpeg worker, tenant-scoped creatives and MFA Admin moderation. See [B10 implementation](docs/backend/B10_IMPLEMENTATION.md) and [backend setup](backend/README.md).
+**B0–B11 implemented.** B11 adds immutable rate revisions, explicit tax and discount policies, exact-paise authoritative quotes with rule snapshots, expiry and non-bookable constraints. See [B11 implementation](docs/backend/B11_IMPLEMENTATION.md) and [backend setup](backend/README.md).
 
-**Not production-ready:** B3 auth endpoints are implemented and tested against disposable PostgreSQL in CI but are not connected to the deployed frontend. No dedicated AdVibe Neon project or verified Resend sender has been provisioned. Pricing, scheduling, payments and payouts are pending B11–B23. B7 KYC requires external private storage, scanning and reviewed legal policy before live deployment. Production Admin MFA requires operator provisioning and validated configuration. Demo credentials are not accepted by this backend.
+**Not production-ready:** B3 auth endpoints are implemented and tested against disposable PostgreSQL in CI but are not connected to the deployed frontend. No dedicated AdVibe Neon project or verified Resend sender has been provisioned. Campaign management, booking, payments and payouts are pending B12–B23. B7 KYC requires external private storage, scanning and reviewed legal policy before live deployment. Production Admin MFA requires operator provisioning and validated configuration. Demo credentials are not accepted by this backend.
 
 Backend checks require an isolated migrated test PostgreSQL DB; CI provisions it automatically. Frontend checks: `npm run check`.
 

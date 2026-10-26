@@ -134,6 +134,7 @@ model Business {
   memberships  BusinessMembership[]
   mediaAssets  MediaAsset[]
   creatives     Creative[]
+  quotes        PriceQuote[]
 
   @@index([ownerUserId])
   @@index([archivedAt, createdAt])
@@ -436,6 +437,7 @@ model Screen {
   credential     DeviceCredential?
   challenges     DevicePairingChallenge[]
   manifests      DeviceManifestVersion[]
+  // B11 prices refer to immutable snapshots, never mutable screen records.
   locationId     String?           @db.Uuid
   location       Location?          @relation(fields: [locationId], references: [id], onDelete: Restrict)
 
@@ -528,6 +530,7 @@ model City {
   createdAt     DateTime     @default(now()) @db.Timestamptz(6)
   updatedAt     DateTime     @updatedAt @db.Timestamptz(6)
   zones         Zone[]
+  rateRules     RateRule[]
 
   @@index([state, name, id])
 }
@@ -651,4 +654,96 @@ model CreativeReview {
   creative    Creative         @relation(fields: [creativeId], references: [id], onDelete: Restrict)
 
   @@index([creativeId, createdAt])
+}
+
+
+// B11 prices are minor INR units with independently versioned tax and commercial policies.
+enum DiscountKind {
+  PERCENT_BPS
+  FIXED_PAISE
+}
+
+model RateRule {
+  id           String          @id @default(uuid()) @db.Uuid
+  cityId       String          @db.Uuid
+  placement    ScreenPlacement
+  createdAt    DateTime        @default(now()) @db.Timestamptz(6)
+  city         City            @relation(fields: [cityId], references: [id], onDelete: Restrict)
+  revisions    RateRevision[]
+
+  @@unique([cityId, placement])
+}
+
+model RateRevision {
+  id                      String   @id @default(uuid()) @db.Uuid
+  ruleId                  String   @db.Uuid
+  version                 Int
+  ratePaisePerScreenDay   Int
+  active                  Boolean
+  validFrom               DateTime @db.Date
+  validTo                 DateTime @db.Date
+  createdAt               DateTime @default(now()) @db.Timestamptz(6)
+  createdByUserId         String   @db.Uuid
+  rule                    RateRule @relation(fields: [ruleId], references: [id], onDelete: Restrict)
+
+  @@unique([ruleId, version])
+  @@index([ruleId, version])
+}
+
+model TaxPolicy {
+  id             String    @id @default(uuid()) @db.Uuid
+  version        String    @unique @db.VarChar(80)
+  taxBps         Int
+  sourceReference String @db.VarChar(180)
+  active         Boolean
+  validFrom      DateTime  @db.Date
+  validTo        DateTime  @db.Date
+  createdAt      DateTime  @default(now()) @db.Timestamptz(6)
+  createdByUserId String  @db.Uuid
+
+  @@index([active, validFrom, validTo])
+}
+
+model DiscountPolicy {
+  id             String       @id @default(uuid()) @db.Uuid
+  code           String       @db.VarChar(40)
+  version        Int
+  kind           DiscountKind
+  value          Int
+  active         Boolean
+  validFrom      DateTime     @db.Date
+  validTo        DateTime     @db.Date
+  createdAt      DateTime     @default(now()) @db.Timestamptz(6)
+  createdByUserId String     @db.Uuid
+
+  @@unique([code, version])
+  @@index([code, active, validFrom, validTo])
+}
+
+model PriceQuote {
+  id                String    @id @default(uuid()) @db.Uuid
+  businessId        String    @db.Uuid
+  requestedByUserId String    @db.Uuid
+  campaignId        String    @db.Uuid
+  currency          String    @default("INR") @db.Char(3)
+  version           Int       @default(1)
+  subtotalPaise     BigInt    @db.BigInt
+  discountPaise     BigInt    @db.BigInt
+  taxablePaise      BigInt    @db.BigInt
+  taxPaise          BigInt    @db.BigInt
+  totalPaise        BigInt    @db.BigInt
+  taxPolicyVersion  String    @db.VarChar(80)
+  discountCode      String?   @db.VarChar(40)
+  discountVersion   Int?
+  startDate         DateTime  @db.Date
+  endDate           DateTime  @db.Date
+  selectedWeekdays  Int[]
+  screenIds         String[]  @default([]) @db.Uuid
+  pricingSnapshot   Json
+  createdAt         DateTime  @default(now()) @db.Timestamptz(6)
+  expiresAt         DateTime  @db.Timestamptz(6)
+  business          Business  @relation(fields: [businessId], references: [id], onDelete: Restrict)
+
+  @@index([businessId, createdAt, id])
+  @@index([expiresAt])
 }

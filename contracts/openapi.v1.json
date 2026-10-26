@@ -3,7 +3,7 @@
   "info": {
     "title": "AdVibe Backend API",
     "version": "0.1.0-b0",
-    "description": "B0–B10 implemented in repository and test CI. B10 private creative upload intents, verified private-object storage, isolated worker AV/FFmpeg transcoding, and Admin-only moderation. Real storage/worker deployment and live creative delivery are NOT deployed or implemented."
+    "description": "B0–B11 repository implementations, including immutable rate revisions, explicitly approved tax policies, discounts and authoritative quote estimates. Production billing, booking, tax sign-off, and payment integrations are NOT deployed or implemented."
   },
   "servers": [
     {
@@ -919,6 +919,61 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 80
+          },
+          "businessId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "campaignId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "discountVersion": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "discountCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "taxablePaise": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "reservationStatus": {
+            "type": "string",
+            "const": "NOT_BOOKED"
+          },
+          "pricingSnapshot": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "weekdays": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 6
+            }
+          },
+          "screenIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         },
         "additionalProperties": false
@@ -1395,7 +1450,9 @@
           "ratePaisePerScreenDay",
           "active",
           "validFrom",
-          "validTo"
+          "validTo",
+          "cityId",
+          "version"
         ],
         "properties": {
           "id": {
@@ -1427,6 +1484,14 @@
           "validTo": {
             "type": "string",
             "format": "date"
+          },
+          "cityId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
           }
         },
         "additionalProperties": false
@@ -1603,7 +1668,8 @@
           "startDate",
           "endDate",
           "weekdays",
-          "campaignId"
+          "campaignId",
+          "businessId"
         ],
         "properties": {
           "screenIds": {
@@ -1636,6 +1702,15 @@
           "campaignId": {
             "type": "string",
             "format": "uuid"
+          },
+          "businessId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "discountCode": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 40
           }
         },
         "additionalProperties": false
@@ -1975,7 +2050,8 @@
           "ratePaisePerScreenDay",
           "validFrom",
           "validTo",
-          "active"
+          "active",
+          "expectedVersion"
         ],
         "properties": {
           "ratePaisePerScreenDay": {
@@ -1993,6 +2069,10 @@
           },
           "active": {
             "type": "boolean"
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 1
           }
         },
         "additionalProperties": false
@@ -3448,6 +3528,191 @@
           "expiresInSeconds": {
             "type": "integer",
             "const": 60
+          }
+        }
+      },
+      "CreateRateInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "cityId",
+          "placement",
+          "ratePaisePerScreenDay",
+          "validFrom",
+          "validTo",
+          "active"
+        ],
+        "properties": {
+          "cityId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "placement": {
+            "type": "string",
+            "enum": [
+              "bike_rear",
+              "auto_rear",
+              "auto_side",
+              "car_rear",
+              "car_interior",
+              "helmet"
+            ]
+          },
+          "ratePaisePerScreenDay": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000000000
+          },
+          "validFrom": {
+            "type": "string",
+            "format": "date"
+          },
+          "validTo": {
+            "type": "string",
+            "format": "date"
+          },
+          "active": {
+            "type": "boolean"
+          }
+        }
+      },
+      "TaxPolicy": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "version",
+          "taxBps",
+          "active",
+          "validFrom",
+          "validTo",
+          "sourceReference"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 80
+          },
+          "taxBps": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10000
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "validFrom": {
+            "type": "string",
+            "format": "date"
+          },
+          "validTo": {
+            "type": "string",
+            "format": "date"
+          },
+          "sourceReference": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 180
+          }
+        }
+      },
+      "DiscountPolicyInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "code",
+          "expectedVersion",
+          "kind",
+          "value",
+          "active",
+          "validFrom",
+          "validTo"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 40
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "percent_bps",
+              "fixed_paise"
+            ]
+          },
+          "value": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000000000
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "validFrom": {
+            "type": "string",
+            "format": "date"
+          },
+          "validTo": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "DiscountPolicy": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "code",
+          "version",
+          "kind",
+          "value",
+          "active",
+          "validFrom",
+          "validTo"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "code": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "percent_bps",
+              "fixed_paise"
+            ]
+          },
+          "value": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "validFrom": {
+            "type": "string",
+            "format": "date"
+          },
+          "validTo": {
+            "type": "string",
+            "format": "date"
           }
         }
       }
@@ -6742,7 +7007,7 @@
         ],
         "operationId": "listPricingRules",
         "summary": "Read applicable commercial rules",
-        "description": "Read applicable commercial rules B0 contract only; no runtime handler exists yet.",
+        "description": "B11 minor-unit pricing, policy snapshots and fail-closed tax configuration. Quotes are not bookings.",
         "x-backend-phase": "B11",
         "x-access-roles": [
           "admin"
@@ -6755,7 +7020,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful authoritative response",
+            "description": "Server-authoritative B11 response",
             "content": {
               "application/json": {
                 "schema": {
@@ -6769,9 +7034,6 @@
                       "items": {
                         "$ref": "#/components/schemas/RateRule"
                       }
-                    },
-                    "meta": {
-                      "$ref": "#/components/schemas/CursorMeta"
                     }
                   },
                   "additionalProperties": false
@@ -6811,7 +7073,8 @@
           {
             "$ref": "#/components/parameters/Limit"
           }
-        ]
+        ],
+        "x-implementation-status": "implemented-b11"
       }
     },
     "/admin/pricing/rules/{ruleId}": {
@@ -6821,7 +7084,7 @@
         ],
         "operationId": "upsertPricingRule",
         "summary": "Update versioned rule and validity",
-        "description": "Update versioned rule and validity B0 contract only; no runtime handler exists yet.",
+        "description": "B11 minor-unit pricing, policy snapshots and fail-closed tax configuration. Quotes are not bookings.",
         "x-backend-phase": "B11",
         "x-access-roles": [
           "admin"
@@ -6834,7 +7097,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful authoritative response",
+            "description": "Server-authoritative B11 response",
             "content": {
               "application/json": {
                 "schema": {
@@ -6905,7 +7168,8 @@
           {
             "$ref": "#/components/parameters/IdempotencyKey"
           }
-        ]
+        ],
+        "x-implementation-status": "implemented-b11"
       }
     },
     "/pricing/quotes": {
@@ -6915,7 +7179,7 @@
         ],
         "operationId": "createAuthoritativeQuote",
         "summary": "Price campaign using authoritative server rule snapshot",
-        "description": "Price campaign using authoritative server rule snapshot B0 contract only; no runtime handler exists yet.",
+        "description": "B11 minor-unit pricing, policy snapshots and fail-closed tax configuration. Quotes are not bookings.",
         "x-backend-phase": "B11",
         "x-access-roles": [
           "advertiser"
@@ -6928,7 +7192,7 @@
         ],
         "responses": {
           "201": {
-            "description": "Successful authoritative response",
+            "description": "Server-authoritative B11 response",
             "content": {
               "application/json": {
                 "schema": {
@@ -6990,7 +7254,88 @@
           {
             "$ref": "#/components/parameters/IdempotencyKey"
           }
-        ]
+        ],
+        "x-implementation-status": "implemented-b11"
+      },
+      "get": {
+        "tags": [
+          "Pricing"
+        ],
+        "operationId": "listOwnQuoteHistory",
+        "summary": "list Own Quote History",
+        "description": "B11 policy versioning and non-binding quote estimates; no bookings or payment collection.",
+        "x-backend-phase": "B11",
+        "x-access-roles": [
+          "advertiser"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Server-authoritative B11 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Quote"
+                      }
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "parameters": [
+          {
+            "name": "businessId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "x-implementation-status": "implemented-b11",
+        "x-csrf-required": false,
+        "x-idempotency-required": false
       }
     },
     "/campaigns": {
@@ -13462,6 +13807,483 @@
           }
         ],
         "x-implementation-status": "implemented-b10",
+        "x-csrf-required": false,
+        "x-idempotency-required": false
+      }
+    },
+    "/admin/pricing/rules": {
+      "post": {
+        "tags": [
+          "Pricing"
+        ],
+        "operationId": "createNewRateRule",
+        "summary": "create New Rate Rule",
+        "description": "B11 policy versioning and non-binding quote estimates; no bookings or payment collection.",
+        "x-backend-phase": "B11",
+        "x-access-roles": [
+          "admin"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Server-authoritative B11 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/RateRule"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRateInput"
+              }
+            }
+          }
+        },
+        "x-csrf-required": true,
+        "x-idempotency-required": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "x-implementation-status": "implemented-b11"
+      }
+    },
+    "/admin/pricing/tax-policies": {
+      "get": {
+        "tags": [
+          "Pricing"
+        ],
+        "operationId": "listVersionedTaxPolicies",
+        "summary": "list Versioned Tax Policies",
+        "description": "B11 policy versioning and non-binding quote estimates; no bookings or payment collection.",
+        "x-backend-phase": "B11",
+        "x-access-roles": [
+          "admin"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Server-authoritative B11 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/TaxPolicy"
+                      }
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "parameters": [],
+        "x-implementation-status": "implemented-b11",
+        "x-csrf-required": false,
+        "x-idempotency-required": false
+      },
+      "post": {
+        "tags": [
+          "Pricing"
+        ],
+        "operationId": "publishVersionedTaxPolicy",
+        "summary": "publish Versioned Tax Policy",
+        "description": "B11 policy versioning and non-binding quote estimates; no bookings or payment collection.",
+        "x-backend-phase": "B11",
+        "x-access-roles": [
+          "admin"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Server-authoritative B11 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/TaxPolicy"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaxPolicy"
+              }
+            }
+          }
+        },
+        "x-csrf-required": true,
+        "x-idempotency-required": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "x-implementation-status": "implemented-b11"
+      }
+    },
+    "/admin/pricing/discounts": {
+      "get": {
+        "tags": [
+          "Pricing"
+        ],
+        "operationId": "listVersionedDiscountPolicies",
+        "summary": "list Versioned Discount Policies",
+        "description": "B11 policy versioning and non-binding quote estimates; no bookings or payment collection.",
+        "x-backend-phase": "B11",
+        "x-access-roles": [
+          "admin"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Server-authoritative B11 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/DiscountPolicy"
+                      }
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "parameters": [],
+        "x-implementation-status": "implemented-b11",
+        "x-csrf-required": false,
+        "x-idempotency-required": false
+      },
+      "post": {
+        "tags": [
+          "Pricing"
+        ],
+        "operationId": "createVersionedDiscount",
+        "summary": "create Versioned Discount",
+        "description": "B11 policy versioning and non-binding quote estimates; no bookings or payment collection.",
+        "x-backend-phase": "B11",
+        "x-access-roles": [
+          "admin"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Server-authoritative B11 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/DiscountPolicy"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiscountPolicyInput"
+              }
+            }
+          }
+        },
+        "x-csrf-required": true,
+        "x-idempotency-required": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "x-implementation-status": "implemented-b11"
+      }
+    },
+    "/pricing/quotes/{quoteId}": {
+      "get": {
+        "tags": [
+          "Pricing"
+        ],
+        "operationId": "getOwnImmutableQuote",
+        "summary": "get Own Immutable Quote",
+        "description": "B11 policy versioning and non-binding quote estimates; no bookings or payment collection.",
+        "x-backend-phase": "B11",
+        "x-access-roles": [
+          "advertiser"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Server-authoritative B11 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Quote"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "parameters": [
+          {
+            "name": "quoteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "x-implementation-status": "implemented-b11",
         "x-csrf-required": false,
         "x-idempotency-required": false
       }

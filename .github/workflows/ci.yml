@@ -35,7 +35,7 @@ jobs:
         run: npm run build
 
   backend-verify:
-    name: Express B10 secure creative media and moderation checks
+    name: Express B11 pricing policies and immutable quote checks
     runs-on: ubuntu-latest
     permissions:
       contents: read
