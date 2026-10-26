@@ -22,6 +22,7 @@ import { createCampaignRouter } from "./modules/campaigns/routes.js";
 import { createReservationRouter } from "./modules/reservations/routes.js";
 import { createPaymentRoutes,type PaymentDependencies } from "./modules/payments/routes.js";
 import { createDeliveryRouter } from "./modules/delivery/routes.js";
+import { createTelemetryRouter } from "./modules/telemetry/routes.js";
 
 /** Every live API server supplies a database probe; omitted probes fail closed. */
 export function createApp(
@@ -65,6 +66,7 @@ export function createApp(
     app.use("/api/v1/drivers", createDriverRouter(config, auth));
     app.use("/api/v1", createKycRouter(config, auth, kyc));
     app.use("/api/v1", createDeviceRouter(config, auth, player));
+    app.use("/api/v1", createTelemetryRouter(config, auth));
     app.use("/api/v1", createGeoRouter(config, auth));
     app.use("/api/v1", createCreativeRouter(config, auth, creative));
     app.use("/api/v1", createPricingAdminRouter(config, auth));
@@ -77,7 +79,7 @@ export function createApp(
     app.use("/api/v1", createAccountsRouter(config, auth,
       verifyCaptcha ?? createTurnstileVerifier()));
   }
-  // B16-B23 add signed playlists, refunds, invoices and payouts; demo remains isolated.
+  // B18-B23 add earnings, refunds and releases; demo frontend remains isolated.
   app.use(notFound);
   app.use(errorHandler(logger));
   return app;
