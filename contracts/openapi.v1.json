@@ -2012,6 +2012,7 @@
         "type": "object",
         "required": [
           "screenId",
+          "manifestVersion",
           "events"
         ],
         "properties": {
@@ -2022,7 +2023,7 @@
           "events": {
             "type": "array",
             "minItems": 1,
-            "maxItems": 1000,
+            "maxItems": 25,
             "items": {
               "type": "object",
               "required": [
@@ -2047,11 +2048,16 @@
                 },
                 "durationMs": {
                   "type": "integer",
-                  "minimum": 0
+                  "minimum": 1000,
+                  "maximum": 60000
                 }
               },
               "additionalProperties": false
             }
+          },
+          "manifestVersion": {
+            "type": "integer",
+            "minimum": 1
           }
         },
         "additionalProperties": false
@@ -2464,7 +2470,7 @@
           "events": {
             "type": "array",
             "minItems": 1,
-            "maxItems": 250,
+            "maxItems": 50,
             "items": {
               "type": "object",
               "required": [
@@ -2497,7 +2503,7 @@
                 "accuracyMeters": {
                   "type": "number",
                   "minimum": 0,
-                  "maximum": 10000
+                  "maximum": 100
                 }
               },
               "additionalProperties": false
@@ -4265,6 +4271,24 @@
           "expectedRevision": {
             "type": "integer",
             "minimum": 1
+          }
+        }
+      },
+      "GpsConsentInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "purposeVersion",
+          "acknowledged"
+        ],
+        "properties": {
+          "purposeVersion": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 100
+          },
+          "acknowledged": {
+            "const": true
           }
         }
       }
@@ -7054,8 +7078,8 @@
         ],
         "operationId": "postPlaybackEvents",
         "summary": "Ingest deduplicated signed playback batch",
-        "description": "Ingest deduplicated signed playback batch B0 contract only; no runtime handler exists yet.",
-        "x-backend-phase": "B16",
+        "description": "B17 signed and consented reported playback qualified against current manifest, paid active window, heartbeat, accurate location, and duplicate buckets; not verified audience reach.",
+        "x-backend-phase": "B17",
         "x-access-roles": [
           "device"
         ],
@@ -7120,12 +7144,10 @@
             }
           }
         },
-        "x-idempotency-required": true,
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/IdempotencyKey"
-          }
-        ]
+        "x-idempotency-required": false,
+        "parameters": [],
+        "x-implementation-status": "implemented-b17",
+        "x-device-signature-required": true
       }
     },
     "/creatives/upload-intents": {
@@ -9349,7 +9371,7 @@
         ],
         "operationId": "ingestConsentedTripEvidence",
         "summary": "Ingest signed consent-backed telemetry",
-        "description": "Purpose-bound driver consent, server-side clock and spatial accuracy checks, minimal retention. B0 contract only.",
+        "description": "B17 bounded, consent-backed, signed GPS with accuracy, speed and retention guards.",
         "x-backend-phase": "B17",
         "x-access-roles": [
           "device"
@@ -9415,12 +9437,10 @@
             }
           }
         },
-        "x-idempotency-required": true,
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/IdempotencyKey"
-          }
-        ]
+        "x-idempotency-required": false,
+        "parameters": [],
+        "x-implementation-status": "implemented-b17",
+        "x-device-signature-required": true
       }
     },
     "/drivers/me/earnings": {
@@ -15631,6 +15651,650 @@
           }
         ],
         "x-implementation-status": "implemented-b16"
+      }
+    },
+    "/drivers/vehicles/{vehicleId}/gps-consent": {
+      "post": {
+        "tags": [
+          "Delivery"
+        ],
+        "operationId": "grantGpsConsent",
+        "summary": "Explicitly grant GPS consent",
+        "description": "B17 purpose-bound driver-consent and signed telemetry. Aggregates are qualified device reports, never verified human views.",
+        "x-backend-phase": "B17",
+        "x-access-roles": [
+          "driver"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Authoritative delivery state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/DeliveryPlan"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Authoritative response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "parameters": [
+          {
+            "name": "vehicleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "x-implementation-status": "implemented-b17",
+        "x-csrf-required": true,
+        "x-idempotency-required": false,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GpsConsentInput"
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Delivery"
+        ],
+        "operationId": "getGpsConsent",
+        "summary": "Read own GPS consent",
+        "description": "B17 purpose-bound driver-consent and signed telemetry. Aggregates are qualified device reports, never verified human views.",
+        "x-backend-phase": "B17",
+        "x-access-roles": [
+          "driver"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Authoritative response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Successful authoritative response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Campaign"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "parameters": [
+          {
+            "name": "vehicleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "x-implementation-status": "implemented-b17"
+      }
+    },
+    "/drivers/vehicles/{vehicleId}/gps-consent/revoke": {
+      "post": {
+        "tags": [
+          "Delivery"
+        ],
+        "operationId": "revokeGpsConsent",
+        "summary": "Revoke GPS consent and erase raw points",
+        "description": "B17 purpose-bound driver-consent and signed telemetry. Aggregates are qualified device reports, never verified human views.",
+        "x-backend-phase": "B17",
+        "x-access-roles": [
+          "driver"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Authoritative delivery state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/DeliveryPlan"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Authoritative response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "parameters": [
+          {
+            "name": "vehicleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "x-implementation-status": "implemented-b17",
+        "x-csrf-required": true,
+        "x-idempotency-required": false,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/drivers/screens/{screenId}/trips/start": {
+      "post": {
+        "tags": [
+          "Delivery"
+        ],
+        "operationId": "startGpsTrip",
+        "summary": "Begin opted-in trip",
+        "description": "B17 purpose-bound driver-consent and signed telemetry. Aggregates are qualified device reports, never verified human views.",
+        "x-backend-phase": "B17",
+        "x-access-roles": [
+          "driver"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Authoritative delivery state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/DeliveryPlan"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Authoritative response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "parameters": [
+          {
+            "name": "screenId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "x-implementation-status": "implemented-b17",
+        "x-csrf-required": true,
+        "x-idempotency-required": false,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/drivers/trips/{tripId}/stop": {
+      "post": {
+        "tags": [
+          "Delivery"
+        ],
+        "operationId": "stopGpsTrip",
+        "summary": "End own active trip",
+        "description": "B17 purpose-bound driver-consent and signed telemetry. Aggregates are qualified device reports, never verified human views.",
+        "x-backend-phase": "B17",
+        "x-access-roles": [
+          "driver"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Authoritative delivery state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/DeliveryPlan"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Authoritative response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "parameters": [
+          {
+            "name": "tripId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "x-implementation-status": "implemented-b17",
+        "x-csrf-required": true,
+        "x-idempotency-required": false,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/campaigns/{campaignId}/exposures": {
+      "get": {
+        "tags": [
+          "Delivery"
+        ],
+        "operationId": "getCampaignQualifiedPlaybacks",
+        "summary": "Tenant-isolated daily zone aggregates",
+        "description": "B17 purpose-bound driver-consent and signed telemetry. Aggregates are qualified device reports, never verified human views.",
+        "x-backend-phase": "B17",
+        "x-access-roles": [
+          "advertiser",
+          "admin"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Authoritative response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Successful authoritative response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Campaign"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "x-implementation-status": "implemented-b17"
       }
     }
   }
