@@ -7,7 +7,6 @@ import { resolvePrincipal,requireRole } from "../auth/policy.js";
 import { mutation } from "../pricing/guard.js";
 import { integerPaise } from "../pricing/money.js";
 import { atUtc } from "../pricing/schemas.js";
-import { serializableTransaction } from "../../db/transaction.js";
 import { executeIdempotent } from "../drivers/idempotency.js";
 import { HttpError } from "../../lib/http-error.js";
 import { validateBody } from "../../middleware/validate.js";
