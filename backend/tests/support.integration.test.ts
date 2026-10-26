@@ -47,7 +47,7 @@ test("B20 support RBAC, maintenance, durable notifications, lease/retry/dead let
   }});
   return {cookie:"advibe_dev_session="+token,csrf:mac(settings,"csrf",hashToken(token))};
  }));
- const [driverAuth,otherAuth,ownerAuth,strangerAuth,adminAuth]=identities as Identity[];
+ const [driverAuth,otherAuth,ownerAuth,strangerAuth,adminAuth]=identities as [Identity,Identity,Identity,Identity,Identity];
  const business=await db.business.create({data:{
   ownerUserId:owner.id,slug:"b20-company-"+tag,displayName:"B20 Company"}});
  const foreign=await db.business.create({data:{
@@ -92,7 +92,6 @@ test("B20 support RBAC, maintenance, durable notifications, lease/retry/dead let
   assert.equal((await post("/support/tickets",ownerAuth,open,"b20-ad-screen-"+tag)).status,422);
   const created=await post("/support/tickets",driverAuth,open,"b20-driver-"+tag);
   assert.equal(created.status,201,JSON.stringify(await created.json()));
-  const ticket=(await created.json().catch(()=>null)) as unknown;void ticket;
   const stored=await db.supportTicket.findFirstOrThrow({where:{
    createdByUserId:driver.id}});
   assert.equal((await post("/support/tickets",driverAuth,open,"b20-driver-"+tag)).status,201);
