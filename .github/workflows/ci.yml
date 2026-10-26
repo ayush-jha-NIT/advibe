@@ -35,7 +35,7 @@ jobs:
         run: npm run build
 
   backend-verify:
-    name: Express B15 delivery scheduling and paid activation checks
+    name: Express B16 signed playlists and heartbeat checks
     runs-on: ubuntu-latest
     permissions:
       contents: read
