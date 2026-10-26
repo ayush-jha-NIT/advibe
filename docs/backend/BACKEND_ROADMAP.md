@@ -1,6 +1,6 @@
 # AdVibe production backend implementation roadmap (B0–B23)
 
-The 24 frontend parts remain a browser-only demonstration. B0–B19 implemented in repository: B19 adds legally gated immutable invoices, verified partial refunds, tax credit notes and provider reconciliation; B18 adds reviewed driver earnings, frozen settlement snapshots and provider-verified payout reconciliation; B17 adds consent-led GPS trips and qualified playback aggregation; B16 adds signed screen-specific manifests, private media references and device heartbeat reports. B15 adds delivery scheduling and pause/resume; B14 adds Cashfree order creation, signed webhooks, independent payment verification and safe paid booking confirmation. B20–B23 remain pending. No production KYC provider, private S3 bucket or legal retention policy was provisioned. Production Neon, email and same-site domain configuration are not complete. Production domains, Neon and Resend provisioning are not complete. Do not confuse health endpoints with production business functionality.
+The 24 frontend parts remain a browser-only demonstration. B0–B20 implemented in repository: B20 adds role-scoped support, device maintenance, notification inbox and reliable leased jobs; B19 adds legally gated immutable invoices, verified partial refunds, tax credit notes and provider reconciliation; B18 adds reviewed driver earnings, frozen settlement snapshots and provider-verified payout reconciliation; B17 adds consent-led GPS trips and qualified playback aggregation; B16 adds signed screen-specific manifests, private media references and device heartbeat reports. B15 adds delivery scheduling and pause/resume; B14 adds Cashfree order creation, signed webhooks, independent payment verification and safe paid booking confirmation. B21–B23 remain pending. No production KYC provider, private S3 bucket or legal retention policy was provisioned. Production Neon, email and same-site domain configuration are not complete. Production domains, Neon and Resend provisioning are not complete. Do not confuse health endpoints with production business functionality.
 
 | Part | Scope | Acceptance evidence |
 | --- | --- | --- |
@@ -24,7 +24,7 @@ The 24 frontend parts remain a browser-only demonstration. B0–B19 implemented 
 | B17 | Trips, consent-led GPS, qualified playback aggregation (implemented; viewer verification pending) | Accuracy, privacy and event-consistency tests |
 | B18 | Earnings ledger, beneficiaries and payouts (implemented; live provider onboarding gated) | Ledger integrity, payout sandbox, reconciliation |
 | B19 | Taxes/invoices/refunds/financial reconciliation (implemented; production tax signoff gated) | Verified finance artifacts and accounting tests |
-| B20 | Support, maintenance, notifications and jobs | Role-scoped helpdesk and resilient queue tests |
+| B20 | Support, maintenance, notifications and jobs (implemented; external scheduler not deployed) | Role-scoped helpdesk and resilient queue tests |
 | B21 | Admin reports, users and audit | Correct aggregates, audited decisions, secure export tests |
 | B22 | Frontend service migration and cross-portal integration | Demo vs API mode clearly separated; full E2E tests |
 | B23 | Production release, monitoring, backups and handover | Staging/pilot signoffs, security/legal/deployment checks |
