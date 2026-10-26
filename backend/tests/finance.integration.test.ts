@@ -83,6 +83,10 @@ test("B19 issued immutable tax documents, refund safety, provider reconciliation
  const date=(days:number)=>dateString(new Date(Date.now()+days*86400000));
  const firstDate=date(2),lastDate=date(2),weekdays=[0,1,2,3,4,5,6];
  const testAmount=18700n;
+ const taxPolicy=await db.taxPolicy.create({data:{
+  version:"b19-tax-"+seed,taxBps:1000,sourceReference:"b19-ci-only-legal-review",
+  active:true,validFrom:atUtc(date(-2)),validTo:atUtc(date(40)),
+  createdByUserId:admin.id}});
  async function readyHold(screenId:string){
   const digest="a".repeat(64),time=new Date(Date.now()-120000);
   const asset=await db.mediaAsset.create({data:{businessId:business.id,
@@ -111,8 +115,8 @@ test("B19 issued immutable tax documents, refund safety, provider reconciliation
   const quote=await db.priceQuote.create({data:{businessId:business.id,
    requestedByUserId:owner.id,campaignId:campaign.id,startDate:atUtc(firstDate),
    endDate:atUtc(lastDate),selectedWeekdays:weekdays,screenIds:[screenId],
-   subtotalPaise:testAmount,discountPaise:0n,taxablePaise:testAmount,taxPaise:0n,
-   totalPaise:testAmount,taxPolicyVersion:"b14-ci-only",
+   subtotalPaise:17000n,discountPaise:0n,taxablePaise:17000n,taxPaise:1700n,
+   totalPaise:testAmount,taxPolicyVersion:taxPolicy.version,
    pricingSnapshot:{test:true},expiresAt:new Date(Date.now()+600000)}});
   const hold=await db.reservationHold.create({data:{
    businessId:business.id,campaignId:campaign.id,quoteId:quote.id,
@@ -258,6 +262,9 @@ test("B19 issued immutable tax documents, refund safety, provider reconciliation
   assert.equal(stored.totalPaise,testAmount);
   assert.equal(stored.supplierGstin,"09AAAAA0000A1Z5");
   assert.equal(stored.taxMode,"INTRA");
+  assert.equal(stored.cgstPaise,850n);
+  assert.equal(stored.sgstPaise,850n);
+  assert.equal(stored.igstPaise,0n);
   assert.equal(stored.cgstPaise+stored.sgstPaise+stored.igstPaise,first.quote.taxPaise);
   assert.ok(stored.invoiceNumber.length<=16);
   assert.equal((await post("/admin/invoices",invoiceInput,staff,"b19-invoice-"+seed)).status,201);
@@ -307,6 +314,8 @@ test("B19 issued immutable tax documents, refund safety, provider reconciliation
   const allNotes=await db.financeCreditNote.findMany({where:{invoiceId:stored.id}});
   assert.equal(allNotes.reduce((sum,x)=>sum+x.amountPaise,0n),testAmount);
   assert.equal(allNotes.reduce((sum,x)=>sum+x.taxablePaise,0n),stored.taxablePaise);
+  assert.equal(allNotes.reduce((sum,x)=>sum+x.cgstPaise,0n),stored.cgstPaise);
+  assert.equal(allNotes.reduce((sum,x)=>sum+x.sgstPaise,0n),stored.sgstPaise);
   assert.equal((await post("/admin/refunds",refundInput,staff,"b19-overrefund-"+seed)).status,409);
   assert.equal((await get("/payments/orders/"+firstOrder.id+"/refunds",bob)).status,404);
   const ownRefundsResponse:unknown=await (await get("/payments/orders/"+firstOrder.id+"/refunds",alice)).json();
