@@ -3,7 +3,7 @@
   "info": {
     "title": "AdVibe Backend API",
     "version": "0.1.0-b0",
-    "description": "B0–B10 implemented in repository and test CI. B10 private creative upload intents, verified private-object storage, isolated worker AV/FFmpeg transcoding, and Admin-only moderation. Real storage/worker deployment and live creative delivery are NOT configured."
+    "description": "B0–B10 implemented in repository and test CI. B10 private creative upload intents, verified private-object storage, isolated worker AV/FFmpeg transcoding, and Admin-only moderation. Real storage/worker deployment and live creative delivery are NOT deployed or implemented."
   },
   "servers": [
     {

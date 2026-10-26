@@ -1,7 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { type Creative, type MediaAsset, type ScreenPlacement } from "@prisma/client";
 import { Router, type NextFunction, type Request, type Response } from "express";
-import { z } from "zod";
 import type { AppConfig } from "../../config/env.js";
 import { HttpError } from "../../lib/http-error.js";
 import { validateBody } from "../../middleware/validate.js";
