@@ -1,5 +1,5 @@
 import {randomUUID} from "node:crypto";
-import {Prisma,type PrismaClient,type Prisma as PrismaTypes} from "@prisma/client";
+import {type PrismaClient,type Prisma as PrismaTypes} from "@prisma/client";
 import {serializableTransaction} from "../../db/transaction.js";
 type Tx=PrismaTypes.TransactionClient;
 export async function enqueueSupportNotice(tx:Tx,source:string,recipients:string[],
