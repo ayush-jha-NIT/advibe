@@ -35,7 +35,7 @@ jobs:
         run: npm run build
 
   backend-verify:
-    name: Express B16 signed playlists and heartbeat checks
+    name: Express B17 consented GPS trips and qualified playback checks
     runs-on: ubuntu-latest
     permissions:
       contents: read
