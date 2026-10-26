@@ -331,6 +331,24 @@ test("B19 issued immutable tax documents, refund safety, provider reconciliation
   assert.equal(checked.confirmedRefundsPaise,18700);
   assert.equal((await db.financeReconciliationEvent.count({where:{
    paymentOrderId:firstOrder.id,state:"MATCHED"}})),1);
+  // B21 admin financial reporting reflects actual B19 paid/refund events only.
+  const dateToday=new Date().toISOString().slice(0,10);
+  const dashboard=await get("/admin/reports?from="+dateToday+"&to="+dateToday,staff);
+  assert.equal(dashboard.status,200);
+  const financial=(await dashboard.json() as {data:{counts:{paidBookings:number;confirmedRefunds:number},
+   financial:{confirmedBookingGrossPaise:string;confirmedRefundsPaise:string;periodDifferencePaise:string}}}).data;
+  assert.equal(financial.counts.paidBookings,1);
+  assert.equal(financial.counts.confirmedRefunds,2);
+  assert.equal(financial.financial.confirmedBookingGrossPaise,"18700");
+  assert.equal(financial.financial.confirmedRefundsPaise,"18700");
+  assert.equal(financial.financial.periodDifferencePaise,"0");
+  assert.equal((await get("/admin/reports",alice)).status,403);
+  assert.equal((await get("/admin/reports?from=2020-01-01&to=2026-10-26",staff)).status,422);
+  const reportExport=await get("/admin/reports/export?from="+dateToday+"&to="+dateToday,staff);
+  assert.equal(reportExport.status,200);
+  assert.match(reportExport.headers.get("Content-Type")??"",/text\/csv/);
+  assert.match(await reportExport.text(),/confirmedBookingGrossPaise/);
+  assert.equal((await get("/admin/reports/export",alice)).status,403);
   // Independent payment provider mismatch must be logged and mark financial resolution required.
   const amountBefore=providerOrder.amount;providerOrder.amount=amountBefore+1n;
   const discrepancy=await post("/admin/finance/reconcile/"+firstOrder.id,{},staff);
