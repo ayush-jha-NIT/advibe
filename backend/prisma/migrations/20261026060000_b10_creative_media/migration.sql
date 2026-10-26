@@ -24,7 +24,7 @@ CREATE TABLE "MediaAsset" (
  CONSTRAINT "MediaAsset_processedSha256_check" CHECK ("processedSha256" IS NULL OR "processedSha256" ~ '^[a-f0-9]{64}$'),
  CONSTRAINT "MediaAsset_processing_complete_check" CHECK ("state" <> 'READY' OR (
   "uploadedAt" IS NOT NULL AND "scannedAt" IS NOT NULL AND "processedAt" IS NOT NULL AND
-  "sourceSha256"="expectedSha256" AND "processedKey" IS NOT NULL AND
+  "sourceSha256" IS NOT NULL AND "sourceSha256"="expectedSha256" AND "processedKey" IS NOT NULL AND
   "processedVersionId" IS NOT NULL AND "processedSha256" IS NOT NULL AND
   "processedMimeType" IS NOT NULL AND "width" > 0 AND "height" > 0)),
  CONSTRAINT "MediaAsset_upload_check" CHECK ("state"='PENDING_UPLOAD' OR

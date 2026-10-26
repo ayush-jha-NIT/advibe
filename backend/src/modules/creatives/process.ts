@@ -29,7 +29,9 @@ export async function processOneCreative(db:PrismaClient,storage:PrivateCreative
        sniffMime(bytes)!==pending.mimeType)
       throw new HttpError(422,"MEDIA_INTEGRITY","Source media checksum or format invalid");
     const processed=await processor.convert(bytes,pending.mimeType);
-    if(processed.width<1||processed.width>8192||
+    if((pending.mimeType==="video/mp4" && (processed.mimeType!=="video/mp4" || processed.durationMs===null)) ||
+       (pending.mimeType!=="video/mp4" && (processed.mimeType!=="image/png" || processed.durationMs!==null)) ||
+       processed.width<1||processed.width>8192||
        processed.height<1||processed.height>8192||
        processed.bytes.length<16||processed.bytes.length>104857600||
        sniffMime(processed.bytes)!==processed.mimeType||
