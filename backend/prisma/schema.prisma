@@ -138,6 +138,7 @@ model Business {
   campaigns     Campaign[]
   reservationHolds ReservationHold[]
   paymentOrders PaymentOrder[]
+  deliveryPlans DeliveryPlan[]
 
   @@index([ownerUserId])
   @@index([archivedAt, createdAt])
@@ -800,6 +801,7 @@ model Campaign {
   submissions     CampaignSubmission[]
   reservationHolds ReservationHold[]
   paymentOrders PaymentOrder[]
+  deliveryPlans DeliveryPlan[]
 
   @@index([ownerBusinessId, createdAt, id])
   @@index([status, submittedAt, id])
@@ -861,6 +863,7 @@ model ReservationHold {
   items           ReservationHoldItem[]
   activeSlots     InventorySlot[]
   paymentOrder    PaymentOrder?
+  deliveryPlan   DeliveryPlan?
 
   @@index([businessId, createdAt, id])
   @@index([campaignId, createdAt, id])
@@ -874,6 +877,7 @@ model ReservationHoldItem {
   serviceDate DateTime        @db.Date
   createdAt   DateTime        @default(now()) @db.Timestamptz(6)
   hold        ReservationHold @relation(fields: [holdId], references: [id], onDelete: Restrict)
+  deliveryWindow DeliveryWindow?
   screen      Screen          @relation(fields: [screenId], references: [id], onDelete: Restrict)
 
   @@unique([holdId, screenId, serviceDate])
@@ -932,6 +936,7 @@ model PaymentOrder {
   hold               ReservationHold   @relation(fields:[reservationHoldId],references:[id],onDelete:Restrict)
   payments           PaymentAttempt[]
   webhookEvents      PaymentWebhookEvent[]
+  deliveryPlan       DeliveryPlan?
 
   @@index([businessId,createdAt,id])
   @@index([state,createdAt])
@@ -960,4 +965,50 @@ model PaymentWebhookEvent {
   order          PaymentOrder  @relation(fields:[paymentOrderId],references:[id],onDelete:Restrict)
 
   @@index([paymentOrderId,receivedAt])
+}
+
+enum DeliveryState {
+  SCHEDULED
+  ACTIVE
+  PAUSED
+  COMPLETED
+}
+model DeliveryPlan {
+  id                String          @id @default(uuid()) @db.Uuid
+  reservationHoldId String          @unique @db.Uuid
+  paymentOrderId    String          @unique @db.Uuid
+  campaignId        String          @db.Uuid
+  businessId        String          @db.Uuid
+  state             DeliveryState   @default(SCHEDULED)
+  revision          Int             @default(1)
+  activatedAt       DateTime        @db.Timestamptz(6)
+  pausedAt          DateTime?       @db.Timestamptz(6)
+  resumedAt         DateTime?       @db.Timestamptz(6)
+  completedAt       DateTime?       @db.Timestamptz(6)
+  pauseReason       String?         @db.VarChar(1000)
+  createdAt         DateTime        @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime        @updatedAt @db.Timestamptz(6)
+  hold              ReservationHold @relation(fields:[reservationHoldId],references:[id],onDelete:Restrict)
+  order             PaymentOrder    @relation(fields:[paymentOrderId],references:[id],onDelete:Restrict)
+  campaign          Campaign        @relation(fields:[campaignId],references:[id],onDelete:Restrict)
+  business          Business        @relation(fields:[businessId],references:[id],onDelete:Restrict)
+  windows           DeliveryWindow[]
+  @@index([campaignId,state])
+  @@index([businessId,createdAt])
+  @@index([state,updatedAt])
+}
+model DeliveryWindow {
+  id                String          @id @default(uuid()) @db.Uuid
+  planId            String          @db.Uuid
+  holdId            String          @db.Uuid
+  screenId          String          @db.Uuid
+  serviceDate       DateTime        @db.Date
+  startsAt          DateTime        @db.Timestamptz(6)
+  endsAt            DateTime        @db.Timestamptz(6)
+  cityTimeZone      String          @db.VarChar(100)
+  plan              DeliveryPlan    @relation(fields:[planId],references:[id],onDelete:Restrict)
+  item              ReservationHoldItem @relation(fields:[holdId,screenId,serviceDate],references:[holdId,screenId,serviceDate],onDelete:Restrict)
+  @@unique([planId,screenId,serviceDate])
+  @@index([screenId,startsAt,endsAt])
+  @@index([planId,startsAt])
 }
