@@ -158,7 +158,7 @@ test("B21 MFA admin reports, least-privileged user status changes and audit expo
   const reportFile=await get("/admin/reports/export"+query,staff);
   assert.equal(reportFile.status,200);
   assert.match(await reportFile.text(),/confirmedBookingGrossPaise/);
-  assert.equal((await db.auditEvent.count({where:{action:"admin.report_exported"}})),1);
+  assert.equal((await db.auditEvent.count({where:{action:"admin.report_exported",actorUserId:administrator.id}})),1);
   // PENDING accounts cannot be pushed into ACTIVE with this operator status workflow.
   assert.equal((await patch("/admin/users/"+unverified.id+"/status",staff,
    restore,"b21-unverified-"+tag)).status,409);
