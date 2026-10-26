@@ -3,7 +3,7 @@
   "info": {
     "title": "AdVibe Backend API",
     "version": "0.1.0-b0",
-    "description": "B0–B7 contract: private KYC upload intents, signed scanning, consent receipts, independent Admin document/application review are implemented in CI. KYC providers/storage and privacy policies require real production provisioning. Booking, payment, devices and most domains remain NOT deployed or implemented."
+    "description": "B0–B8 contract. B8 device provisioning, verified Ed25519 pairing, revocation, signed heartbeats and empty signed manifests implemented in CI. Production hardware vendor, physical inspection, advertising playback and device fleet deployment are NOT deployed or implemented."
   },
   "servers": [
     {
@@ -608,7 +608,8 @@
           "id",
           "vehicleId",
           "placement",
-          "status"
+          "status",
+          "lastTrustedHeartbeatAt"
         ],
         "properties": {
           "id": {
@@ -637,10 +638,9 @@
           "status": {
             "type": "string",
             "enum": [
-              "online",
-              "offline",
-              "maintenance",
-              "unpaired"
+              "unpaired",
+              "paired",
+              "revoked"
             ]
           },
           "lastTrustedHeartbeatAt": {
@@ -1267,7 +1267,8 @@
                 }
               },
               "additionalProperties": false
-            }
+            },
+            "description": "B8 returns strictly an empty list; scheduling/creative signing is B15/B16."
           },
           "signature": {
             "type": "string",
@@ -2785,6 +2786,173 @@
           }
         },
         "additionalProperties": true
+      },
+      "DeviceScreenProvisionInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "vehicleId",
+          "placement",
+          "installationReference"
+        ],
+        "properties": {
+          "vehicleId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "placement": {
+            "type": "string",
+            "enum": [
+              "bike_rear",
+              "auto_rear",
+              "auto_side",
+              "car_rear",
+              "car_interior",
+              "helmet"
+            ]
+          },
+          "installationReference": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 120
+          }
+        }
+      },
+      "DevicePairingChallengeInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "screenId",
+          "publicKeySpki"
+        ],
+        "properties": {
+          "screenId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "publicKeySpki": {
+            "type": "string",
+            "minLength": 54,
+            "maxLength": 180,
+            "description": "Admin-offline-verified Ed25519 SPKI DER base64url public key"
+          }
+        }
+      },
+      "DevicePairingChallenge": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "challengeId",
+          "screenId",
+          "nonce",
+          "expiresAt",
+          "keyFingerprint"
+        ],
+        "properties": {
+          "challengeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "screenId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nonce": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "keyFingerprint": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        }
+      },
+      "DevicePairProof": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "challengeId",
+          "signature"
+        ],
+        "properties": {
+          "challengeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "signature": {
+            "type": "string",
+            "description": "Ed25519 signature over exact pairing tuple; never a device secret"
+          }
+        }
+      },
+      "DevicePairResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "screenId",
+          "deviceId",
+          "fingerprint",
+          "status"
+        ],
+        "properties": {
+          "screenId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "deviceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fingerprint": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "paired"
+            ]
+          }
+        }
+      },
+      "DeviceHeartbeatReceipt": {
+        "type": "object",
+        "required": [
+          "received",
+          "eventId"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "received": {
+            "type": "boolean"
+          },
+          "eventId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "DeviceRevocationReceipt": {
+        "type": "object",
+        "required": [
+          "screenId",
+          "status"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "screenId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "revoked"
+            ]
+          }
+        }
       }
     },
     "responses": {
@@ -4957,10 +5125,9 @@
         ],
         "operationId": "listScreens",
         "summary": "List filtered screens with authoritative server inventory status",
-        "description": "Advertiser response must omit secrets and show only allocatable capacity; driver list must be owner-filtered. B0 contract only; no runtime handler exists yet.",
+        "description": "B8: Admin or owning driver only; advertisers cannot see private unpublished vehicle inventory.",
         "x-backend-phase": "B8",
         "x-access-roles": [
-          "advertiser",
           "driver",
           "admin"
         ],
@@ -5028,7 +5195,8 @@
           {
             "$ref": "#/components/parameters/Limit"
           }
-        ]
+        ],
+        "x-implementation-status": "implemented-b8"
       }
     },
     "/screens/{screenId}": {
@@ -5038,10 +5206,9 @@
         ],
         "operationId": "getScreen",
         "summary": "Read authorized screen metadata",
-        "description": "Read authorized screen metadata B0 contract only; no runtime handler exists yet.",
+        "description": "B8: Admin or owning driver only; advertisers cannot see private unpublished vehicle inventory.",
         "x-backend-phase": "B8",
         "x-access-roles": [
-          "advertiser",
           "driver",
           "admin"
         ],
@@ -5106,7 +5273,8 @@
               "format": "uuid"
             }
           }
-        ]
+        ],
+        "x-implementation-status": "implemented-b8"
       }
     },
     "/admin/devices/pairing-challenges": {
@@ -5115,8 +5283,8 @@
           "Devices"
         ],
         "operationId": "createDevicePairingChallenge",
-        "summary": "Create short-lived install challenge",
-        "description": "Create short-lived install challenge B0 contract only; no runtime handler exists yet.",
+        "summary": "create Device Pairing Challenge",
+        "description": "Implemented B8 identity/provisioning API. Pairing is NOT hardware certification or permission to play ads.",
         "x-backend-phase": "B8",
         "x-access-roles": [
           "admin"
@@ -5129,7 +5297,7 @@
         ],
         "responses": {
           "201": {
-            "description": "Successful authoritative response",
+            "description": "Successful response",
             "content": {
               "application/json": {
                 "schema": {
@@ -5139,7 +5307,7 @@
                   ],
                   "properties": {
                     "data": {
-                      "$ref": "#/components/schemas/PublicMessage"
+                      "$ref": "#/components/schemas/DevicePairingChallenge"
                     }
                   },
                   "additionalProperties": false
@@ -5172,6 +5340,16 @@
             "$ref": "#/components/responses/ServerError"
           }
         },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DevicePairingChallengeInput"
+              }
+            }
+          }
+        },
         "x-csrf-required": true,
         "x-idempotency-required": true,
         "parameters": [
@@ -5181,7 +5359,8 @@
           {
             "$ref": "#/components/parameters/IdempotencyKey"
           }
-        ]
+        ],
+        "x-implementation-status": "implemented-b8"
       }
     },
     "/devices/heartbeats": {
@@ -5270,10 +5449,10 @@
         "tags": [
           "Devices"
         ],
-        "operationId": "getDeviceManifest",
-        "summary": "Fetch signed device playlist",
-        "description": "Fetch signed device playlist B0 contract only; no runtime handler exists yet.",
-        "x-backend-phase": "B16",
+        "operationId": "readSignedEmptyManifest",
+        "summary": "read Signed Empty Manifest",
+        "description": "Implemented B8 identity/provisioning API. Pairing is NOT hardware certification or permission to play ads.",
+        "x-backend-phase": "B8",
         "x-access-roles": [
           "device"
         ],
@@ -5285,7 +5464,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful authoritative response",
+            "description": "Successful response",
             "content": {
               "application/json": {
                 "schema": {
@@ -5327,7 +5506,12 @@
           "500": {
             "$ref": "#/components/responses/ServerError"
           }
-        }
+        },
+        "x-idempotency-required": false,
+        "parameters": [],
+        "x-implementation-status": "implemented-b8",
+        "x-csrf-required": false,
+        "x-device-signature-required": true
       }
     },
     "/devices/playback-events": {
@@ -10822,6 +11006,411 @@
         "parameters": [],
         "x-implementation-status": "implemented-b7",
         "x-signature-verification-required": true
+      }
+    },
+    "/admin/devices/screens": {
+      "post": {
+        "tags": [
+          "Devices"
+        ],
+        "operationId": "provisionDeviceScreen",
+        "summary": "provision Device Screen",
+        "description": "Implemented B8 identity/provisioning API. Pairing is NOT hardware certification or permission to play ads.",
+        "x-backend-phase": "B8",
+        "x-access-roles": [
+          "admin"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Screen"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceScreenProvisionInput"
+              }
+            }
+          }
+        },
+        "x-csrf-required": true,
+        "x-idempotency-required": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "x-implementation-status": "implemented-b8"
+      }
+    },
+    "/devices/pair": {
+      "post": {
+        "tags": [
+          "Devices"
+        ],
+        "operationId": "completeDevicePairing",
+        "summary": "complete Device Pairing",
+        "description": "Implemented B8 identity/provisioning API. Pairing is NOT hardware certification or permission to play ads.",
+        "x-backend-phase": "B8",
+        "x-access-roles": [
+          "public"
+        ],
+        "x-trust-boundary": "public",
+        "security": [],
+        "responses": {
+          "201": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/DevicePairResult"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DevicePairProof"
+              }
+            }
+          }
+        },
+        "x-csrf-required": false,
+        "x-idempotency-required": false,
+        "parameters": [],
+        "x-implementation-status": "implemented-b8"
+      }
+    },
+    "/admin/devices/{screenId}/revoke": {
+      "post": {
+        "tags": [
+          "Devices"
+        ],
+        "operationId": "revokeDeviceIdentity",
+        "summary": "revoke Device Identity",
+        "description": "Implemented B8 identity/provisioning API. Pairing is NOT hardware certification or permission to play ads.",
+        "x-backend-phase": "B8",
+        "x-access-roles": [
+          "admin"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/DeviceRevocationReceipt"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "x-csrf-required": true,
+        "x-idempotency-required": false,
+        "parameters": [
+          {
+            "name": "screenId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "x-implementation-status": "implemented-b8"
+      }
+    },
+    "/admin/devices/{screenId}/manifests/empty": {
+      "post": {
+        "tags": [
+          "Devices"
+        ],
+        "operationId": "issueEmptySignedManifest",
+        "summary": "issue Empty Signed Manifest",
+        "description": "Implemented B8 identity/provisioning API. Pairing is NOT hardware certification or permission to play ads.",
+        "x-backend-phase": "B8",
+        "x-access-roles": [
+          "admin"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/DeviceManifest"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "x-csrf-required": true,
+        "x-idempotency-required": false,
+        "parameters": [
+          {
+            "name": "screenId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "x-implementation-status": "implemented-b8"
+      }
+    },
+    "/devices/heartbeat": {
+      "post": {
+        "tags": [
+          "Devices"
+        ],
+        "operationId": "acceptAuthenticatedDeviceHeartbeat",
+        "summary": "accept Authenticated Device Heartbeat",
+        "description": "Implemented B8 identity/provisioning API. Pairing is NOT hardware certification or permission to play ads.",
+        "x-backend-phase": "B8",
+        "x-access-roles": [
+          "device"
+        ],
+        "x-trust-boundary": "device",
+        "security": [
+          {
+            "deviceBearer": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/DeviceHeartbeatReceipt"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceHeartbeatInput"
+              }
+            }
+          }
+        },
+        "x-idempotency-required": false,
+        "parameters": [],
+        "x-implementation-status": "implemented-b8",
+        "x-csrf-required": false,
+        "x-device-signature-required": true
       }
     }
   }

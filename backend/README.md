@@ -1,33 +1,18 @@
-# AdVibe backend B7: private KYC and agreement review
+# AdVibe Backend B8: device provisioning and secure pairing
 
-B0–B7 have repository implementations. The Next.js frontend remains a demo, and no production Neon, KYC scanner vendor, private storage bucket or legally approved retention policy has been connected.
+B0–B8 are implemented in repository and CI; the deployed frontend is **still in demo mode**, and no production AdVibe Neon database, hardware vendor or physical-screen installation has been provisioned.
 
-Node 22+, PostgreSQL 16+, private pooled DATABASE_URL, unpooled DIRECT_URL, AUTH_SECRET, MFA_ENCRYPTION_KEY, verified Resend and Turnstile configuration remain required. Apply migration 20261026030000_b7_private_kyc to disposable staging first.
+Start with backend/.env.example: private pooled DATABASE_URL and direct DIRECT_URL; AUTH_SECRET; MFA_ENCRYPTION_KEY; verified CORS_ORIGINS, Resend and Turnstile credentials; legally approved KYC private storage/scan/legal policy. B8 additionally supports DEVICE_MANIFEST_SIGNING_KEY_PKCS8_B64: separate Ed25519 private PKCS8 DER in base64url, stored **only in server secrets management**, with the public key pinned into approved hardware firmware.
 
-B7 additional private environment values:
-- KYC_S3_BUCKET / KYC_S3_REGION: encrypted, private, versioned S3 bucket with least-privilege server-only IAM.
-- KYC_SCAN_SECRET: separate >=32-character secret shared only with the trusted scanner callback.
-- KYC_RETENTION_DAYS: legally approved document retention days, 1..365.
-- DRIVER_AGREEMENT_VERSION and DRIVER_AGREEMENT_SHA256: reviewed/published agreement identifier and exact SHA-256.
-- DRIVER_PRIVACY_VERSION: reviewed/published privacy notice version.
+Local commands:
+- npm install --prefix backend
+- npm --prefix backend run db:validate
+- npm --prefix backend run db:migrate:deploy
+- npm --prefix backend run check (only against disposable localhost PostgreSQL, NODE_ENV=test and DB_TEST_ALLOWED=true)
+- npm --prefix backend run dev
 
-No live uploads or approvals are available when policy values/storage are missing. Never store raw government IDs in application tables, frontend localStorage, Cloudinary public URLs, logs or Git.
+Migration 20261026040000_b8_device_identity creates Screen, DeviceCredential, DevicePairingChallenge, DeviceRequestNonce, DeviceHeartbeat and DeviceManifestVersion plus constraints and indexes.
 
-Run npm install --prefix backend; npm --prefix backend run db:migrate:deploy; npm --prefix backend run check against disposable local test PostgreSQL only (NODE_ENV=test, DB_TEST_ALLOWED=true). For development run npm --prefix backend run dev after provisioning the local database. GitHub Actions does this in a fresh PostgreSQL 16 service container.
+B8 implements Admin-only screen creation, public-key pairing challenges, signed pairing proof, immediate credential revocation and rotation, owner-scoped screen inspection, device-signed heartbeats and short-lived signed **EMPTY** manifests. This is deliberately not ad playback. See docs/backend/B8_IMPLEMENTATION.md for routes, exact signature canonicalization, security limits and hardware/legal prerequisites. Never expose the Ed25519 private key or claim verified physical installation from a database PAIRED status.
 
-Important B7 routes:
-- POST /api/v1/drivers/documents/upload-intents
-- POST /api/v1/drivers/documents/:documentId/complete
-- GET /api/v1/drivers/applications/:applicationId/documents
-- POST /api/v1/drivers/applications/:applicationId/accept-agreement
-- POST /api/v1/drivers/applications/:applicationId/reopen
-- POST /api/v1/webhooks/kyc/document-scan (HMAC-signed provider-only)
-- GET /api/v1/admin/driver-applications
-- GET /api/v1/admin/driver-applications/:applicationId
-- GET /api/v1/admin/driver-documents/:documentId/download-url
-- POST /api/v1/admin/driver-documents/:documentId/decision
-- POST /api/v1/admin/driver-applications/:applicationId/decision
-
-Only an enrolled MFA-authenticated Admin may review confidential evidence. A clean scan still needs human document approval, and application approval requires all three specified documents plus legally reviewed agreement acceptance. Submission/approval is not proof of live KYC compliance or device activation.
-
-See docs/backend/B7_IMPLEMENTATION.md for boundaries, S3 lifecycle, verified scanner requirements and tests. Next: B8 device provisioning with separate hardware identity. B22 eventually integrates the real frontend.
+B9 is geo inventory; B15–B16 are scheduling/playback. B22 migrates frontend demo services to real APIs. All external production credentials and device integrations require separate deployment and review.

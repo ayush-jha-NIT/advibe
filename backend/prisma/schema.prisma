@@ -282,6 +282,7 @@ model Vehicle {
   updatedAt             DateTime            @updatedAt @db.Timestamptz(6)
   driver                User                @relation(fields: [driverUserId], references: [id], onDelete: Restrict)
   applications          DriverApplication[] @relation("ApplicationVehicle")
+  screens               Screen[]
 
   @@unique([id, driverUserId])
   @@index([driverUserId, createdAt, id])
@@ -402,4 +403,104 @@ model DriverApplicationReview {
 
   @@index([applicationId, createdAt])
   @@index([adminUserId, createdAt])
+}
+
+
+// B8: provisioning and cryptographic pairing are NOT physical installation approval.
+enum ScreenPlacement {
+  BIKE_REAR
+  AUTO_REAR
+  AUTO_SIDE
+  CAR_REAR
+  CAR_INTERIOR
+  HELMET
+}
+
+enum ScreenState {
+  UNPAIRED
+  PAIRED
+  REVOKED
+}
+
+model Screen {
+  id             String            @id @default(uuid()) @db.Uuid
+  vehicleId      String            @db.Uuid
+  placement      ScreenPlacement
+  state          ScreenState       @default(UNPAIRED)
+  installationReference String     @db.VarChar(120)
+  createdAt      DateTime          @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime          @updatedAt @db.Timestamptz(6)
+  vehicle        Vehicle           @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
+  credential     DeviceCredential?
+  challenges     DevicePairingChallenge[]
+  manifests      DeviceManifestVersion[]
+
+  @@index([vehicleId, state])
+}
+
+model DeviceCredential {
+  id               String    @id @default(uuid()) @db.Uuid
+  screenId         String    @unique @db.Uuid
+  publicKeySpki    String    @db.VarChar(256)
+  fingerprint      String    @db.Char(64)
+  pairedAt         DateTime  @default(now()) @db.Timestamptz(6)
+  revokedAt        DateTime? @db.Timestamptz(6)
+  updatedAt        DateTime  @updatedAt @db.Timestamptz(6)
+  screen           Screen    @relation(fields: [screenId], references: [id], onDelete: Restrict)
+  requestNonces    DeviceRequestNonce[]
+  heartbeats       DeviceHeartbeat[]
+
+  @@index([fingerprint])
+}
+
+model DevicePairingChallenge {
+  id              String    @id @default(uuid()) @db.Uuid
+  screenId        String    @db.Uuid
+  adminUserId     String    @db.Uuid
+  publicKeySpki   String    @db.VarChar(256)
+  nonce           String    @db.VarChar(64)
+  expiresAt       DateTime  @db.Timestamptz(6)
+  consumedAt      DateTime? @db.Timestamptz(6)
+  createdAt       DateTime  @default(now()) @db.Timestamptz(6)
+  screen          Screen    @relation(fields: [screenId], references: [id], onDelete: Restrict)
+
+  @@index([screenId, consumedAt, expiresAt])
+  @@index([expiresAt])
+}
+
+model DeviceRequestNonce {
+  id            String           @id @default(uuid()) @db.Uuid
+  credentialId  String           @db.Uuid
+  nonce         String           @db.VarChar(64)
+  receivedAt    DateTime         @default(now()) @db.Timestamptz(6)
+  credential    DeviceCredential @relation(fields: [credentialId], references: [id], onDelete: Restrict)
+
+  @@unique([credentialId, nonce])
+  @@index([receivedAt])
+}
+
+model DeviceHeartbeat {
+  id            String           @id @default(uuid()) @db.Uuid
+  credentialId  String           @db.Uuid
+  deviceEventId String           @db.VarChar(128)
+  observedAt    DateTime         @db.Timestamptz(6)
+  receivedAt    DateTime         @default(now()) @db.Timestamptz(6)
+  firmwareVersion String         @db.VarChar(100)
+  credential    DeviceCredential @relation(fields: [credentialId], references: [id], onDelete: Restrict)
+
+  @@unique([credentialId, deviceEventId])
+  @@index([credentialId, receivedAt])
+}
+
+model DeviceManifestVersion {
+  id         String    @id @default(uuid()) @db.Uuid
+  screenId   String    @db.Uuid
+  version    Int
+  expiresAt  DateTime  @db.Timestamptz(6)
+  entries    Json
+  signature  String    @db.VarChar(128)
+  createdAt  DateTime  @default(now()) @db.Timestamptz(6)
+  screen     Screen    @relation(fields: [screenId], references: [id], onDelete: Restrict)
+
+  @@unique([screenId, version])
 }

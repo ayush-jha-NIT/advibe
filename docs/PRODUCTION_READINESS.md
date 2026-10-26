@@ -1,6 +1,6 @@
 # AdVibe Production Readiness — Mandatory Backend and Launch Work
 
-**Status: frontend demonstration only, NOT production-ready. B0–B7 implemented in GitHub CI, including versioned KYC upload and Admin review controls. B8–B23 pending. Live private storage, scanner vendor and legal retention/sign-off remain unconfigured. A submitted application is not KYC or hardware approval. No AdVibe Neon production database or verified email sender is provisioned. Admin authenticator must be operator-enrolled, and the deployed frontend still uses demo authentication.**
+**Status: frontend demonstration only, NOT production-ready. B0–B8 implemented in GitHub CI, including secure device pairing and signed empty manifests. B9–B23 pending. Hardware manufacture, physical installation attestation and firmware keys are not provisioned. Live private storage, scanner vendor and legal retention/sign-off remain unconfigured. A submitted application is not KYC or hardware approval. No AdVibe Neon production database or verified email sender is provisioned. Admin authenticator must be operator-enrolled, and the deployed frontend still uses demo authentication.**
 
 Backend baseline: [B0 architecture](backend/B0_ARCHITECTURE.md), [database](backend/B0_DATABASE.md), [API migration map](backend/B0_API_MAPPING.md), [decisions](backend/B0_DECISIONS.md), and [versioned OpenAPI](../contracts/openapi.v1.json).
 

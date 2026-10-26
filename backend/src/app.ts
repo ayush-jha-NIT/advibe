@@ -11,6 +11,7 @@ import { createAccountsRouter } from "./modules/accounts/routes.js";
 import { createTurnstileVerifier, type CaptchaVerifier } from "./modules/enquiries/captcha.js";
 import { createDriverRouter } from "./modules/drivers/routes.js";
 import { createKycRouter, type KycDependencies } from "./modules/kyc/routes.js";
+import { createDeviceRouter } from "./modules/devices/routes.js";
 
 /** Every live API server supplies a database probe; omitted probes fail closed. */
 export function createApp(
@@ -30,7 +31,7 @@ export function createApp(
       return callback(new HttpError(403, "ORIGIN_FORBIDDEN", "Origin is not allowed"));
     },
     methods: ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "X-CSRF-Token", "Idempotency-Key", "X-Request-ID"],
+    allowedHeaders: ["Content-Type", "X-CSRF-Token", "Idempotency-Key", "X-Request-ID", "X-Device-ID", "X-Device-Timestamp", "X-Device-Nonce", "X-Device-Signature"],
     maxAge: 600,
   }));
   app.use(express.json({ limit: "64kb", strict: true }));
@@ -49,10 +50,11 @@ export function createApp(
     app.use("/api/v1/auth", createAuthRouter(config, auth));
     app.use("/api/v1/drivers", createDriverRouter(config, auth));
     app.use("/api/v1", createKycRouter(config, auth, kyc));
+    app.use("/api/v1", createDeviceRouter(config, auth));
     app.use("/api/v1", createAccountsRouter(config, auth,
       verifyCaptcha ?? createTurnstileVerifier()));
   }
-  // B8-B23 add devices, pricing and payment routes; demo remains isolated.
+  // B9-B23 add geo inventory, playback scheduling and payment routes; demo remains isolated.
   app.use(notFound);
   app.use(errorHandler(logger));
   return app;

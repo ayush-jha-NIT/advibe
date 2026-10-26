@@ -35,7 +35,7 @@ jobs:
         run: npm run build
 
   backend-verify:
-    name: Express B7 KYC, legal consent and verification checks
+    name: Express B8 device identity and secure pairing checks
     runs-on: ubuntu-latest
     permissions:
       contents: read
