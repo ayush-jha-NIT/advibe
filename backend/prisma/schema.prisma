@@ -137,6 +137,7 @@ model Business {
   quotes        PriceQuote[]
   campaigns     Campaign[]
   reservationHolds ReservationHold[]
+  paymentOrders PaymentOrder[]
 
   @@index([ownerUserId])
   @@index([archivedAt, createdAt])
@@ -857,6 +858,7 @@ model ReservationHold {
   quote           PriceQuote           @relation(fields: [quoteId], references: [id], onDelete: Restrict)
   items           ReservationHoldItem[]
   activeSlots     InventorySlot[]
+  paymentOrder    PaymentOrder?
 
   @@index([businessId, createdAt, id])
   @@index([campaignId, createdAt, id])
@@ -886,4 +888,74 @@ model InventorySlot {
 
   @@id([screenId, serviceDate])
   @@index([holdId])
+}
+
+
+// B14 Cashfree payment attempt ledger and server-verified confirmation.
+// Refunds, invoices, and settlement reconciliation are reserved for B19.
+enum PaymentOrderState {
+  CREATING
+  ACTIVE
+  PAID
+  PAID_UNALLOCATED
+  CANCELLED
+}
+
+enum PaymentAttemptState {
+  SUCCESS
+  FAILED
+  PENDING
+  USER_DROPPED
+}
+
+model PaymentOrder {
+  id                 String            @id @default(uuid()) @db.Uuid
+  businessId         String            @db.Uuid
+  campaignId         String            @db.Uuid
+  quoteId            String            @db.Uuid
+  reservationHoldId  String            @unique @db.Uuid
+  createdByUserId    String            @db.Uuid
+  providerOrderId    String            @unique @db.VarChar(90)
+  providerSessionId  String?           @db.VarChar(350)
+  currency           String            @default("INR") @db.Char(3)
+  amountPaise        BigInt            @db.BigInt
+  state              PaymentOrderState @default(CREATING)
+  createdAt          DateTime          @default(now()) @db.Timestamptz(6)
+  updatedAt          DateTime          @updatedAt @db.Timestamptz(6)
+  paidAt             DateTime?         @db.Timestamptz(6)
+  requiresResolution Boolean           @default(false)
+  business           Business          @relation(fields:[businessId],references:[id],onDelete:Restrict)
+  campaign           Campaign          @relation(fields:[campaignId],references:[id],onDelete:Restrict)
+  quote              PriceQuote        @relation(fields:[quoteId],references:[id],onDelete:Restrict)
+  hold               ReservationHold   @relation(fields:[reservationHoldId],references:[id],onDelete:Restrict)
+  payments           PaymentAttempt[]
+  webhookEvents      PaymentWebhookEvent[]
+
+  @@index([businessId,createdAt,id])
+  @@index([state,createdAt])
+  @@index([requiresResolution,createdAt])
+}
+
+model PaymentAttempt {
+  id                String              @id @default(uuid()) @db.Uuid
+  paymentOrderId    String              @db.Uuid
+  providerPaymentId String              @unique @db.VarChar(90)
+  amountPaise       BigInt              @db.BigInt
+  currency          String              @db.Char(3)
+  status            PaymentAttemptState
+  verifiedAt        DateTime            @default(now()) @db.Timestamptz(6)
+  order             PaymentOrder        @relation(fields:[paymentOrderId],references:[id],onDelete:Restrict)
+
+  @@index([paymentOrderId,verifiedAt])
+}
+
+model PaymentWebhookEvent {
+  id             String        @id @default(uuid()) @db.Uuid
+  paymentOrderId String        @db.Uuid
+  eventHash      String        @unique @db.Char(64)
+  eventType      String        @db.VarChar(80)
+  receivedAt     DateTime      @default(now()) @db.Timestamptz(6)
+  order          PaymentOrder  @relation(fields:[paymentOrderId],references:[id],onDelete:Restrict)
+
+  @@index([paymentOrderId,receivedAt])
 }

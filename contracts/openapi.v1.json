@@ -3,7 +3,7 @@
   "info": {
     "title": "AdVibe Backend API",
     "version": "0.1.0-b0",
-    "description": "B0–B13 are repository and PostgreSQL CI implementations. B13 provides temporary exclusive screen-day holds, expiry reclaim, ownership checks and release. Live deployment, confirmed booking/payment and real playback are NOT deployed or implemented."
+    "description": "B0–B14 source/CI modules. B14 Cashfree order creation, authenticated exact-amount provider reads, raw signed webhooks and atomic reservation conversion; no production merchant credentials or live payment deployment. Refunds, invoices and settlement audits remain B19, not implemented."
   },
   "servers": [
     {
@@ -1207,7 +1207,12 @@
           "quoteId",
           "amountPaise",
           "currency",
-          "status"
+          "status",
+          "businessId",
+          "reservationHoldId",
+          "needsResolution",
+          "createdAt",
+          "paidAt"
         ],
         "properties": {
           "id": {
@@ -1234,16 +1239,38 @@
           "status": {
             "type": "string",
             "enum": [
-              "created",
-              "pending",
+              "creating",
+              "active",
               "paid",
-              "failed",
+              "paid_unallocated",
               "cancelled"
             ]
           },
           "checkoutSession": {
             "type": "string",
             "description": "Short-lived provider-issued checkout token, never merchant secret"
+          },
+          "businessId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reservationHoldId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "needsResolution": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "paidAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
           }
         },
         "additionalProperties": false
@@ -1254,7 +1281,8 @@
           "id",
           "orderId",
           "amountPaise",
-          "status"
+          "status",
+          "verifiedAt"
         ],
         "properties": {
           "id": {
@@ -1278,6 +1306,10 @@
               "failed",
               "refunded"
             ]
+          },
+          "verifiedAt": {
+            "type": "string",
+            "format": "date-time"
           }
         },
         "additionalProperties": false
@@ -2315,7 +2347,8 @@
         "required": [
           "campaignId",
           "quoteId",
-          "reservationHoldId"
+          "reservationHoldId",
+          "customerPhone"
         ],
         "properties": {
           "campaignId": {
@@ -2329,6 +2362,11 @@
           "reservationHoldId": {
             "type": "string",
             "format": "uuid"
+          },
+          "customerPhone": {
+            "type": "string",
+            "pattern": "^[6-9][0-9]{9}$",
+            "description": "Explicit customer contact required by checkout provider; not stored by AdVibe"
           }
         },
         "additionalProperties": false
@@ -8510,7 +8548,7 @@
         ],
         "operationId": "createPaymentOrder",
         "summary": "Create provider order for locked server quote",
-        "description": "Server MUST derive price and ownership from stored quote and reservation; ignore client submitted amounts. B0 contract only; no runtime handler exists yet.",
+        "description": "B14 source and isolated PostgreSQL test implementation. Cashfree verified status and exact INR paise are authoritative; late successful charges require manual resolution. No refunds/invoices, production keys or live deployment.",
         "x-backend-phase": "B14",
         "x-access-roles": [
           "advertiser"
@@ -8585,7 +8623,8 @@
           {
             "$ref": "#/components/parameters/IdempotencyKey"
           }
-        ]
+        ],
+        "x-implementation-status": "implemented-b14"
       }
     },
     "/payments/orders/{orderId}": {
@@ -8595,7 +8634,7 @@
         ],
         "operationId": "getOwnPaymentOrder",
         "summary": "Read server-verified order state",
-        "description": "Read server-verified order state B0 contract only; no runtime handler exists yet.",
+        "description": "B14 source and isolated PostgreSQL test implementation. Cashfree verified status and exact INR paise are authoritative; late successful charges require manual resolution. No refunds/invoices, production keys or live deployment.",
         "x-backend-phase": "B14",
         "x-access-roles": [
           "advertiser",
@@ -8662,7 +8701,8 @@
               "format": "uuid"
             }
           }
-        ]
+        ],
+        "x-implementation-status": "implemented-b14"
       }
     },
     "/webhooks/cashfree/payments": {
@@ -8672,7 +8712,7 @@
         ],
         "operationId": "cashfreePaymentWebhook",
         "summary": "Receive signed payment events",
-        "description": "Receive signed payment events B0 contract only; no runtime handler exists yet. Verify provider signature over raw body and deduplicate provider event ID before acknowledging.",
+        "description": "B14 source and isolated PostgreSQL test implementation. Cashfree verified status and exact INR paise are authoritative; late successful charges require manual resolution. No refunds/invoices, production keys or live deployment. Raw-body HMAC-SHA256 base64(timestamp+raw bytes), rejects bad signature. Provider verification required before booking.",
         "x-backend-phase": "B14",
         "x-access-roles": [
           "provider"
@@ -8727,15 +8767,16 @@
         "requestBody": {
           "required": true,
           "content": {
-            "application/octet-stream": {
+            "application/json": {
               "schema": {
-                "type": "string",
-                "format": "binary"
+                "type": "object",
+                "description": "Cashfree-signed provider-specific raw JSON webhook"
               }
             }
           }
         },
-        "x-signature-verification-required": true
+        "x-signature-verification-required": true,
+        "x-implementation-status": "implemented-b14"
       }
     },
     "/payments": {
@@ -8745,7 +8786,7 @@
         ],
         "operationId": "listOwnPayments",
         "summary": "List authorized payment ledger",
-        "description": "List authorized payment ledger B0 contract only; no runtime handler exists yet.",
+        "description": "B14 source and isolated PostgreSQL test implementation. Cashfree verified status and exact INR paise are authoritative; late successful charges require manual resolution. No refunds/invoices, production keys or live deployment.",
         "x-backend-phase": "B14",
         "x-access-roles": [
           "advertiser",
@@ -8815,7 +8856,8 @@
           {
             "$ref": "#/components/parameters/Limit"
           }
-        ]
+        ],
+        "x-implementation-status": "implemented-b14"
       }
     },
     "/admin/refunds": {
@@ -10823,7 +10865,7 @@
         ],
         "operationId": "confirmHeldAllocation",
         "summary": "Confirm eligible booked capacity after verified payment and approval",
-        "description": "Server-only transition; paid verified order and approved campaign required. Holds may expire during checkout; follow explicit reallocation/refund policy. B0 contract only.",
+        "description": "B14 source and isolated PostgreSQL test implementation. Cashfree verified status and exact INR paise are authoritative; late successful charges require manual resolution. No refunds/invoices, production keys or live deployment. This is server-side Cashfree reconciliation, NOT a user-supplied payment confirmation.",
         "x-backend-phase": "B14",
         "x-access-roles": [
           "advertiser"
@@ -10880,7 +10922,7 @@
           }
         },
         "x-csrf-required": true,
-        "x-idempotency-required": true,
+        "x-idempotency-required": false,
         "parameters": [
           {
             "name": "holdId",
@@ -10893,11 +10935,9 @@
           },
           {
             "$ref": "#/components/parameters/CsrfToken"
-          },
-          {
-            "$ref": "#/components/parameters/IdempotencyKey"
           }
-        ]
+        ],
+        "x-implementation-status": "implemented-b14"
       }
     },
     "/admin/screens/{screenId}/desired-state": {

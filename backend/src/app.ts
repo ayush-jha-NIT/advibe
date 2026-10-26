@@ -19,11 +19,13 @@ import { createDiscountRouter } from "./modules/pricing/discounts.js";
 import { createQuoteRouter } from "./modules/pricing/quotes.js";
 import { createCampaignRouter } from "./modules/campaigns/routes.js";
 import { createReservationRouter } from "./modules/reservations/routes.js";
+import { createPaymentRoutes,type PaymentDependencies } from "./modules/payments/routes.js";
 
 /** Every live API server supplies a database probe; omitted probes fail closed. */
 export function createApp(
   config: AppConfig, logger: Logger, checkDatabase?: () => Promise<void>, auth?: AuthDependencies,
   verifyCaptcha?: CaptchaVerifier, kyc?: KycDependencies, creative?: CreativeDependencies,
+  payment?: PaymentDependencies,
 ): Express {
   const app = express();
   app.disable("x-powered-by");
@@ -41,6 +43,9 @@ export function createApp(
     allowedHeaders: ["Content-Type", "X-CSRF-Token", "Idempotency-Key", "X-Request-ID", "X-Device-ID", "X-Device-Timestamp", "X-Device-Nonce", "X-Device-Signature"],
     maxAge: 600,
   }));
+  const paymentRoutes=auth?createPaymentRoutes(config,auth,payment):undefined;
+  if(paymentRoutes)app.use("/api/v1/webhooks/cashfree/payments",
+    express.raw({type:"application/json",limit:"64kb"}),paymentRoutes.webhooks);
   app.use(express.json({ limit: "64kb", strict: true }));
   app.get("/api/v1/health", (_req, res) => {
     res.status(200).json({ data: { message: "ok" } });
@@ -65,10 +70,11 @@ export function createApp(
     app.use("/api/v1", createQuoteRouter(config, auth));
     app.use("/api/v1", createCampaignRouter(config, auth));
     app.use("/api/v1", createReservationRouter(config, auth));
+    if(paymentRoutes)app.use("/api/v1",paymentRoutes.api);
     app.use("/api/v1", createAccountsRouter(config, auth,
       verifyCaptcha ?? createTurnstileVerifier()));
   }
-  // B14-B23 add confirmed bookings, payments and playback; frontend demo remains isolated.
+  // B15-B23 add delivery scheduling, refunds, invoices and payouts; demo remains isolated.
   app.use(notFound);
   app.use(errorHandler(logger));
   return app;

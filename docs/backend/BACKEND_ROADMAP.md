@@ -1,6 +1,6 @@
 # AdVibe production backend implementation roadmap (B0–B23)
 
-The 24 frontend parts remain a browser-only demonstration. B0–B13 implemented in repository: B13 adds exclusive screen-day hold allocations with PostgreSQL uniqueness, expiry/release, and tenant-scoped booking history. B14–B23 remain pending. No production KYC provider, private S3 bucket or legal retention policy was provisioned. Production Neon, email and same-site domain configuration are not complete. Production domains, Neon and Resend provisioning are not complete. Do not confuse health endpoints with production business functionality.
+The 24 frontend parts remain a browser-only demonstration. B0–B14 implemented in repository: B14 adds Cashfree order creation, signed webhooks, independent payment verification and safe paid booking confirmation. B15–B23 remain pending. No production KYC provider, private S3 bucket or legal retention policy was provisioned. Production Neon, email and same-site domain configuration are not complete. Production domains, Neon and Resend provisioning are not complete. Do not confuse health endpoints with production business functionality.
 
 | Part | Scope | Acceptance evidence |
 | --- | --- | --- |
