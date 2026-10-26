@@ -63,6 +63,8 @@ export async function issuePlaylist(tx:Tx,cred:DeviceCredential,config:AppConfig
  const expiresAt=new Date(entries.length?expiry:now.getTime()+45_000);
  const prior=await tx.deviceManifestVersion.findFirst({where:{screenId:cred.screenId},
   orderBy:{version:"desc"},select:{version:true}});
+ if(!prior && entries.length===0)
+  throw new HttpError(503,"MANIFEST_UNAVAILABLE","No active delivery or provisioned empty manifest");
  const manifest=signPlaylist(signer,cred.screenId,(prior?.version??0)+1,expiresAt,entries);
  await tx.deviceManifestVersion.create({data:{
   screenId:cred.screenId,version:manifest.version,expiresAt,
