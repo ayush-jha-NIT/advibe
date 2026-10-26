@@ -53,3 +53,8 @@ B19 adds immutable invoice snapshots, GST component breakdowns from approved quo
 ## B20 support, maintenance and in-app notification jobs
 
 Read [B20 implementation](../docs/backend/B20_IMPLEMENTATION.md). Create tickets scoped by role, follow maintenance status and view authenticated in-app notifications. A separate opt-in trusted scheduler runs `B20_JOBS_ENABLED=true npm run support:dispatch`. No push/SMS/email dispatcher or always-on cloud worker is deployed by B20. Maintenance records do not automatically pause paid campaigns; operators must coordinate approved playback interruption and existing delivery controls.
+
+
+## B21 admin reports, user decisions and safe audit exports
+
+B21 implements MFA-protected operational and confirmed-cashflow reporting, paginated account searches, audited suspension/reactivation of advertiser/driver accounts and read-only audit APIs. CSV exports are bounded, sanitized and themselves audited. See [B21 implementation](../docs/backend/B21_IMPLEMENTATION.md). Figures are not net profit, a tax return, bank reconciliation, or verified human impressions. Frontend remains demo mode until B22.
