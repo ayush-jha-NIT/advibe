@@ -64,6 +64,9 @@ export function createTelemetryRouter(config:AppConfig,auth:AuthDependencies):Ro
     const vehicle=await tx.vehicle.findFirst({where:{id:vehicleId,driverUserId:p.userId}});
     if(!vehicle)throw new HttpError(404,"NOT_FOUND","Vehicle unavailable");
     const now=new Date();
+    const prior=await tx.gpsConsent.findMany({where:{vehicleId,revokedAt:null},select:{id:true}});
+    const priorTrips=await tx.tripSession.findMany({where:{consentGrantId:{in:prior.map(g=>g.id)}},select:{id:true}});
+    await tx.gpsSample.deleteMany({where:{tripId:{in:priorTrips.map(t=>t.id)}}});
     await tx.gpsConsent.updateMany({where:{vehicleId,revokedAt:null},
      data:{revokedAt:now}});
     await tx.tripSession.updateMany({where:{vehicleId,endedAt:null},
