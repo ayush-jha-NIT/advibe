@@ -41,7 +41,9 @@ test("all key public, auth and three portal pages exist as explicit Next.js rout
 test("release scripts, browser job and demo warnings are present",()=>{
  const workflow=read(".github/workflows/ci.yml");
  assert.match(workflow,/browser-smoke:/);
- assert.match(workflow,/playwright install --with-deps chromium/);
+ assert.ok(/playwright install --with-deps chromium/.test(workflow)||
+  /image:\\s*mcr\\.microsoft\\.com\\/playwright:v1\\.56\\.1-noble/.test(workflow),
+  "Browser job must install Playwright system dependencies or use its preinstalled version-matched image");
  assert.match(workflow,/npm run test:browser/);
  assert.ok(exists("scripts/release-smoke.mjs"));
  assert.ok(exists("scripts/deployment-health.mjs"));
