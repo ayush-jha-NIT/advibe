@@ -23,3 +23,8 @@ Cashfree sandbox setup (do not put secrets in the frontend):
 `CASHFREE_ENV=sandbox`, `CASHFREE_CLIENT_ID`, `CASHFREE_CLIENT_SECRET`, `CASHFREE_NOTIFY_URL=https://<controlled-host>/api/v1/webhooks/cashfree/payments`. Cashfree Checkout on the frontend receives only the paymentSessionId from the backend after user authorization. Configure actual Cashfree sandbox webhook events at the merchant dashboard; verify replay and refunds before any live launch.
 
 Live charges remain disabled by default. Production additionally requires `PAYMENTS_ENABLED=true`, `BOOKING_HOLDS_ENABLED=true`, `PRICING_TAX_POLICY_APPROVED=true`, `CASHFREE_ENV=production` and all D04/D06/D13 approval requirements. Inactive/expired holds can never be booked even if provider charge succeeds; such money is recorded PAID_UNALLOCATED for review. B15 adds playback scheduling, B19 handles refunds/invoices and full settlement reconciliation. Full architecture and security details: docs/backend/B14_IMPLEMENTATION.md.
+
+
+## Backend B15: delivery scheduling and activation
+
+See [B15 implementation](../docs/backend/B15_IMPLEMENTATION.md). Schedule `DELIVERY_TICK_ENABLED=true npm run delivery:tick` externally. B15 does not serve signed device playlists.
