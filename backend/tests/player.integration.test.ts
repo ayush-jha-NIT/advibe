@@ -130,7 +130,7 @@ test("B16 signed device playlists, heartbeat claims and immediate pause/revocati
  const app=createApp(config,createLogger(config),async()=>{await db.user.count();},
   {db,settings,sender:async()=>{}},async()=>false,undefined,undefined,undefined,{
    media:{async signedGet(k,v){
-    assert.ok(k.startsWith("creative-processed/"));assert.equal(v,"b14-process-v1");
+    assert.ok(k.startsWith("creative-processed/"));assert.equal(v,"b16-process-v1");
     signedGets++;return "https://private-media.example.invalid/"+encodeURIComponent(v)+"?signed=ci";
    }}
   });
