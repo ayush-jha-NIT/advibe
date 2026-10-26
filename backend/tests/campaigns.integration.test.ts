@@ -31,7 +31,7 @@ test("B12 advertiser ownership, submitted snapshots and MFA review lifecycle",as
   db.user.create({data:{email:"b12-"+kind+"-"+seed+"@example.invalid",
    displayName:"B12 "+kind,passwordHash:pw,status:"ACTIVE",emailVerifiedAt:new Date(),
    role:kind==="admin"?"ADMIN":kind==="driver"?"DRIVER":"ADVERTISER"}})));
- const [owner,stranger,admin,driver]=users as [User,User,User,User];
+ const [owner,stranger,admin]=users as [User,User,User,User];
  await db.adminMfaCredential.create({data:{userId:admin.id,
   secretCipher:encryptTotpSecret(settings,admin.id,"GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ"),
   enabledAt:new Date(Date.now()-60000)}});
