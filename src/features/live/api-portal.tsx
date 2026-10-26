@@ -19,10 +19,10 @@ function simple(value:unknown):string{
 function money(value:unknown):string{
  try{
   const amount=BigInt(String(value??"0"));
-  const neg=amount<0n?"-":"";
-  const val=amount<0n?-amount:amount;
-  return neg+"₹"+(val/100n).toLocaleString("en-IN")+"."+
-   (val%100n).toString().padStart(2,"0");
+  const neg=amount<BigInt(0)?"-":"";
+  const val=amount<BigInt(0)?-amount:amount;
+  return neg+"₹"+(val/BigInt(100)).toLocaleString("en-IN")+"."+
+   (val%BigInt(100)).toString().padStart(2,"0");
  }catch{return "Unavailable";}
 }
 function meaningfulRows(data:unknown):Result{
