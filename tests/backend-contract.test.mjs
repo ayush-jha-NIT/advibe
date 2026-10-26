@@ -107,7 +107,7 @@ test("existing portal navigation is completely covered by frontend-to-API migrat
  for(const path of ["/login","/signup","/verify","/forgot-password","/reset-password","/contact","/pricing"])
   assert.ok(map.includes("| "+path+" |"),"Missing public/auth mapping: "+path);
 });
-test("B0–B11 documentation preserves production safety gates",()=>{
+test("B0–B12 documentation preserves production safety gates",()=>{
  const docs=["B0_ARCHITECTURE.md","B0_DATABASE.md","B0_API_MAPPING.md","B0_DECISIONS.md","BACKEND_ROADMAP.md","B0_CONTRACT_RULES.md"];
  for(const filename of docs){
   const content=read("docs/backend/"+filename);
@@ -117,7 +117,7 @@ test("B0–B11 documentation preserves production safety gates",()=>{
  for(const topic of ["idempotency","exclusion","private","webhook","retention","settlement"])
   assert.match(blueprint,new RegExp(topic,"i"),"Missing DB risk topic "+topic);
  const runtime=read("backend/README.md");
- assert.match(runtime,/Backend B11: versioned rates and immutable quote estimates/,"B11 runtime must be documented");
+ assert.match(runtime,/Backend B12: campaign drafts and approval workflows/,"B12 runtime must be documented");
  const b2Doc=read("docs/backend/B2_IMPLEMENTATION.md");
  const b3Doc=read("docs/backend/B3_IMPLEMENTATION.md");
  const b4Doc=read("docs/backend/B4_IMPLEMENTATION.md");
@@ -130,6 +130,12 @@ test("B0–B11 documentation preserves production safety gates",()=>{
  const b9Doc=read("docs/backend/B9_IMPLEMENTATION.md");
  const b10Doc=read("docs/backend/B10_IMPLEMENTATION.md");
  const b11Doc=read("docs/backend/B11_IMPLEMENTATION.md");
+ const b12Doc=read("docs/backend/B12_IMPLEMENTATION.md");
+ assert.match(b12Doc,/NOT_BOOKED/);
+ assert.match(b12Doc,/append.only/i);
+ for(const p of ["/campaigns","/campaigns/{campaignId}","/campaigns/{campaignId}/submit","/admin/campaigns/{campaignId}/decision"])
+  for(const op of Object.values(spec.paths[p]))
+   assert.equal(op["x-implementation-status"],"implemented-b12");
  assert.match(b11Doc,/D04/);
  assert.match(b11Doc,/NOT_BOOKED/);
  assert.match(b11Doc,/append.only/i);

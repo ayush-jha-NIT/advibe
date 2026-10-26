@@ -135,6 +135,7 @@ model Business {
   mediaAssets  MediaAsset[]
   creatives     Creative[]
   quotes        PriceQuote[]
+  campaigns     Campaign[]
 
   @@index([ownerUserId])
   @@index([archivedAt, createdAt])
@@ -637,6 +638,9 @@ model Creative {
   business        Business         @relation(fields: [ownerBusinessId], references: [id], onDelete: Restrict)
   asset           MediaAsset       @relation(fields: [mediaAssetId, ownerBusinessId], references: [id, businessId], onDelete: Restrict)
   decisions       CreativeReview[]
+  campaigns       Campaign[]
+
+  @@unique([id, ownerBusinessId])
 
   @@index([ownerBusinessId, createdAt, id])
   @@index([approval, createdAt])
@@ -746,4 +750,77 @@ model PriceQuote {
 
   @@index([businessId, createdAt, id])
   @@index([expiresAt])
+}
+
+
+// B12 campaign drafts and approved submissions never represent booking/payment.
+enum CampaignState {
+  DRAFT
+  SUBMITTED
+  CHANGES_REQUESTED
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum CampaignDecision {
+  APPROVED
+  REJECTED
+  CHANGES_REQUESTED
+}
+
+model Campaign {
+  id              String        @id @default(uuid()) @db.Uuid
+  ownerBusinessId String        @db.Uuid
+  createdByUserId String        @db.Uuid
+  title           String        @db.VarChar(180)
+  creativeId      String        @db.Uuid
+  startDate       DateTime      @db.Date
+  endDate         DateTime      @db.Date
+  weekdays        Int[]
+  startMinute     Int           @default(0) @db.SmallInt
+  endMinute       Int           @default(1440) @db.SmallInt
+  status          CampaignState @default(DRAFT)
+  revision        Int           @default(1)
+  submissionNumber Int          @default(0)
+  submittedAt     DateTime?     @db.Timestamptz(6)
+  reviewedAt      DateTime?     @db.Timestamptz(6)
+  reviewedByUserId String?      @db.Uuid
+  reviewReason    String?       @db.VarChar(1000)
+  createdAt       DateTime      @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime      @updatedAt @db.Timestamptz(6)
+  business        Business      @relation(fields: [ownerBusinessId], references: [id], onDelete: Restrict)
+  creative        Creative      @relation(fields: [creativeId, ownerBusinessId], references: [id, ownerBusinessId], onDelete: Restrict)
+  submissions     CampaignSubmission[]
+
+  @@index([ownerBusinessId, createdAt, id])
+  @@index([status, submittedAt, id])
+}
+
+model CampaignSubmission {
+  id               String    @id @default(uuid()) @db.Uuid
+  campaignId       String    @db.Uuid
+  number           Int
+  campaignRevision Int
+  snapshot         Json
+  createdAt        DateTime  @default(now()) @db.Timestamptz(6)
+  campaign         Campaign  @relation(fields: [campaignId], references: [id], onDelete: Restrict)
+  reviews          CampaignReview[]
+
+  @@unique([campaignId, number])
+}
+
+model CampaignReview {
+  id               String           @id @default(uuid()) @db.Uuid
+  campaignId       String           @db.Uuid
+  submissionNumber Int
+  adminUserId      String           @db.Uuid
+  decision         CampaignDecision
+  reason           String           @db.VarChar(1000)
+  snapshotHash     String           @db.Char(64)
+  createdAt        DateTime         @default(now()) @db.Timestamptz(6)
+  submission       CampaignSubmission @relation(fields: [campaignId, submissionNumber], references: [campaignId, number], onDelete: Restrict)
+
+  @@unique([campaignId, submissionNumber])
+  @@index([adminUserId, createdAt])
 }

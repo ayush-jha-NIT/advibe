@@ -1,30 +1,26 @@
-# AdVibe Backend B11: versioned rates and immutable quote estimates
+# AdVibe Backend B12: campaign drafts and approval workflows
 
-B0–B11 are implemented as repository code and tested against disposable PostgreSQL 16 in GitHub Actions. The deployed Vercel frontend remains **demo-only**. There is no deployed AdVibe production database, certified screen inventory, confirmed tax policy or payment integration.
+The backend repository includes B0–B12 with PostgreSQL 16 CI integration tests. Deployed Vercel frontend remains **demo-only**; no production database, media-worker fleet, approved real device inventory, bookings or payments have been configured.
 
-Backend setup remains Node 22+, Prisma 6, PostgreSQL 16, DATABASE_URL / DIRECT_URL, AUTH_SECRET and MFA_ENCRYPTION_KEY, with all earlier B7–B10 vendor dependencies configured separately. Migration 20261026070000_b11_pricing_quotes adds versioned RateRule/RateRevision, TaxPolicy, DiscountPolicy and append-only PriceQuote snapshots.
+## Local development
 
-Run:
-- npm install --prefix backend
-- npm --prefix backend run db:validate
-- npm --prefix backend run db:migrate:deploy
-- npm --prefix backend run dev
-- For **disposable localhost** PostgreSQL only, NODE_ENV=test and DB_TEST_ALLOWED=true, npm --prefix backend run check
+Node.js 22+, Prisma 6, PostgreSQL 16. Configure DATABASE_URL and DIRECT_URL plus AUTH_SECRET and MFA_ENCRYPTION_KEY, controlled CORS origin and earlier B7–B11 providers. Install and migrate:
 
-B11 policy/quote endpoints:
-- GET /api/v1/pricing/rules
-- POST /api/v1/admin/pricing/rules
-- PUT /api/v1/admin/pricing/rules/:ruleId
-- GET/POST /api/v1/admin/pricing/tax-policies
-- GET/POST /api/v1/admin/pricing/discounts
-- POST /api/v1/pricing/quotes
-- GET /api/v1/pricing/quotes/:quoteId
-- GET /api/v1/pricing/quotes?businessId=...
+- `npm install --prefix backend`
+- `npm --prefix backend run db:validate`
+- `npm --prefix backend run db:migrate:deploy`
+- `npm --prefix backend run dev`
+- On **disposable localhost Postgres only**, use NODE_ENV=test and DB_TEST_ALLOWED=true to run `npm --prefix backend run check`.
 
-Admin updates require a currently enrolled MFA session; creation requires CSRF and idempotency. Advertisers may quote only their current business-owned screen candidates at published sites. Quotes are immutable non-binding estimates marked NOT_BOOKED; no reservation or delivery is implied.
+The B12 migration creates campaigns, immutable submissions and decisions. Owners/managers can create/edit drafts, associate their own B10 creatives, and submit only once those creatives are approved and processed. Admin MFA sessions review a submission with approve/reject/request-changes decisions and recorded reasons. Changes-requested campaigns must be revised before resubmission. All mutations audit transactions, idempotent creates and submissions, and strict CSRF/origin checks.
 
-### Production tax gate
+## API routes
 
-Review D04 with an Indian tax/finance advisor. Enter an effective TaxPolicy with explicit sourceReference and non-demo rate. Production quote creation is blocked unless PRICING_TAX_POLICY_APPROVED=true is explicitly configured in secure deployment configuration after the real approval. Never copy the demo 18% tax assumption.
+- `GET/POST /api/v1/campaigns`
+- `GET/PATCH /api/v1/campaigns/:campaignId`
+- `POST /api/v1/campaigns/:campaignId/submit`
+- `GET /api/v1/campaigns/:campaignId/submissions`
+- `POST /api/v1/admin/campaigns/:campaignId/decision`
+- `GET /api/v1/admin/campaigns/:campaignId/reviews`
 
-See docs/backend/B11_IMPLEMENTATION.md for exact integer arithmetic, revision history, policy expiry, venue-local dates, and limitations. B12 is campaigns, B13 is booking capacity, B14 is payments and invoices.
+Every campaign has inventoryStatus=NOT_BOOKED and paymentStatus=unpaid, even when APPROVED. B13 implements screen reservations, B14 payments, B15 scheduling, and B22 real frontend API integration. Production-only dependencies remain pending. See docs/backend/B12_IMPLEMENTATION.md for state transition and test details.

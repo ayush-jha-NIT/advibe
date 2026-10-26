@@ -1,6 +1,6 @@
 # AdVibe production backend implementation roadmap (B0–B23)
 
-The 24 frontend parts remain a browser-only demonstration. B0–B11 implemented in repository: B11 adds versioned rates, tax and discount policies and immutable minor-unit quote estimates. B12–B23 remain pending. No production KYC provider, private S3 bucket or legal retention policy was provisioned. Production Neon, email and same-site domain configuration are not complete. Production domains, Neon and Resend provisioning are not complete. Do not confuse health endpoints with production business functionality.
+The 24 frontend parts remain a browser-only demonstration. B0–B12 implemented in repository: B12 adds business-scoped campaign drafts, versioned submission snapshots and Admin review decisions. B13–B23 remain pending. No production KYC provider, private S3 bucket or legal retention policy was provisioned. Production Neon, email and same-site domain configuration are not complete. Production domains, Neon and Resend provisioning are not complete. Do not confuse health endpoints with production business functionality.
 
 | Part | Scope | Acceptance evidence |
 | --- | --- | --- |

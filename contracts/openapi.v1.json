@@ -3,7 +3,7 @@
   "info": {
     "title": "AdVibe Backend API",
     "version": "0.1.0-b0",
-    "description": "B0–B11 repository implementations, including immutable rate revisions, explicitly approved tax policies, discounts and authoritative quote estimates. Production billing, booking, tax sign-off, and payment integrations are NOT deployed or implemented."
+    "description": "B0–B12 repository implementations include advertiser campaign drafts, immutable review submissions, Admin decisions and audit. Campaign approval is NOT deployed payment, booking, ad scheduling or actual playback."
   },
   "servers": [
     {
@@ -810,7 +810,12 @@
           "startDate",
           "endDate",
           "status",
-          "creativeId"
+          "creativeId",
+          "weekdays",
+          "timeWindow",
+          "revision",
+          "submissionNumber",
+          "inventoryStatus"
         ],
         "properties": {
           "id": {
@@ -863,6 +868,75 @@
               "failed",
               "refunded"
             ]
+          },
+          "weekdays": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 6
+            }
+          },
+          "timeWindow": {
+            "type": "object",
+            "required": [
+              "start",
+              "end"
+            ],
+            "properties": {
+              "start": {
+                "type": "string",
+                "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+              },
+              "end": {
+                "type": "string",
+                "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$|^24:00$"
+              }
+            },
+            "additionalProperties": false,
+            "description": "B12 timeWindow defaults to full day 00:00–24:00, end exclusive."
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "submissionNumber": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "inventoryStatus": {
+            "type": "string",
+            "const": "NOT_BOOKED"
+          },
+          "submittedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "reviewedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "reviewReason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
           }
         },
         "additionalProperties": false
@@ -1606,6 +1680,7 @@
       "CampaignInput": {
         "type": "object",
         "required": [
+          "businessId",
           "title",
           "creativeId",
           "startDate",
@@ -1649,14 +1724,19 @@
             "properties": {
               "start": {
                 "type": "string",
-                "pattern": "^\\d{2}:\\d{2}$"
+                "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
               },
               "end": {
                 "type": "string",
-                "pattern": "^\\d{2}:\\d{2}$"
+                "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$|^24:00$"
               }
             },
-            "additionalProperties": false
+            "additionalProperties": false,
+            "description": "B12 timeWindow defaults to full day 00:00–24:00, end exclusive."
+          },
+          "businessId": {
+            "type": "string",
+            "format": "uuid"
           }
         },
         "additionalProperties": false
@@ -3713,6 +3793,167 @@
           "validTo": {
             "type": "string",
             "format": "date"
+          }
+        }
+      },
+      "CampaignPatchInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "expectedRevision"
+        ],
+        "minProperties": 2,
+        "properties": {
+          "expectedRevision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 180
+          },
+          "creativeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "weekdays": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 6
+            }
+          },
+          "timeWindow": {
+            "type": "object",
+            "required": [
+              "start",
+              "end"
+            ],
+            "properties": {
+              "start": {
+                "type": "string",
+                "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+              },
+              "end": {
+                "type": "string",
+                "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$|^24:00$"
+              }
+            },
+            "additionalProperties": false,
+            "description": "B12 timeWindow defaults to full day 00:00–24:00, end exclusive."
+          }
+        }
+      },
+      "CampaignDecisionInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "decision",
+          "reason",
+          "expectedRevision"
+        ],
+        "properties": {
+          "decision": {
+            "type": "string",
+            "enum": [
+              "approved",
+              "rejected",
+              "changes_requested"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 1000
+          },
+          "expectedRevision": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      },
+      "CampaignSubmission": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "number",
+          "campaignRevision",
+          "snapshot",
+          "createdAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "number": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "campaignRevision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "snapshot": {
+            "type": "object"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CampaignReview": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "submissionNumber",
+          "decision",
+          "reason",
+          "snapshotHash",
+          "reviewedAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "submissionNumber": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "decision": {
+            "type": "string",
+            "enum": [
+              "approved",
+              "rejected",
+              "changes_requested"
+            ]
+          },
+          "reason": {
+            "type": "string"
+          },
+          "snapshotHash": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "reviewedAt": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       }
@@ -7345,7 +7586,7 @@
         ],
         "operationId": "listCampaigns",
         "summary": "List authorized campaigns",
-        "description": "List authorized campaigns B0 contract only; no runtime handler exists yet.",
+        "description": "B12 PostgreSQL-backed campaign state and immutable submission/review evidence. Not booked, paid or scheduled.",
         "x-backend-phase": "B12",
         "x-access-roles": [
           "advertiser",
@@ -7415,7 +7656,8 @@
           {
             "$ref": "#/components/parameters/Limit"
           }
-        ]
+        ],
+        "x-implementation-status": "implemented-b12"
       },
       "post": {
         "tags": [
@@ -7423,7 +7665,7 @@
         ],
         "operationId": "createCampaign",
         "summary": "Create advertiser-owned draft",
-        "description": "Create advertiser-owned draft B0 contract only; no runtime handler exists yet.",
+        "description": "B12 PostgreSQL-backed campaign state and immutable submission/review evidence. Not booked, paid or scheduled.",
         "x-backend-phase": "B12",
         "x-access-roles": [
           "advertiser"
@@ -7498,7 +7740,8 @@
           {
             "$ref": "#/components/parameters/IdempotencyKey"
           }
-        ]
+        ],
+        "x-implementation-status": "implemented-b12"
       }
     },
     "/campaigns/{campaignId}": {
@@ -7508,7 +7751,7 @@
         ],
         "operationId": "getCampaign",
         "summary": "Fetch owned campaign detail",
-        "description": "Fetch owned campaign detail B0 contract only; no runtime handler exists yet.",
+        "description": "B12 PostgreSQL-backed campaign state and immutable submission/review evidence. Not booked, paid or scheduled.",
         "x-backend-phase": "B12",
         "x-access-roles": [
           "advertiser",
@@ -7575,7 +7818,8 @@
               "format": "uuid"
             }
           }
-        ]
+        ],
+        "x-implementation-status": "implemented-b12"
       },
       "patch": {
         "tags": [
@@ -7583,7 +7827,7 @@
         ],
         "operationId": "updateCampaign",
         "summary": "Update editable campaign draft",
-        "description": "Update editable campaign draft B0 contract only; no runtime handler exists yet.",
+        "description": "B12 PostgreSQL-backed campaign state and immutable submission/review evidence. Not booked, paid or scheduled.",
         "x-backend-phase": "B12",
         "x-access-roles": [
           "advertiser"
@@ -7644,7 +7888,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CampaignInput"
+                "$ref": "#/components/schemas/CampaignPatchInput"
               }
             }
           }
@@ -7663,7 +7907,8 @@
           {
             "$ref": "#/components/parameters/CsrfToken"
           }
-        ]
+        ],
+        "x-implementation-status": "implemented-b12"
       }
     },
     "/campaigns/{campaignId}/submit": {
@@ -7673,7 +7918,7 @@
         ],
         "operationId": "submitCampaign",
         "summary": "Send campaign to Admin review",
-        "description": "Send campaign to Admin review B0 contract only; no runtime handler exists yet.",
+        "description": "B12 PostgreSQL-backed campaign state and immutable submission/review evidence. Not booked, paid or scheduled.",
         "x-backend-phase": "B12",
         "x-access-roles": [
           "advertiser"
@@ -7747,7 +7992,8 @@
           {
             "$ref": "#/components/parameters/IdempotencyKey"
           }
-        ]
+        ],
+        "x-implementation-status": "implemented-b12"
       }
     },
     "/admin/campaigns/{campaignId}/decision": {
@@ -7757,7 +8003,7 @@
         ],
         "operationId": "reviewCampaign",
         "summary": "Review advertiser campaign",
-        "description": "Review advertiser campaign B0 contract only; no runtime handler exists yet.",
+        "description": "B12 PostgreSQL-backed campaign state and immutable submission/review evidence. Not booked, paid or scheduled.",
         "x-backend-phase": "B12",
         "x-access-roles": [
           "admin"
@@ -7818,7 +8064,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ReviewInput"
+                "$ref": "#/components/schemas/CampaignDecisionInput"
               }
             }
           }
@@ -7841,7 +8087,8 @@
           {
             "$ref": "#/components/parameters/IdempotencyKey"
           }
-        ]
+        ],
+        "x-implementation-status": "implemented-b12"
       }
     },
     "/reservations/holds": {
@@ -14286,6 +14533,167 @@
         "x-implementation-status": "implemented-b11",
         "x-csrf-required": false,
         "x-idempotency-required": false
+      }
+    },
+    "/campaigns/{campaignId}/submissions": {
+      "get": {
+        "tags": [
+          "Campaigns"
+        ],
+        "operationId": "listCampaignSubmissionHistory",
+        "summary": "list Campaign Submission History",
+        "description": "B12 immutable submission or review history, scoped to owner business or Admin.",
+        "x-backend-phase": "B12",
+        "x-access-roles": [
+          "advertiser",
+          "admin"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful authoritative response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CampaignSubmission"
+                      }
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "x-implementation-status": "implemented-b12"
+      }
+    },
+    "/admin/campaigns/{campaignId}/reviews": {
+      "get": {
+        "tags": [
+          "Campaigns"
+        ],
+        "operationId": "adminListCampaignReviewDecisions",
+        "summary": "admin List Campaign Review Decisions",
+        "description": "B12 immutable submission or review history, scoped to owner business or Admin.",
+        "x-backend-phase": "B12",
+        "x-access-roles": [
+          "admin"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful authoritative response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CampaignReview"
+                      }
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "x-implementation-status": "implemented-b12"
       }
     }
   }
