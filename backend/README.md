@@ -48,3 +48,8 @@ See [B18 implementation](../docs/backend/B18_IMPLEMENTATION.md). Financial polic
 ## B19 finance and tax records
 
 B19 adds immutable invoice snapshots, GST component breakdowns from approved quote values, partial refund and credit-note records, and independently fetched Cashfree PG refund/reconciliation evidence. Production issuance requires statutory supplier details, D04/D06/D13 signoff and all corresponding feature flags. See [B19 implementation](../docs/backend/B19_IMPLEMENTATION.md). The backend does not auto-provision live GST e-invoice IRNs or tax filing.
+
+
+## B20 support, maintenance and in-app notification jobs
+
+Read [B20 implementation](../docs/backend/B20_IMPLEMENTATION.md). Create tickets scoped by role, follow maintenance status and view authenticated in-app notifications. A separate opt-in trusted scheduler runs `B20_JOBS_ENABLED=true npm run support:dispatch`. No push/SMS/email dispatcher or always-on cloud worker is deployed by B20. Maintenance records do not automatically pause paid campaigns; operators must coordinate approved playback interruption and existing delivery controls.
