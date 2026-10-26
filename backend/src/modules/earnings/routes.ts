@@ -1,7 +1,6 @@
 import { createHash,createHmac,randomUUID,timingSafeEqual } from "node:crypto";
 import { Router,type Request,type Response,type NextFunction } from "express";
 import { z } from "zod";
-import { Prisma } from "@prisma/client";
 import type { AppConfig } from "../../config/env.js";
 import type { AuthDependencies } from "../auth/routes.js";
 import { resolvePrincipal,requireRole } from "../auth/policy.js";
