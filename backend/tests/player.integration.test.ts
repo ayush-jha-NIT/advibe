@@ -219,14 +219,14 @@ test("B16 signed device playlists, heartbeat claims and immediate pause/revocati
    headers:{Cookie:alice.cookie}})).status,403);
   const delivery="/reservations/holds/"+first.hold.id+"/delivery";
   assert.equal((await adminPost(delivery+"/pause",
-   {expectedRevision:1,reason:"B16 emergency remote screen pause"})).status,200);
+   {expectedRevision:1,reason:"B16 emergency remote screen pause"},"b16-pause-"+seed)).status,200);
   const disabled=await readManifest();
   checkSignature(disabled);
   assert.deepEqual(disabled.entries,[]);
   assert.ok(disabled.version>playing.version);
   const denied={...beat,deviceEventId:"b16-paused-"+seed,observedAt:new Date().toISOString()};
   assert.equal((await deviceSend("POST","/devices/heartbeat",denied)).status,409);
-  assert.equal((await adminPost(delivery+"/resume",{expectedRevision:2})).status,200);
+  assert.equal((await adminPost(delivery+"/resume",{expectedRevision:2},"b16-resume-"+seed)).status,200);
   const restored=await readManifest();
   assert.equal(restored.entries.length,1);checkSignature(restored);
   await db.screen.update({where:{id:screens[0]!.id},data:{state:"REVOKED"}});
