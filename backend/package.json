@@ -14,7 +14,7 @@
     "lint": "eslint src tests",
     "test": "node --import tsx --test tests/app.test.ts tests/env.test.ts",
     "smoke": "node scripts/smoke.mjs",
-    "check": "npm run lint && npm run typecheck && npm run test && npm run test:db && npm run test:auth && npm run test:security && npm run test:accounts && npm run test:drivers && npm run test:kyc && npm run test:devices && npm run test:geo && npm run test:creatives && npm run test:pricing && npm run test:campaigns && npm run test:reservations && npm run test:payments && npm run test:delivery && npm run test:player && npm run test:telemetry && npm run test:earnings && npm run test:finance && npm run test:support && npm run build && npm run smoke",
+    "check": "npm run lint && npm run typecheck && npm run test && npm run test:db && npm run test:auth && npm run test:security && npm run test:accounts && npm run test:drivers && npm run test:kyc && npm run test:devices && npm run test:geo && npm run test:creatives && npm run test:pricing && npm run test:campaigns && npm run test:reservations && npm run test:payments && npm run test:delivery && npm run test:player && npm run test:telemetry && npm run test:earnings && npm run test:finance && npm run test:support && npm run test:admin && npm run build && npm run smoke",
     "postinstall": "prisma generate --schema prisma/schema.prisma",
     "db:validate": "prisma validate --schema prisma/schema.prisma",
     "db:migrate:deploy": "prisma migrate deploy --schema prisma/schema.prisma",
@@ -46,7 +46,8 @@
     "test:finance": "node --import tsx --test tests/finance.integration.test.ts",
     "refunds:reconcile": "node --env-file-if-exists=.env --import tsx scripts/reconcile-refunds.ts",
     "test:support": "node --import tsx --test tests/support.integration.test.ts",
-    "support:dispatch": "node --env-file-if-exists=.env --import tsx scripts/dispatch-support-jobs.ts"
+    "support:dispatch": "node --env-file-if-exists=.env --import tsx scripts/dispatch-support-jobs.ts",
+    "test:admin": "node --import tsx --test tests/admin.integration.test.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",
