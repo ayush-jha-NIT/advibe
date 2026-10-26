@@ -1,4 +1,4 @@
-import { Prisma, type PrismaClient } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { Router, type NextFunction, type Request, type Response } from "express";
 import type { AppConfig } from "../../config/env.js";
 import { HttpError } from "../../lib/http-error.js";
