@@ -86,6 +86,8 @@ model User {
   driverEarnings DriverEarning[] @relation("EarningDriver")
   driverSettlements DriverSettlement[] @relation("SettlementDriver")
   driverBeneficiaries PayoutBeneficiary[]
+  accountDecisions AccountStatusDecision[] @relation("DecisionSubject")
+  issuedStatusDecisions AccountStatusDecision[] @relation("DecisionAdministrator")
   gpsConsents GpsConsent[]
   reviewedKycDocuments DriverDocument[] @relation("DocumentReviewer")
   driverReviewDecisions DriverApplicationReview[] @relation("ApplicationReviewer")
@@ -1447,4 +1449,19 @@ model DurableJob {
   createdAt DateTime @default(now()) @db.Timestamptz(6)
   completedAt DateTime? @db.Timestamptz(6)
   @@index([state,availableAt,leaseUntil])
+}
+
+// B21: immutable record of MFA-authorized status decisions (no Admin role changes).
+model AccountStatusDecision {
+  id String @id @default(uuid()) @db.Uuid
+  subjectUserId String @db.Uuid
+  administratorUserId String @db.Uuid
+  previousStatus AccountStatus
+  newStatus AccountStatus
+  reason String @db.VarChar(500)
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  subject User @relation("DecisionSubject",fields:[subjectUserId],references:[id],onDelete:Restrict)
+  administrator User @relation("DecisionAdministrator",fields:[administratorUserId],references:[id],onDelete:Restrict)
+  @@index([subjectUserId,createdAt,id])
+  @@index([administratorUserId,createdAt,id])
 }
