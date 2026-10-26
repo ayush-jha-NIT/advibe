@@ -43,3 +43,8 @@ See [B17 implementation](../docs/backend/B17_IMPLEMENTATION.md). Production GPS 
 ## B18 reviewed earnings, immutable ledger and verified payouts
 
 See [B18 implementation](../docs/backend/B18_IMPLEMENTATION.md). Financial policy and D05/D07 approvals are required to activate production payouts. B17 device telemetry never auto-generates payable impressions; an MFA Admin independently reviews service evidence. A configured payout provider must independently confirm transfers before settlement is marked PAID. Never store raw bank details or call these simulated transfers live settlement.
+
+
+## B19 finance and tax records
+
+B19 adds immutable invoice snapshots, GST component breakdowns from approved quote values, partial refund and credit-note records, and independently fetched Cashfree PG refund/reconciliation evidence. Production issuance requires statutory supplier details, D04/D06/D13 signoff and all corresponding feature flags. See [B19 implementation](../docs/backend/B19_IMPLEMENTATION.md). The backend does not auto-provision live GST e-invoice IRNs or tax filing.
