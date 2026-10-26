@@ -12,6 +12,7 @@ import { createTurnstileVerifier, type CaptchaVerifier } from "./modules/enquiri
 import { createDriverRouter } from "./modules/drivers/routes.js";
 import { createKycRouter, type KycDependencies } from "./modules/kyc/routes.js";
 import { createDeviceRouter } from "./modules/devices/routes.js";
+import type { PlayerDependencies } from "./modules/devices/player.js";
 import { createGeoRouter } from "./modules/geo/routes.js";
 import { createCreativeRouter, type CreativeDependencies } from "./modules/creatives/routes.js";
 import { createPricingAdminRouter } from "./modules/pricing/admin.js";
@@ -26,7 +27,7 @@ import { createDeliveryRouter } from "./modules/delivery/routes.js";
 export function createApp(
   config: AppConfig, logger: Logger, checkDatabase?: () => Promise<void>, auth?: AuthDependencies,
   verifyCaptcha?: CaptchaVerifier, kyc?: KycDependencies, creative?: CreativeDependencies,
-  payment?: PaymentDependencies,
+  payment?: PaymentDependencies, player?:PlayerDependencies,
 ): Express {
   const app = express();
   app.disable("x-powered-by");
@@ -63,7 +64,7 @@ export function createApp(
     app.use("/api/v1/auth", createAuthRouter(config, auth));
     app.use("/api/v1/drivers", createDriverRouter(config, auth));
     app.use("/api/v1", createKycRouter(config, auth, kyc));
-    app.use("/api/v1", createDeviceRouter(config, auth));
+    app.use("/api/v1", createDeviceRouter(config, auth, player));
     app.use("/api/v1", createGeoRouter(config, auth));
     app.use("/api/v1", createCreativeRouter(config, auth, creative));
     app.use("/api/v1", createPricingAdminRouter(config, auth));
