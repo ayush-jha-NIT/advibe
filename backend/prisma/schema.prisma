@@ -499,6 +499,8 @@ model DeviceHeartbeat {
   observedAt    DateTime         @db.Timestamptz(6)
   receivedAt    DateTime         @default(now()) @db.Timestamptz(6)
   firmwareVersion String         @db.VarChar(100)
+  manifestVersion Int?
+  playbackState String?           @db.VarChar(30)
   credential    DeviceCredential @relation(fields: [credentialId], references: [id], onDelete: Restrict)
 
   @@unique([credentialId, deviceEventId])
