@@ -28,3 +28,8 @@ Live charges remain disabled by default. Production additionally requires `PAYME
 ## Backend B15: delivery scheduling and activation
 
 See [B15 implementation](../docs/backend/B15_IMPLEMENTATION.md). Schedule `DELIVERY_TICK_ENABLED=true npm run delivery:tick` externally. B15 does not serve signed device playlists.
+
+
+## Backend B16: signed device playlist gateway
+
+See [B16 implementation](../docs/backend/B16_IMPLEMENTATION.md). Positive production manifests require DEVICE_PLAYBACK_ENABLED=true, DEVICE_FLEET_APPROVED=true, a pinned Ed25519 signing key, and private versioned S3 media. Playback reports are not verified exposures.
