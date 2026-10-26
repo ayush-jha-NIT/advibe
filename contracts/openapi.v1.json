@@ -2412,10 +2412,12 @@
       },
       "RefundInput": {
         "type": "object",
+        "additionalProperties": false,
         "required": [
           "paymentOrderId",
           "amountPaise",
-          "reason"
+          "reason",
+          "policyReference"
         ],
         "properties": {
           "paymentOrderId": {
@@ -2424,15 +2426,20 @@
           },
           "amountPaise": {
             "type": "integer",
-            "minimum": 1
+            "minimum": 100,
+            "maximum": 100000000000
           },
           "reason": {
             "type": "string",
-            "minLength": 10,
-            "maxLength": 1000
+            "minLength": 16,
+            "maxLength": 500
+          },
+          "policyReference": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 140
           }
-        },
-        "additionalProperties": false
+        }
       },
       "AccountStatusInput": {
         "type": "object",
@@ -4375,6 +4382,210 @@
             "type": "string",
             "minLength": 12,
             "maxLength": 128
+          }
+        }
+      },
+      "InvoiceIssueInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "paymentOrderId",
+          "recipientName",
+          "recipientAddress",
+          "recipientStateCode",
+          "placeOfSupplyCode",
+          "description"
+        ],
+        "properties": {
+          "paymentOrderId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "recipientName": {
+            "type": "string"
+          },
+          "recipientAddress": {
+            "type": "string"
+          },
+          "recipientGstin": {
+            "type": "string"
+          },
+          "recipientStateCode": {
+            "type": "string"
+          },
+          "placeOfSupplyCode": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      },
+      "FinanceInvoice": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "invoiceNumber": {
+            "type": "string"
+          },
+          "issuedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "supplier": {
+            "type": "object"
+          },
+          "recipient": {
+            "type": "object"
+          },
+          "taxPolicyVersion": {
+            "type": "string"
+          },
+          "taxablePaise": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "cgstPaise": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "sgstPaise": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "igstPaise": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "totalPaise": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "FinanceRefund": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "paymentOrderId",
+          "amountPaise",
+          "status",
+          "createdAt",
+          "succeededAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "paymentOrderId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "amountPaise": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "status": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "succeededAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "FinanceReconciliation": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "orderId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "matched",
+              "mismatch"
+            ]
+          },
+          "expectedPaise": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "providerPaise": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "verifiedPaymentsPaise": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "confirmedRefundsPaise": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "providerRefundsPaise": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "FinanceCreditNote": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "noteNumber": {
+            "type": "string"
+          },
+          "invoiceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "issuedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "amountPaise": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "taxablePaise": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "cgstPaise": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "sgstPaise": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "igstPaise": {
+            "type": "integer",
+            "minimum": 0
           }
         }
       }
@@ -9159,12 +9370,13 @@
     "/admin/refunds": {
       "post": {
         "tags": [
-          "Refunds"
+          "Finance"
         ],
         "operationId": "adminCreateRefund",
-        "summary": "Request policy-approved provider refund",
-        "description": "Request policy-approved provider refund B0 contract only; no runtime handler exists yet.",
+        "summary": "Prepare idempotent policy-reviewed Cashfree refund",
+        "description": "B19 legally gated immutable tax evidence and provider-verified finance operations.",
         "x-backend-phase": "B19",
+        "x-implementation-status": "implemented-b19",
         "x-access-roles": [
           "admin"
         ],
@@ -9176,7 +9388,7 @@
         ],
         "responses": {
           "201": {
-            "description": "Successful authoritative response",
+            "description": "Authoritative B19 finance response",
             "content": {
               "application/json": {
                 "schema": {
@@ -9184,12 +9396,12 @@
                   "required": [
                     "data"
                   ],
+                  "additionalProperties": false,
                   "properties": {
                     "data": {
-                      "$ref": "#/components/schemas/PaymentRecord"
+                      "$ref": "#/components/schemas/FinanceRefund"
                     }
-                  },
-                  "additionalProperties": false
+                  }
                 }
               }
             }
@@ -9219,6 +9431,16 @@
             "$ref": "#/components/responses/ServerError"
           }
         },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "x-csrf-required": true,
+        "x-idempotency-required": true,
         "requestBody": {
           "required": true,
           "content": {
@@ -9228,17 +9450,7 @@
               }
             }
           }
-        },
-        "x-csrf-required": true,
-        "x-idempotency-required": true,
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/CsrfToken"
-          },
-          {
-            "$ref": "#/components/parameters/IdempotencyKey"
-          }
-        ]
+        }
       }
     },
     "/driver/assignments": {
@@ -16876,6 +17088,503 @@
           }
         ],
         "x-implementation-status": "implemented-b18"
+      }
+    },
+    "/admin/invoices": {
+      "post": {
+        "tags": [
+          "Finance"
+        ],
+        "operationId": "adminIssueInvoice",
+        "summary": "Issue immutable tax invoice from approved paid quote",
+        "description": "B19 legally gated immutable tax evidence and provider-verified finance operations.",
+        "x-backend-phase": "B19",
+        "x-implementation-status": "implemented-b19",
+        "x-access-roles": [
+          "admin"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Authoritative B19 finance response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/FinanceInvoice"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "x-csrf-required": true,
+        "x-idempotency-required": true,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvoiceIssueInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/payments/orders/{orderId}/invoice": {
+      "get": {
+        "tags": [
+          "Finance"
+        ],
+        "operationId": "getOwnPaymentInvoice",
+        "summary": "View business-owned invoice snapshot",
+        "description": "B19 legally gated immutable tax evidence and provider-verified finance operations.",
+        "x-backend-phase": "B19",
+        "x-implementation-status": "implemented-b19",
+        "x-access-roles": [
+          "advertiser",
+          "admin"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Authoritative B19 finance response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/FinanceInvoice"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "x-csrf-required": false,
+        "x-idempotency-required": false
+      }
+    },
+    "/payments/orders/{orderId}/refunds": {
+      "get": {
+        "tags": [
+          "Finance"
+        ],
+        "operationId": "getOwnRefunds",
+        "summary": "View business-owned refund statuses",
+        "description": "B19 legally gated immutable tax evidence and provider-verified finance operations.",
+        "x-backend-phase": "B19",
+        "x-implementation-status": "implemented-b19",
+        "x-access-roles": [
+          "advertiser",
+          "admin"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Authoritative B19 finance response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/FinanceRefund"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "x-csrf-required": false,
+        "x-idempotency-required": false
+      }
+    },
+    "/payments/orders/{orderId}/credit-notes": {
+      "get": {
+        "tags": [
+          "Finance"
+        ],
+        "operationId": "getOwnCreditNotes",
+        "summary": "View business-owned tax credit notes",
+        "description": "B19 legally gated immutable tax evidence and provider-verified finance operations.",
+        "x-backend-phase": "B19",
+        "x-implementation-status": "implemented-b19",
+        "x-access-roles": [
+          "advertiser",
+          "admin"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Authoritative B19 finance response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/FinanceCreditNote"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "x-csrf-required": false,
+        "x-idempotency-required": false
+      }
+    },
+    "/admin/finance/reconcile/{orderId}": {
+      "post": {
+        "tags": [
+          "Finance"
+        ],
+        "operationId": "adminReconcileProviderMoney",
+        "summary": "Verify provider payment and refund totals independently",
+        "description": "B19 legally gated immutable tax evidence and provider-verified finance operations.",
+        "x-backend-phase": "B19",
+        "x-implementation-status": "implemented-b19",
+        "x-access-roles": [
+          "admin"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Authoritative B19 finance response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/FinanceReconciliation"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "x-csrf-required": true,
+        "x-idempotency-required": false,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/finance/reconciliation": {
+      "get": {
+        "tags": [
+          "Finance"
+        ],
+        "operationId": "adminListFinancialReconciliation",
+        "summary": "List audited finance mismatches",
+        "description": "B19 legally gated immutable tax evidence and provider-verified finance operations.",
+        "x-backend-phase": "B19",
+        "x-implementation-status": "implemented-b19",
+        "x-access-roles": [
+          "admin"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Authoritative B19 finance response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/FinanceReconciliation"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "parameters": [],
+        "x-csrf-required": false,
+        "x-idempotency-required": false
       }
     }
   }
