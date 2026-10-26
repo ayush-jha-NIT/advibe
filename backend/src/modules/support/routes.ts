@@ -133,10 +133,8 @@ export function createSupportRouter(config:AppConfig,auth:AuthDependencies):Rout
  router.get("/support/tickets",safe(async(req,res)=>{
   const p=await principal(req),{limit,cursor}=readLimit(req);
   const where:Prisma.SupportTicketWhereInput=p.role==="ADMIN"?{}:
-   p.role==="DRIVER"?{createdByUserId:p.userId}:{
-    OR:[{createdByUserId:p.userId},{business:{
-     memberships:{some:{userId:p.userId,revokedAt:null}}}}]};
-  // Business relation not required by B20 schema: use eligible IDs from membership.
+   {createdByUserId:p.userId};
+  // Membership IDs are scoped independently to prevent cross-tenant ticket reads.
   if(p.role==="ADVERTISER"){
    const owned=await db.businessMembership.findMany({where:{
     userId:p.userId,revokedAt:null},select:{businessId:true}});
