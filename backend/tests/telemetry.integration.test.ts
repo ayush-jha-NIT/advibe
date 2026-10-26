@@ -231,7 +231,7 @@ test("B17 opt-in GPS trips, playback corroboration and B16 regressions",async()=
   const startPath="/drivers/screens/"+screens[0]!.id+"/trips/start";
   assert.equal((await driverPost(startPath,{})).status,409,"No implicit location tracking");
   assert.equal((await driverPost(consentPath,{acknowledged:true,purposeVersion:"b17-ci-v1"},
-   outsiderSession)).status,404);
+   outsiderSession)).status,403);
   assert.equal((await driverPost(consentPath,{acknowledged:true,purposeVersion:"b17-ci-v1"},
    driverSession,false)).status,403);
   assert.equal((await driverPost(consentPath,{acknowledged:true,purposeVersion:"wrong-v1"})).status,422);
