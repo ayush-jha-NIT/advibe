@@ -8,11 +8,11 @@ export const holdInput=z.strictObject({
   screenIds:z.array(uuid).min(1).max(100).refine(x=>new Set(x).size===x.length,
     "Screen IDs must be unique"),
 });
-export function equalSets(left:string[]|number[],right:string[]|number[]):boolean{
+export function equalSets<T extends string|number>(left:T[],right:T[]):boolean{
   return left.length===right.length&&
     new Set(left).size===left.length&&
     new Set(right).size===right.length&&
-    left.every(x=>right.includes(x as never));
+    left.every(x=>right.includes(x));
 }
 export function selectedServiceDates(start:Date,end:Date,weekdays:number[]):Date[]{
   const first=atUtc(dateString(start)).getTime(),last=atUtc(dateString(end)).getTime();
