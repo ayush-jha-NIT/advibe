@@ -3,7 +3,7 @@
   "info": {
     "title": "AdVibe Backend API",
     "version": "0.1.0-b0",
-    "description": "B0–B8 contract. B8 device provisioning, verified Ed25519 pairing, revocation, signed heartbeats and empty signed manifests implemented in CI. Production hardware vendor, physical inspection, advertising playback and device fleet deployment are NOT deployed or implemented."
+    "description": "B0–B9 implemented in repository. B9 curated city, circular zone and published location catalog with PostgreSQL GiST bounding and exact spherical search; public inventory is not bookable. B10–B23 production media, booking, payments, delivery and payout modules NOT deployed or implemented."
   },
   "servers": [
     {
@@ -598,6 +598,32 @@
             "type": "number",
             "minimum": -180,
             "maximum": 180
+          },
+          "slug": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100
+          },
+          "cityId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "zoneId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "citySlug": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published",
+              "archived"
+            ]
           }
         },
         "additionalProperties": false
@@ -2953,6 +2979,346 @@
             ]
           }
         }
+      },
+      "CityCatalog": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "slug",
+          "name",
+          "countryCode",
+          "timeZone",
+          "state"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "countryCode": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 2
+          },
+          "timeZone": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published",
+              "archived"
+            ]
+          }
+        }
+      },
+      "ZoneCatalog": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "cityId",
+          "slug",
+          "name",
+          "centerLat",
+          "centerLng",
+          "radiusMeters",
+          "state"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "cityId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "centerLat": {
+            "type": "number",
+            "minimum": -90,
+            "maximum": 90
+          },
+          "centerLng": {
+            "type": "number",
+            "minimum": -180,
+            "maximum": 180
+          },
+          "radiusMeters": {
+            "type": "integer",
+            "minimum": 100,
+            "maximum": 50000
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published",
+              "archived"
+            ]
+          }
+        }
+      },
+      "CityCreateInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "slug",
+          "name",
+          "countryCode",
+          "timeZone"
+        ],
+        "properties": {
+          "slug": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "countryCode": {
+            "type": "string",
+            "pattern": "^[A-Z]{2}$"
+          },
+          "timeZone": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 100
+          }
+        }
+      },
+      "CityUpdateInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "minProperties": 1,
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "timeZone": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published",
+              "archived"
+            ]
+          }
+        }
+      },
+      "ZoneCreateInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "cityId",
+          "slug",
+          "name",
+          "centerLat",
+          "centerLng",
+          "radiusMeters"
+        ],
+        "properties": {
+          "cityId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "centerLat": {
+            "type": "number"
+          },
+          "centerLng": {
+            "type": "number"
+          },
+          "radiusMeters": {
+            "type": "integer",
+            "minimum": 100,
+            "maximum": 50000
+          }
+        }
+      },
+      "ZoneUpdateInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "minProperties": 1,
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "centerLat": {
+            "type": "number"
+          },
+          "centerLng": {
+            "type": "number"
+          },
+          "radiusMeters": {
+            "type": "integer"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published",
+              "archived"
+            ]
+          }
+        }
+      },
+      "LocationCreateInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "zoneId",
+          "slug",
+          "name",
+          "lat",
+          "lng"
+        ],
+        "properties": {
+          "zoneId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "lat": {
+            "type": "number",
+            "minimum": -90,
+            "maximum": 90
+          },
+          "lng": {
+            "type": "number",
+            "minimum": -180,
+            "maximum": 180
+          }
+        }
+      },
+      "LocationUpdateInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "minProperties": 1,
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "lat": {
+            "type": "number"
+          },
+          "lng": {
+            "type": "number"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published",
+              "archived"
+            ]
+          }
+        }
+      },
+      "ScreenSiteAssignmentInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "locationId"
+        ],
+        "properties": {
+          "locationId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "ScreenSiteAssignment": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "screenId",
+          "locationId",
+          "inventoryStatus",
+          "message"
+        ],
+        "properties": {
+          "screenId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "locationId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "inventoryStatus": {
+            "type": "string",
+            "enum": [
+              "NOT_BOOKABLE"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "SiteScreen": {
+        "type": "object",
+        "required": [
+          "screenId",
+          "placement",
+          "pairingState",
+          "bookable"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "screenId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "placement": {
+            "type": "string"
+          },
+          "pairingState": {
+            "type": "string"
+          },
+          "bookable": {
+            "type": "boolean",
+            "const": false
+          }
+        }
       }
     },
     "responses": {
@@ -3998,7 +4364,7 @@
         ],
         "operationId": "listPublicLocations",
         "summary": "View publishable area coverage",
-        "description": "View publishable area coverage B0 contract only; no runtime handler exists yet.",
+        "description": "B9 curated catalog. Only published city, zone and site are shown to public; no physical GPS/trip feeds. No booking or pricing.",
         "x-backend-phase": "B9",
         "x-access-roles": [
           "public"
@@ -4062,8 +4428,117 @@
           },
           {
             "$ref": "#/components/parameters/Limit"
+          },
+          {
+            "name": "citySlug",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "number"
+              ],
+              "description": "B9 bounds: complete bounding box or complete radius search, max 50 km and max 5-degree bounding extent"
+            }
+          },
+          {
+            "name": "zoneId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "number"
+              ],
+              "description": "B9 bounds: complete bounding box or complete radius search, max 50 km and max 5-degree bounding extent"
+            }
+          },
+          {
+            "name": "minLat",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "number"
+              ],
+              "description": "B9 bounds: complete bounding box or complete radius search, max 50 km and max 5-degree bounding extent"
+            }
+          },
+          {
+            "name": "minLng",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "number"
+              ],
+              "description": "B9 bounds: complete bounding box or complete radius search, max 50 km and max 5-degree bounding extent"
+            }
+          },
+          {
+            "name": "maxLat",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "number"
+              ],
+              "description": "B9 bounds: complete bounding box or complete radius search, max 50 km and max 5-degree bounding extent"
+            }
+          },
+          {
+            "name": "maxLng",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "number"
+              ],
+              "description": "B9 bounds: complete bounding box or complete radius search, max 50 km and max 5-degree bounding extent"
+            }
+          },
+          {
+            "name": "lat",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "number"
+              ],
+              "description": "B9 bounds: complete bounding box or complete radius search, max 50 km and max 5-degree bounding extent"
+            }
+          },
+          {
+            "name": "lng",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "number"
+              ],
+              "description": "B9 bounds: complete bounding box or complete radius search, max 50 km and max 5-degree bounding extent"
+            }
+          },
+          {
+            "name": "radiusMeters",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "number"
+              ],
+              "description": "B9 bounds: complete bounding box or complete radius search, max 50 km and max 5-degree bounding extent"
+            }
           }
-        ]
+        ],
+        "x-implementation-status": "implemented-b9"
       }
     },
     "/public/formats": {
@@ -4073,7 +4548,7 @@
         ],
         "operationId": "listPublicFormats",
         "summary": "View approved marketing ad formats",
-        "description": "Illustrative formats/prices only unless flagged as current binding quote. B0 contract only; no runtime handler exists yet.",
+        "description": "B9 curated catalog. Only published city, zone and site are shown to public; no physical GPS/trip feeds. No booking or pricing.",
         "x-backend-phase": "B9",
         "x-access-roles": [
           "public"
@@ -4138,7 +4613,8 @@
           {
             "$ref": "#/components/parameters/Limit"
           }
-        ]
+        ],
+        "x-implementation-status": "implemented-b9"
       }
     },
     "/drivers/me": {
@@ -5044,7 +5520,7 @@
         ],
         "operationId": "listLocations",
         "summary": "List relevant locations/areas",
-        "description": "List relevant locations/areas B0 contract only; no runtime handler exists yet.",
+        "description": "B9 curated catalog. Only published city, zone and site are shown to public; no physical GPS/trip feeds. No booking or pricing.",
         "x-backend-phase": "B9",
         "x-access-roles": [
           "advertiser",
@@ -5114,8 +5590,117 @@
           },
           {
             "$ref": "#/components/parameters/Limit"
+          },
+          {
+            "name": "citySlug",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "number"
+              ],
+              "description": "B9 bounds: complete bounding box or complete radius search, max 50 km and max 5-degree bounding extent"
+            }
+          },
+          {
+            "name": "zoneId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "number"
+              ],
+              "description": "B9 bounds: complete bounding box or complete radius search, max 50 km and max 5-degree bounding extent"
+            }
+          },
+          {
+            "name": "minLat",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "number"
+              ],
+              "description": "B9 bounds: complete bounding box or complete radius search, max 50 km and max 5-degree bounding extent"
+            }
+          },
+          {
+            "name": "minLng",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "number"
+              ],
+              "description": "B9 bounds: complete bounding box or complete radius search, max 50 km and max 5-degree bounding extent"
+            }
+          },
+          {
+            "name": "maxLat",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "number"
+              ],
+              "description": "B9 bounds: complete bounding box or complete radius search, max 50 km and max 5-degree bounding extent"
+            }
+          },
+          {
+            "name": "maxLng",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "number"
+              ],
+              "description": "B9 bounds: complete bounding box or complete radius search, max 50 km and max 5-degree bounding extent"
+            }
+          },
+          {
+            "name": "lat",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "number"
+              ],
+              "description": "B9 bounds: complete bounding box or complete radius search, max 50 km and max 5-degree bounding extent"
+            }
+          },
+          {
+            "name": "lng",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "number"
+              ],
+              "description": "B9 bounds: complete bounding box or complete radius search, max 50 km and max 5-degree bounding extent"
+            }
+          },
+          {
+            "name": "radiusMeters",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "number"
+              ],
+              "description": "B9 bounds: complete bounding box or complete radius search, max 50 km and max 5-degree bounding extent"
+            }
           }
-        ]
+        ],
+        "x-implementation-status": "implemented-b9"
       }
     },
     "/screens": {
@@ -9152,7 +9737,7 @@
         ],
         "operationId": "adminListLocations",
         "summary": "List Admin city/zone inventory",
-        "description": "Restricted to authorized Admin; no private driver GPS disclosed. B0 contract only.",
+        "description": "B9 curated catalog. Only published city, zone and site are shown to public; no physical GPS/trip feeds. No booking or pricing.",
         "x-backend-phase": "B9",
         "x-access-roles": [
           "admin"
@@ -9220,8 +9805,201 @@
           },
           {
             "$ref": "#/components/parameters/Limit"
+          },
+          {
+            "name": "citySlug",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "number"
+              ],
+              "description": "B9 bounds: complete bounding box or complete radius search, max 50 km and max 5-degree bounding extent"
+            }
+          },
+          {
+            "name": "zoneId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "number"
+              ],
+              "description": "B9 bounds: complete bounding box or complete radius search, max 50 km and max 5-degree bounding extent"
+            }
+          },
+          {
+            "name": "minLat",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "number"
+              ],
+              "description": "B9 bounds: complete bounding box or complete radius search, max 50 km and max 5-degree bounding extent"
+            }
+          },
+          {
+            "name": "minLng",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "number"
+              ],
+              "description": "B9 bounds: complete bounding box or complete radius search, max 50 km and max 5-degree bounding extent"
+            }
+          },
+          {
+            "name": "maxLat",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "number"
+              ],
+              "description": "B9 bounds: complete bounding box or complete radius search, max 50 km and max 5-degree bounding extent"
+            }
+          },
+          {
+            "name": "maxLng",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "number"
+              ],
+              "description": "B9 bounds: complete bounding box or complete radius search, max 50 km and max 5-degree bounding extent"
+            }
+          },
+          {
+            "name": "lat",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "number"
+              ],
+              "description": "B9 bounds: complete bounding box or complete radius search, max 50 km and max 5-degree bounding extent"
+            }
+          },
+          {
+            "name": "lng",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "number"
+              ],
+              "description": "B9 bounds: complete bounding box or complete radius search, max 50 km and max 5-degree bounding extent"
+            }
+          },
+          {
+            "name": "radiusMeters",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "number"
+              ],
+              "description": "B9 bounds: complete bounding box or complete radius search, max 50 km and max 5-degree bounding extent"
+            }
           }
-        ]
+        ],
+        "x-implementation-status": "implemented-b9"
+      },
+      "post": {
+        "tags": [
+          "Locations"
+        ],
+        "operationId": "adminCreateCatalogLocation",
+        "summary": "admin Create Catalog Location",
+        "description": "B9: curated geographic catalog, strict published visibility and scoped Admin mutations. NOT live GPS or sellable inventory.",
+        "x-backend-phase": "B9",
+        "x-access-roles": [
+          "admin"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful authoritative response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Location"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LocationCreateInput"
+              }
+            }
+          }
+        },
+        "x-csrf-required": true,
+        "x-idempotency-required": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "x-implementation-status": "implemented-b9"
       }
     },
     "/reservations/holds/{holdId}/confirm": {
@@ -11411,6 +12189,904 @@
         "x-implementation-status": "implemented-b8",
         "x-csrf-required": false,
         "x-device-signature-required": true
+      }
+    },
+    "/public/cities": {
+      "get": {
+        "tags": [
+          "Locations"
+        ],
+        "operationId": "listPublicCatalogCities",
+        "summary": "list Public Catalog Cities",
+        "description": "B9: curated geographic catalog, strict published visibility and scoped Admin mutations. NOT live GPS or sellable inventory.",
+        "x-backend-phase": "B9",
+        "x-access-roles": [
+          "public"
+        ],
+        "x-trust-boundary": "public",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Successful authoritative response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CityCatalog"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "parameters": [],
+        "x-implementation-status": "implemented-b9",
+        "x-csrf-required": false,
+        "x-idempotency-required": false
+      }
+    },
+    "/public/zones": {
+      "get": {
+        "tags": [
+          "Locations"
+        ],
+        "operationId": "listPublicCatalogZones",
+        "summary": "list Public Catalog Zones",
+        "description": "B9: curated geographic catalog, strict published visibility and scoped Admin mutations. NOT live GPS or sellable inventory.",
+        "x-backend-phase": "B9",
+        "x-access-roles": [
+          "public"
+        ],
+        "x-trust-boundary": "public",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Successful authoritative response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ZoneCatalog"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "parameters": [],
+        "x-implementation-status": "implemented-b9",
+        "x-csrf-required": false,
+        "x-idempotency-required": false
+      }
+    },
+    "/admin/cities": {
+      "get": {
+        "tags": [
+          "Locations"
+        ],
+        "operationId": "adminListCatalogCities",
+        "summary": "admin List Catalog Cities",
+        "description": "B9: curated geographic catalog, strict published visibility and scoped Admin mutations. NOT live GPS or sellable inventory.",
+        "x-backend-phase": "B9",
+        "x-access-roles": [
+          "admin"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful authoritative response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CityCatalog"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "parameters": [],
+        "x-implementation-status": "implemented-b9",
+        "x-csrf-required": false,
+        "x-idempotency-required": false
+      },
+      "post": {
+        "tags": [
+          "Locations"
+        ],
+        "operationId": "adminCreateCatalogCity",
+        "summary": "admin Create Catalog City",
+        "description": "B9: curated geographic catalog, strict published visibility and scoped Admin mutations. NOT live GPS or sellable inventory.",
+        "x-backend-phase": "B9",
+        "x-access-roles": [
+          "admin"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful authoritative response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/CityCatalog"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CityCreateInput"
+              }
+            }
+          }
+        },
+        "x-csrf-required": true,
+        "x-idempotency-required": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "x-implementation-status": "implemented-b9"
+      }
+    },
+    "/admin/cities/{cityId}": {
+      "patch": {
+        "tags": [
+          "Locations"
+        ],
+        "operationId": "adminUpdateCatalogCity",
+        "summary": "admin Update Catalog City",
+        "description": "B9: curated geographic catalog, strict published visibility and scoped Admin mutations. NOT live GPS or sellable inventory.",
+        "x-backend-phase": "B9",
+        "x-access-roles": [
+          "admin"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful authoritative response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/CityCatalog"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CityUpdateInput"
+              }
+            }
+          }
+        },
+        "x-csrf-required": true,
+        "x-idempotency-required": false,
+        "parameters": [
+          {
+            "name": "cityId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "x-implementation-status": "implemented-b9"
+      }
+    },
+    "/admin/zones": {
+      "get": {
+        "tags": [
+          "Locations"
+        ],
+        "operationId": "adminListCatalogZones",
+        "summary": "admin List Catalog Zones",
+        "description": "B9: curated geographic catalog, strict published visibility and scoped Admin mutations. NOT live GPS or sellable inventory.",
+        "x-backend-phase": "B9",
+        "x-access-roles": [
+          "admin"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful authoritative response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ZoneCatalog"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "parameters": [],
+        "x-implementation-status": "implemented-b9",
+        "x-csrf-required": false,
+        "x-idempotency-required": false
+      },
+      "post": {
+        "tags": [
+          "Locations"
+        ],
+        "operationId": "adminCreateCatalogZone",
+        "summary": "admin Create Catalog Zone",
+        "description": "B9: curated geographic catalog, strict published visibility and scoped Admin mutations. NOT live GPS or sellable inventory.",
+        "x-backend-phase": "B9",
+        "x-access-roles": [
+          "admin"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful authoritative response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/ZoneCatalog"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ZoneCreateInput"
+              }
+            }
+          }
+        },
+        "x-csrf-required": true,
+        "x-idempotency-required": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "x-implementation-status": "implemented-b9"
+      }
+    },
+    "/admin/zones/{zoneId}": {
+      "patch": {
+        "tags": [
+          "Locations"
+        ],
+        "operationId": "adminUpdateCatalogZone",
+        "summary": "admin Update Catalog Zone",
+        "description": "B9: curated geographic catalog, strict published visibility and scoped Admin mutations. NOT live GPS or sellable inventory.",
+        "x-backend-phase": "B9",
+        "x-access-roles": [
+          "admin"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful authoritative response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/ZoneCatalog"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ZoneUpdateInput"
+              }
+            }
+          }
+        },
+        "x-csrf-required": true,
+        "x-idempotency-required": false,
+        "parameters": [
+          {
+            "name": "zoneId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "x-implementation-status": "implemented-b9"
+      }
+    },
+    "/admin/locations/{locationId}": {
+      "patch": {
+        "tags": [
+          "Locations"
+        ],
+        "operationId": "adminUpdateCatalogLocation",
+        "summary": "admin Update Catalog Location",
+        "description": "B9: curated geographic catalog, strict published visibility and scoped Admin mutations. NOT live GPS or sellable inventory.",
+        "x-backend-phase": "B9",
+        "x-access-roles": [
+          "admin"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful authoritative response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Location"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LocationUpdateInput"
+              }
+            }
+          }
+        },
+        "x-csrf-required": true,
+        "x-idempotency-required": false,
+        "parameters": [
+          {
+            "name": "locationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "x-implementation-status": "implemented-b9"
+      }
+    },
+    "/admin/screens/{screenId}/location": {
+      "put": {
+        "tags": [
+          "Locations"
+        ],
+        "operationId": "adminMapScreenToPublishedSite",
+        "summary": "admin Map Screen To Published Site",
+        "description": "B9: curated geographic catalog, strict published visibility and scoped Admin mutations. NOT live GPS or sellable inventory.",
+        "x-backend-phase": "B9",
+        "x-access-roles": [
+          "admin"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful authoritative response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/ScreenSiteAssignment"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScreenSiteAssignmentInput"
+              }
+            }
+          }
+        },
+        "x-csrf-required": true,
+        "x-idempotency-required": false,
+        "parameters": [
+          {
+            "name": "screenId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "x-implementation-status": "implemented-b9"
+      }
+    },
+    "/admin/locations/{locationId}/screens": {
+      "get": {
+        "tags": [
+          "Locations"
+        ],
+        "operationId": "adminListSiteScreens",
+        "summary": "admin List Site Screens",
+        "description": "B9: curated geographic catalog, strict published visibility and scoped Admin mutations. NOT live GPS or sellable inventory.",
+        "x-backend-phase": "B9",
+        "x-access-roles": [
+          "admin"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful authoritative response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/SiteScreen"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "parameters": [
+          {
+            "name": "locationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "x-implementation-status": "implemented-b9",
+        "x-csrf-required": false,
+        "x-idempotency-required": false
       }
     }
   }

@@ -35,7 +35,7 @@ jobs:
         run: npm run build
 
   backend-verify:
-    name: Express B8 device identity and secure pairing checks
+    name: Express B9 geographic catalog and spatial query checks
     runs-on: ubuntu-latest
     permissions:
       contents: read

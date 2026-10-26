@@ -1,18 +1,31 @@
-# AdVibe Backend B8: device provisioning and secure pairing
+# AdVibe Backend B9: geographic catalog and inventory
 
-B0–B8 are implemented in repository and CI; the deployed frontend is **still in demo mode**, and no production AdVibe Neon database, hardware vendor or physical-screen installation has been provisioned.
+The repository implements B0–B9 on Node 22, Express, Prisma and PostgreSQL 16+. The public frontend still uses demo data; no production AdVibe Neon database, KYC scanner, real device fleet or live inventory has been provisioned.
 
-Start with backend/.env.example: private pooled DATABASE_URL and direct DIRECT_URL; AUTH_SECRET; MFA_ENCRYPTION_KEY; verified CORS_ORIGINS, Resend and Turnstile credentials; legally approved KYC private storage/scan/legal policy. B8 additionally supports DEVICE_MANIFEST_SIGNING_KEY_PKCS8_B64: separate Ed25519 private PKCS8 DER in base64url, stored **only in server secrets management**, with the public key pinned into approved hardware firmware.
+## Local execution
 
-Local commands:
+Configure backend/.env based on backend/.env.example: DATABASE_URL, DIRECT_URL, AUTH_SECRET, MFA_ENCRYPTION_KEY, approved origins and upstream provider credentials. Run:
+
 - npm install --prefix backend
 - npm --prefix backend run db:validate
 - npm --prefix backend run db:migrate:deploy
-- npm --prefix backend run check (only against disposable localhost PostgreSQL, NODE_ENV=test and DB_TEST_ALLOWED=true)
 - npm --prefix backend run dev
 
-Migration 20261026040000_b8_device_identity creates Screen, DeviceCredential, DevicePairingChallenge, DeviceRequestNonce, DeviceHeartbeat and DeviceManifestVersion plus constraints and indexes.
+To test locally, use only disposable localhost PostgreSQL with NODE_ENV=test and DB_TEST_ALLOWED=true, then run npm --prefix backend run check. CI provisions PostgreSQL 16 and executes fresh migrations B2–B9.
 
-B8 implements Admin-only screen creation, public-key pairing challenges, signed pairing proof, immediate credential revocation and rotation, owner-scoped screen inspection, device-signed heartbeats and short-lived signed **EMPTY** manifests. This is deliberately not ad playback. See docs/backend/B8_IMPLEMENTATION.md for routes, exact signature canonicalization, security limits and hardware/legal prerequisites. Never expose the Ed25519 private key or claim verified physical installation from a database PAIRED status.
+## B9 APIs
 
-B9 is geo inventory; B15–B16 are scheduling/playback. B22 migrates frontend demo services to real APIs. All external production credentials and device integrations require separate deployment and review.
+Admin MFA only:
+- GET/POST /api/v1/admin/cities, PATCH /api/v1/admin/cities/:cityId
+- GET/POST /api/v1/admin/zones, PATCH /api/v1/admin/zones/:zoneId
+- GET/POST /api/v1/admin/locations, PATCH /api/v1/admin/locations/:locationId
+- PUT /api/v1/admin/screens/:screenId/location
+- GET /api/v1/admin/locations/:locationId/screens
+
+Public catalog: GET /api/v1/public/cities, /public/zones, /public/locations and /public/formats. Authenticated advertiser/driver: GET /api/v1/locations (published-only), Admin may view unpublished locations.
+
+Cities and zones must be explicitly published before a site can appear. Zone geometry is a bounded circle and cannot change after locations exist. Site coordinates are curated and bounded by the zone; PostgreSQL built-in GiST on point(longitude,latitude) accelerates bbox searches, with exact Haversine radius filtering. Every Admin mutation requires a current session, CSRF and origin checks, with transactional audit records and idempotent creation.
+
+A screen-site link returns inventoryStatus=NOT_BOOKABLE and is not proof of installation, verified playback, stock, price or booking. The six format labels are descriptions, not inventory commitments. Do not expose driver GPS or KYC through the curated site catalog. See docs/backend/B9_IMPLEMENTATION.md for full scope, queries, SQL index and privacy boundaries.
+
+B10 is creative media ingestion; B11–B15 implement pricing, booking and scheduling; B17 adds opt-in GPS; B22 eventually connects the frontend to these APIs.
