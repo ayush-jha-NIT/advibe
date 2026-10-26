@@ -2251,16 +2251,21 @@
       },
       "PayoutInput": {
         "type": "object",
+        "additionalProperties": false,
         "required": [
-          "settlementId"
+          "settlementId",
+          "beneficiaryId"
         ],
         "properties": {
           "settlementId": {
             "type": "string",
             "format": "uuid"
+          },
+          "beneficiaryId": {
+            "type": "string",
+            "format": "uuid"
           }
-        },
-        "additionalProperties": false
+        }
       },
       "RateInput": {
         "type": "object",
@@ -4289,6 +4294,87 @@
           },
           "acknowledged": {
             "const": true
+          }
+        }
+      },
+      "EarningPolicyInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "version",
+          "paisePerReviewedEvent"
+        ],
+        "properties": {
+          "version": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 80
+          },
+          "paisePerReviewedEvent": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10000000
+          }
+        }
+      },
+      "EarningReviewInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "sourceProofId",
+          "policyId",
+          "evidenceReference"
+        ],
+        "properties": {
+          "sourceProofId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "policyId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "evidenceReference": {
+            "type": "string",
+            "minLength": 12,
+            "maxLength": 140
+          }
+        }
+      },
+      "SettlementCreateInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "driverUserId",
+          "periodStart",
+          "periodEnd"
+        ],
+        "properties": {
+          "driverUserId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "periodStart": {
+            "type": "string",
+            "format": "date"
+          },
+          "periodEnd": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "BeneficiaryRegisterInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "providerToken"
+        ],
+        "properties": {
+          "providerToken": {
+            "type": "string",
+            "minLength": 12,
+            "maxLength": 128
           }
         }
       }
@@ -9449,8 +9535,8 @@
           "Payouts"
         ],
         "operationId": "getOwnEarnings",
-        "summary": "Read attributable earning ledger",
-        "description": "Read attributable earning ledger B0 contract only; no runtime handler exists yet.",
+        "summary": "Read owned driver ledger balances",
+        "description": "Implemented B18 exact-paise reviewed earnings, immutable settlements and independent transfer confirmation. This is not live merchant certification.",
         "x-backend-phase": "B18",
         "x-access-roles": [
           "driver"
@@ -9463,7 +9549,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful authoritative response",
+            "description": "Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -9473,13 +9559,8 @@
                   ],
                   "properties": {
                     "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/Settlement"
-                      }
-                    },
-                    "meta": {
-                      "$ref": "#/components/schemas/CursorMeta"
+                      "type": "object",
+                      "additionalProperties": true
                     }
                   },
                   "additionalProperties": false
@@ -9512,14 +9593,8 @@
             "$ref": "#/components/responses/ServerError"
           }
         },
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/Cursor"
-          },
-          {
-            "$ref": "#/components/parameters/Limit"
-          }
-        ]
+        "parameters": [],
+        "x-implementation-status": "implemented-b18"
       }
     },
     "/drivers/me/settlements": {
@@ -9527,9 +9602,9 @@
         "tags": [
           "Payouts"
         ],
-        "operationId": "getOwnSettlements",
-        "summary": "List owned settlement periods",
-        "description": "List owned settlement periods B0 contract only; no runtime handler exists yet.",
+        "operationId": "listOwnSettlements",
+        "summary": "List own immutable settlements",
+        "description": "Implemented B18 exact-paise reviewed earnings, immutable settlements and independent transfer confirmation. This is not live merchant certification.",
         "x-backend-phase": "B18",
         "x-access-roles": [
           "driver"
@@ -9542,7 +9617,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful authoritative response",
+            "description": "Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -9554,11 +9629,9 @@
                     "data": {
                       "type": "array",
                       "items": {
-                        "$ref": "#/components/schemas/Settlement"
+                        "type": "object",
+                        "additionalProperties": true
                       }
-                    },
-                    "meta": {
-                      "$ref": "#/components/schemas/CursorMeta"
                     }
                   },
                   "additionalProperties": false
@@ -9591,14 +9664,8 @@
             "$ref": "#/components/responses/ServerError"
           }
         },
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/Cursor"
-          },
-          {
-            "$ref": "#/components/parameters/Limit"
-          }
-        ]
+        "parameters": [],
+        "x-implementation-status": "implemented-b18"
       }
     },
     "/admin/payouts": {
@@ -9607,8 +9674,8 @@
           "Payouts"
         ],
         "operationId": "adminInitiatePayout",
-        "summary": "Initiate verified beneficiary payout",
-        "description": "Initiate verified beneficiary payout B0 contract only; no runtime handler exists yet.",
+        "summary": "Queue idempotent provider payout",
+        "description": "Implemented B18 exact-paise reviewed earnings, immutable settlements and independent transfer confirmation. This is not live merchant certification.",
         "x-backend-phase": "B18",
         "x-access-roles": [
           "admin"
@@ -9621,7 +9688,7 @@
         ],
         "responses": {
           "201": {
-            "description": "Successful authoritative response",
+            "description": "Response",
             "content": {
               "application/json": {
                 "schema": {
@@ -9631,7 +9698,8 @@
                   ],
                   "properties": {
                     "data": {
-                      "$ref": "#/components/schemas/Settlement"
+                      "type": "object",
+                      "additionalProperties": true
                     }
                   },
                   "additionalProperties": false
@@ -9678,12 +9746,13 @@
         "x-idempotency-required": true,
         "parameters": [
           {
-            "$ref": "#/components/parameters/CsrfToken"
+            "$ref": "#/components/parameters/IdempotencyKey"
           },
           {
-            "$ref": "#/components/parameters/IdempotencyKey"
+            "$ref": "#/components/parameters/CsrfToken"
           }
-        ]
+        ],
+        "x-implementation-status": "implemented-b18"
       }
     },
     "/webhooks/cashfree/payouts": {
@@ -9693,7 +9762,7 @@
         ],
         "operationId": "cashfreePayoutWebhook",
         "summary": "Receive signed payout events",
-        "description": "Receive signed payout events B0 contract only; no runtime handler exists yet. Verify provider signature over raw body and deduplicate provider event ID before acknowledging.",
+        "description": "Sandbox adapter: signed raw payload plus independent provider transfer GET. Production vendor webhook format is unverified and explicitly disabled.",
         "x-backend-phase": "B18",
         "x-access-roles": [
           "provider"
@@ -9748,15 +9817,37 @@
         "requestBody": {
           "required": true,
           "content": {
-            "application/octet-stream": {
+            "application/json": {
               "schema": {
-                "type": "string",
-                "format": "binary"
+                "type": "object",
+                "required": [
+                  "eventId",
+                  "providerReference",
+                  "type"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "eventId": {
+                    "type": "string"
+                  },
+                  "providerReference": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "PAYOUT_SUCCESS",
+                      "PAYOUT_FAILED",
+                      "PAYOUT_PENDING"
+                    ]
+                  }
+                }
               }
             }
           }
         },
-        "x-signature-verification-required": true
+        "x-signature-verification-required": true,
+        "x-implementation-status": "implemented-b18-sandbox-adapter-only"
       }
     },
     "/admin/settlements": {
@@ -9836,6 +9927,91 @@
             "$ref": "#/components/parameters/Limit"
           }
         ]
+      },
+      "post": {
+        "tags": [
+          "Payouts"
+        ],
+        "operationId": "freezeDriverSettlement",
+        "summary": "Freeze driver settlement",
+        "description": "Implemented B18 exact-paise reviewed earnings, immutable settlements and independent transfer confirmation. This is not live merchant certification.",
+        "x-backend-phase": "B18",
+        "x-access-roles": [
+          "admin"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SettlementCreateInput"
+              }
+            }
+          }
+        },
+        "x-csrf-required": true,
+        "x-idempotency-required": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "x-implementation-status": "implemented-b18"
       }
     },
     "/tickets": {
@@ -16295,6 +16471,411 @@
           }
         ],
         "x-implementation-status": "implemented-b17"
+      }
+    },
+    "/admin/earnings/policies": {
+      "post": {
+        "tags": [
+          "Payouts"
+        ],
+        "operationId": "createVersionedEarningPolicy",
+        "summary": "Create immutable earning rate",
+        "description": "Implemented B18 exact-paise reviewed earnings, immutable settlements and independent transfer confirmation. This is not live merchant certification.",
+        "x-backend-phase": "B18",
+        "x-access-roles": [
+          "admin"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EarningPolicyInput"
+              }
+            }
+          }
+        },
+        "x-csrf-required": true,
+        "x-idempotency-required": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "x-implementation-status": "implemented-b18"
+      }
+    },
+    "/admin/earnings/accrue": {
+      "post": {
+        "tags": [
+          "Payouts"
+        ],
+        "operationId": "reviewDriverServiceEarning",
+        "summary": "Review service proof and accrue once",
+        "description": "Implemented B18 exact-paise reviewed earnings, immutable settlements and independent transfer confirmation. This is not live merchant certification.",
+        "x-backend-phase": "B18",
+        "x-access-roles": [
+          "admin"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EarningReviewInput"
+              }
+            }
+          }
+        },
+        "x-csrf-required": true,
+        "x-idempotency-required": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "x-implementation-status": "implemented-b18"
+      }
+    },
+    "/drivers/me/beneficiaries": {
+      "post": {
+        "tags": [
+          "Payouts"
+        ],
+        "operationId": "verifyDriverBeneficiary",
+        "summary": "Register provider-verified beneficiary",
+        "description": "Implemented B18 exact-paise reviewed earnings, immutable settlements and independent transfer confirmation. This is not live merchant certification.",
+        "x-backend-phase": "B18",
+        "x-access-roles": [
+          "driver"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BeneficiaryRegisterInput"
+              }
+            }
+          }
+        },
+        "x-csrf-required": true,
+        "x-idempotency-required": false,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CsrfToken"
+          }
+        ],
+        "x-implementation-status": "implemented-b18"
+      },
+      "get": {
+        "tags": [
+          "Payouts"
+        ],
+        "operationId": "listDriverBeneficiaries",
+        "summary": "List masked beneficiary tokens",
+        "description": "Implemented B18 exact-paise reviewed earnings, immutable settlements and independent transfer confirmation. This is not live merchant certification.",
+        "x-backend-phase": "B18",
+        "x-access-roles": [
+          "driver"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": true
+                      }
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "parameters": [],
+        "x-implementation-status": "implemented-b18"
+      }
+    },
+    "/admin/payouts/{payoutId}": {
+      "get": {
+        "tags": [
+          "Payouts"
+        ],
+        "operationId": "readAdminPayout",
+        "summary": "Read verified payout status",
+        "description": "Implemented B18 exact-paise reviewed earnings, immutable settlements and independent transfer confirmation. This is not live merchant certification.",
+        "x-backend-phase": "B18",
+        "x-access-roles": [
+          "admin"
+        ],
+        "x-trust-boundary": "session",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "parameters": [
+          {
+            "name": "payoutId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "x-implementation-status": "implemented-b18"
       }
     }
   }
