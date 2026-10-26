@@ -35,7 +35,7 @@ export function createCampaignSubmitRouter(config:AppConfig,auth:AuthDependencie
     const prev=await tx.campaignSubmission.findFirst({where:{campaignId:c.id},
      orderBy:{number:"desc"}});
     if(c.status==="CHANGES_REQUESTED"&&
-       (!prev||c.revision<=prev.campaignRevision+1))
+       (!prev||c.revision<=prev.campaignRevision+2))
      throw new HttpError(409,"CAMPAIGN_REVISION_REQUIRED","Edit campaign after requested changes");
     try{validateSchedule(dateString(c.startDate),dateString(c.endDate),c.weekdays,true);}
     catch{throw new HttpError(422,"SCHEDULE_INVALID","Campaign dates or weekdays invalid");}
