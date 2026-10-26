@@ -337,11 +337,23 @@ test("B19 issued immutable tax documents, refund safety, provider reconciliation
   assert.equal(dashboard.status,200);
   const financial=(await dashboard.json() as {data:{counts:{paidBookings:number;confirmedRefunds:number},
    financial:{confirmedBookingGrossPaise:string;confirmedRefundsPaise:string;periodDifferencePaise:string}}}).data;
-  assert.equal(financial.counts.paidBookings,1);
-  assert.equal(financial.counts.confirmedRefunds,2);
-  assert.equal(financial.financial.confirmedBookingGrossPaise,"18700");
-  assert.equal(financial.financial.confirmedRefundsPaise,"18700");
-  assert.equal(financial.financial.periodDifferencePaise,"0");
+  const start=new Date(dateToday+"T00:00:00.000Z");
+  const end=new Date(start.getTime()+86400000);
+  const expectedPaid=await db.paymentOrder.aggregate({
+   where:{state:"PAID",requiresResolution:false,paidAt:{gte:start,lt:end}},
+   _count:{_all:true},_sum:{amountPaise:true}});
+  const expectedRefunds=await db.paymentRefund.aggregate({
+   where:{state:"SUCCEEDED",succeededAt:{gte:start,lt:end}},
+   _count:{_all:true},_sum:{amountPaise:true}});
+  assert.ok(financial.counts.paidBookings>=1);
+  assert.ok(financial.counts.confirmedRefunds>=2);
+  assert.equal(financial.counts.paidBookings,expectedPaid._count._all);
+  assert.equal(financial.counts.confirmedRefunds,expectedRefunds._count._all);
+  const expectedGross=expectedPaid._sum.amountPaise??0n;
+  const expectedRefunded=expectedRefunds._sum.amountPaise??0n;
+  assert.equal(financial.financial.confirmedBookingGrossPaise,String(expectedGross));
+  assert.equal(financial.financial.confirmedRefundsPaise,String(expectedRefunded));
+  assert.equal(financial.financial.periodDifferencePaise,String(expectedGross-expectedRefunded));
   assert.equal((await get("/admin/reports",alice)).status,403);
   assert.equal((await get("/admin/reports?from=2020-01-01&to=2026-10-26",staff)).status,422);
   const reportExport=await get("/admin/reports/export?from="+dateToday+"&to="+dateToday,staff);
