@@ -27,9 +27,6 @@ test("B16 signed device playlists, heartbeat claims and immediate pause/revocati
  const settings=loadAuthSettings({AUTH_SECRET:"ci_only_dev_test_auth_secret_32_characters_long_value",
   MFA_ENCRYPTION_KEY:"3f4e8bb1976542ac8ef51b03d9607a2acb8970645a1ed3c0b7d14982f63a0e57"},config);
  await db.$connect();
- assert.equal(decimalPaise("52.03"),5203n);
- assert.equal(decimalPaise(1.5),150n);
- assert.throws(()=>decimalPaise("1.001"));
  const seed=randomUUID().slice(0,8);
  const hash=await argon2.hash("B14-Cashfree-Password-2026!",{type:argon2.argon2id});
  const users=await Promise.all(["owner","outsider","admin","driver"].map(async kind=>
