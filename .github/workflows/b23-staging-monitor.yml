@@ -1,0 +1,26 @@
+name: B23 staging live health and access monitoring
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 */6 * * *"
+permissions:
+  contents: read
+concurrency:
+  group: b23-staging-health
+  cancel-in-progress: true
+jobs:
+  verify-staging:
+    name: Read-only HTTPS health, readiness and anonymous-session checks
+    if: ${{ vars.B23_STAGING_FRONTEND_ORIGIN != '' && vars.B23_STAGING_BACKEND_ORIGIN != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      B23_FRONTEND_ORIGIN: ${{ vars.B23_STAGING_FRONTEND_ORIGIN }}
+      B23_BACKEND_ORIGIN: ${{ vars.B23_STAGING_BACKEND_ORIGIN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Probe staging without any credentials, financial mutations or user data
+        run: node scripts/b23-staging-probe.mjs
