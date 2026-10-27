@@ -1,0 +1,55 @@
+# B23 staging template: creating/syncing this Blueprint DOES NOT approve production.
+# Never enable paid transfers, bookings or hardware from this template.
+services:
+  - type: web
+    name: advibe-api-staging
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install --no-audit --no-fund && npm run build
+    preDeployCommand: npm run db:migrate:deploy
+    startCommand: npm run start
+    healthCheckPath: /api/v1/ready
+    autoDeployTrigger: "off"
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: HOST
+        value: 0.0.0.0
+      - key: TRUST_PROXY
+        value: "true"
+      - key: B23_RELEASE_STAGE
+        value: staging
+      - key: B23_STAGING_APPROVED
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: AUTH_WEB_ORIGIN
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+      - key: AUTH_SECRET
+        generateValue: true
+      - key: MFA_ENCRYPTION_KEY
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: AUTH_EMAIL_FROM
+        sync: false
+      - key: PRICING_TAX_POLICY_APPROVED
+        value: "false"
+      - key: PAYMENTS_ENABLED
+        value: "false"
+      - key: B18_PAYOUTS_ENABLED
+        value: "false"
+      - key: B19_REFUNDS_ENABLED
+        value: "false"
+      - key: B19_TAX_INVOICES_ENABLED
+        value: "false"
+      - key: BOOKING_HOLDS_ENABLED
+        value: "false"
+      - key: DEVICE_PLAYBACK_ENABLED
+        value: "false"
+      - key: CREATIVE_WORKER_ENABLED
+        value: "false"
