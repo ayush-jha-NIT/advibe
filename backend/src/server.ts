@@ -1,4 +1,5 @@
 import { createApp } from "./app.js";
+import { releaseGate } from "./ops/release.js";
 import { loadConfig } from "./config/env.js";
 import { assertDatabaseReady, createDatabase } from "./db/client.js";
 import { createLogger } from "./lib/logger.js";
@@ -7,6 +8,7 @@ import { loadAuthSettings } from "./modules/auth/settings.js";
 
 async function main(): Promise<void> {
   const config = loadConfig();
+  const release = releaseGate(process.env);
   const logger = createLogger(config);
   const authSettings = loadAuthSettings(process.env, config);
   const db = createDatabase();
@@ -23,7 +25,7 @@ async function main(): Promise<void> {
     db, settings: authSettings, sender: createResendSender(authSettings),
   });
   const server = app.listen(config.port, config.host, () => {
-    logger.info({ host: config.host, port: config.port, environment: config.nodeEnv },
+    logger.info({ host: config.host, port: config.port, environment: config.nodeEnv, releaseStage: release.mode },
       "AdVibe B2 database-backed API listening");
   });
   server.requestTimeout = 30_000;
