@@ -37,7 +37,7 @@ export function createApp(
 ): Express {
   const app = express();
   app.disable("x-powered-by");
-  app.set("trust proxy", config.trustProxy);
+  app.set("trust proxy", config.trustProxy ? 1 : false); // Trust only one managed reverse-proxy hop.
   app.locals.ready = true;
   app.use(requestContext(logger));
   app.use(helmet());
