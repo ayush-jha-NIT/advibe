@@ -14,7 +14,7 @@ export const requestContext = (logger: Logger): RequestHandler => (req, res, nex
     logger.info({
       requestId,
       method: req.method,
-      path: req.path, // Never log query strings, request bodies, auth headers or cookies.
+      route: req.route?.path ? String(req.baseUrl ?? "") + String(req.route.path) : "[unmatched]", // Route templates only: never log UUIDs, GPS, paths, query data or tokens.
       statusCode: res.statusCode,
       durationMs: Math.round(performance.now() - start),
     }, "HTTP request");
