@@ -1,10 +1,10 @@
 # AdVibe Production Readiness — Mandatory Backend and Launch Work
 
-**Status: frontend demonstration only, NOT production-ready. B0–B14 implemented in GitHub CI, including signed payment processing and booking confirmation guards. B15–B23 pending; legal/tax approval D04 remains outstanding. Dedicated ClamAV/FFmpeg worker and private object storage are not deployed. Hardware manufacture, physical installation attestation and firmware keys are not provisioned. Live private storage, scanner vendor and legal retention/sign-off remain unconfigured. A submitted application is not KYC or hardware approval. No AdVibe Neon production database or verified email sender is provisioned. Admin authenticator must be operator-enrolled, and the deployed frontend still uses demo authentication.**
+**Status: NOT production-ready. B0–B23 backend and frontend integration components are implemented in source and CI, including a B23 staging-only deployment blueprint, release admission guard and encrypted backup/restore tooling. Actual hosting, production provider onboarding, private storage configuration and operator signoffs remain pending; legal/tax approval D04 remains outstanding. Dedicated ClamAV/FFmpeg worker and private object storage are not deployed. Hardware manufacture, physical installation attestation and firmware keys are not provisioned. Live private storage, scanner vendor and legal retention/sign-off remain unconfigured. A submitted application is not KYC or hardware approval. No AdVibe Neon production database or verified email sender is provisioned. Admin authenticator must be operator-enrolled, and the deployed frontend still uses demo authentication.**
 
 Backend baseline: [B0 architecture](backend/B0_ARCHITECTURE.md), [database](backend/B0_DATABASE.md), [API migration map](backend/B0_API_MAPPING.md), [decisions](backend/B0_DECISIONS.md), and [versioned OpenAPI](../contracts/openapi.v1.json).
 
-The 24-part approved implementation is a Next.js UI backed by fictional browser-local data. Demo roles are not server-enforced permissions. Client-only payment/KYC/device statuses are not reliable proof.
+The browser demo remains available by default. Separately, B22 live API mode uses server-authenticated roles when explicitly enabled and connected to a deployed backend; no live infrastructure or legal approval is implied. Client-only payment/KYC/device statuses are not reliable proof.
 
 | Blocker | Required before any real-user launch |
 | --- | --- |
