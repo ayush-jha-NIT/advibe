@@ -91,7 +91,7 @@ export function createApp(
     app.use("/api/v1", createAccountsRouter(config, auth,
       verifyCaptcha ?? createTurnstileVerifier()));
   }
-  // B22-B23 add frontend API integration and production release; demo remains isolated.
+  // B23 deployment and operator signoffs are external release gates; demo remains isolated.
   app.use(notFound);
   app.use(errorHandler(logger));
   return app;
