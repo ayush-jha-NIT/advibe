@@ -88,7 +88,7 @@ These tools alone are **not a scheduled backup or PITR policy**. Provision autom
 
 ## 6. CI acceptance and remaining external dependencies
 
-GitHub B23 adds the fifth `release-gates` CI job after the existing frontend, backend, demo Chromium and API-mode Chromium jobs. It checks release refusal defaults, backup/recovery command syntax, operational presence and handoff documentation. Backend suite tests staged and production admission rules; Node tests verify that evidence template is *unapproved* by default.
+GitHub B23 adds **six checks**: frontend, backend, demo Chromium, API-mode Chromium, real encrypted backup/restore using disposable PostgreSQL and synthetic data, then the final `release-gates` check. The synthetic recovery job installs age and PostgreSQL tooling, streams an encrypted archive, restores it into a separate empty test database and checks the restored record and migrations. The final release gate checks refusal defaults, syntax, operational presence and handoff documentation. **This CI drill never touches real Neon data** and cannot prove production RTO/RPO or access controls. Backend suite tests staged and production admission rules; Node tests verify that evidence template is *unapproved* by default.
 
 No real Vercel/Render project deployment, external recovery test, provider signoff or operational on-call acknowledgment is implied by repository CI. Source implementation can be complete without the business being legally/operationally approved to go live.
 
