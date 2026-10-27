@@ -58,3 +58,7 @@ Read [B20 implementation](../docs/backend/B20_IMPLEMENTATION.md). Create tickets
 ## B21 admin reports, user decisions and safe audit exports
 
 B21 implements MFA-protected operational and confirmed-cashflow reporting, paginated account searches, audited suspension/reactivation of advertiser/driver accounts and read-only audit APIs. CSV exports are bounded, sanitized and themselves audited. See [B21 implementation](../docs/backend/B21_IMPLEMENTATION.md). Figures are not net profit, a tax return, bank reconciliation, or verified human impressions. Frontend remains demo mode until B22.
+
+## B23 release engineering and operational handover
+
+See [B23 implementation](../docs/backend/B23_IMPLEMENTATION.md). Render staging deployment blueprint (auto-deploy off), production admission gate, dependency readiness, encrypted age backup and disposable restore-drill scripts, read-only 6-hour staging monitor and evidence-bound approval tools are implemented. None has created a live production service, issued legal signoff, backed up a real customer DB or paid a driver; external account-owned infrastructure and signoffs are required.
