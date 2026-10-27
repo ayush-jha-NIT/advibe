@@ -184,3 +184,27 @@ jobs:
           name: part23-browser-failures
           path: test-results/
           if-no-files-found: ignore
+
+  release-gates:
+    name: B23 release preparation and fail-closed evidence validation
+    runs-on: ubuntu-latest
+    needs: [verify, backend-verify, live-portal-smoke, browser-smoke]
+    permissions:
+      contents: read
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Test B23 operational controls and unapproved release defaults
+        run: npm run test:release-gates
+      - name: Syntax-validate both disaster recovery scripts
+        run: |
+          bash -n backend/scripts/backup-encrypted.sh
+          bash -n backend/scripts/restore-drill.sh
+      - name: Confirm no remote deployment is implied by CI
+        run: |
+          test -f docs/backend/B23_IMPLEMENTATION.md
+          test -f ops/b23-release-evidence.template.json
+          echo "B23 CI checks complete: production signoff and live staging deployment are separate, manual gates."
