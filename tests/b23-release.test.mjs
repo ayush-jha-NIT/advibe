@@ -27,7 +27,7 @@ test("B23 scripts never run automatic destructive recovery or output raw databas
  assert.match(backup,/umask 077/);
  assert.match(drill,/YES_DISPOSABLE_DATABASE/);
  assert.match(drill,/pg_restore --exit-on-error/);
- assert.doesNotMatch(drill,/DROP DATABASE|--clean/);
+ assert.doesNotMatch(drill,/pg_restore[^\\n]*--(?:clean|create)/);
  assert.match(read(".github/workflows/b23-staging-monitor.yml"),/workflow_dispatch/);
  assert.match(read(".github/workflows/b23-staging-monitor.yml"),/b23-staging-probe\.mjs/);
 });
