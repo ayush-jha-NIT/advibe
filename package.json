@@ -13,7 +13,10 @@
     "health:deployment": "node scripts/deployment-health.mjs",
     "test:browser": "node scripts/release-smoke.mjs",
     "test:contracts": "node --test tests/backend-contract.test.mjs",
-    "test:live-browser": "node scripts/b22-live-browser.mjs"
+    "test:live-browser": "node scripts/b22-live-browser.mjs",
+    "test:release-gates": "node --test tests/b23-release.test.mjs",
+    "probe:staging": "node scripts/b23-staging-probe.mjs",
+    "check:release-evidence": "node scripts/b23-approve-release.mjs"
   },
   "dependencies": {
     "next": "16.4.2",
