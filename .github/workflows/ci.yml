@@ -35,7 +35,7 @@ jobs:
         run: npm run build
 
   backend-verify:
-    name: Express B21 admin reports, users and append-only audit
+    name: Express B23 production-gated B0–B23 backend tests
     runs-on: ubuntu-latest
     permissions:
       contents: read
