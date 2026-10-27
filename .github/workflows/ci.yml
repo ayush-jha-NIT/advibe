@@ -185,10 +185,68 @@ jobs:
           path: test-results/
           if-no-files-found: ignore
 
+  encrypted-restore-drill:
+    name: B23 real encrypted PostgreSQL backup/restore drill (synthetic data)
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: read
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: advibe_b23_ci
+          POSTGRES_PASSWORD: ci_only_b23_password
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U advibe_b23_ci -d postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: "5432"
+      PGUSER: advibe_b23_ci
+      PGPASSWORD: ci_only_b23_password
+      PGSSLMODE: prefer
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install age and PostgreSQL client
+        run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq age postgresql-client
+      - name: Create two disposable test databases and synthetic records
+        run: |
+          psql -v ON_ERROR_STOP=1 -d postgres -c 'CREATE DATABASE advibe_b23_source'
+          psql -v ON_ERROR_STOP=1 -d postgres -c 'CREATE DATABASE advibe_b23_restore'
+          psql -v ON_ERROR_STOP=1 -d advibe_b23_source -c 'CREATE TABLE "User" ("id" integer PRIMARY KEY, "email" text NOT NULL)'
+          psql -v ON_ERROR_STOP=1 -d advibe_b23_source -c 'CREATE TABLE "_prisma_migrations" ("id" text PRIMARY KEY)'
+          psql -v ON_ERROR_STOP=1 -d advibe_b23_source -c "INSERT INTO \"User\" VALUES (7,'synthetic@example.invalid')"
+          psql -v ON_ERROR_STOP=1 -d advibe_b23_source -c "INSERT INTO \"_prisma_migrations\" VALUES ('synthetic-b23')"
+      - name: Generate disposable encryption identity and stream encrypted archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          age-keygen -o "$RUNNER_TEMP/b23-test-identity.txt" 2>/dev/null
+          recipient=$(age-keygen -y "$RUNNER_TEMP/b23-test-identity.txt")
+          B23_BACKUP_RECIPIENT="$recipient" PGDATABASE=advibe_b23_source bash backend/scripts/backup-encrypted.sh "$RUNNER_TEMP/advibe-test.dump.age"
+          if grep -aq 'synthetic@example.invalid' "$RUNNER_TEMP/advibe-test.dump.age"; then
+            echo "Plaintext appeared in encrypted archive" >&2
+            exit 1
+          fi
+          B23_RESTORE_ACK=YES_DISPOSABLE_DATABASE B23_AGE_IDENTITY_FILE="$RUNNER_TEMP/b23-test-identity.txt" PGDATABASE=advibe_b23_restore bash backend/scripts/restore-drill.sh "$RUNNER_TEMP/advibe-test.dump.age"
+          test "$(psql -At -d advibe_b23_restore -c 'SELECT count(*) FROM "User" WHERE id=7')" = 1
+          echo "PASS: authentic age encrypted PostgreSQL backup and isolated restore drill with synthetic data"
+      - name: Erase ephemeral encryption identity and archive
+        if: always()
+        run: rm -f "$RUNNER_TEMP/b23-test-identity.txt" "$RUNNER_TEMP/advibe-test.dump.age"
+
   release-gates:
     name: B23 release preparation and fail-closed evidence validation
     runs-on: ubuntu-latest
-    needs: [verify, backend-verify, live-portal-smoke, browser-smoke]
+    needs: [verify, backend-verify, live-portal-smoke, browser-smoke, encrypted-restore-drill]
     permissions:
       contents: read
     timeout-minutes: 5
