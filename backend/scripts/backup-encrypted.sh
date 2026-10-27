@@ -12,13 +12,15 @@ destination=$1
 [[ ! -e "$destination" && ! -L "$destination" ]] || die "target must not already exist"
 parent=$(dirname "$destination")
 [[ -d "$parent" ]] || die "destination directory missing"
-temp=$(mktemp "$parent/.advibe-backup-XXXXXXXX.age")
-trap 'rm -f "$temp"' EXIT
+tempdir=$(mktemp -d "$parent/.advibe-backup-XXXXXXXX")
+temp="$tempdir/archive.age"
+trap 'rm -rf "$tempdir"' EXIT
 # No unencrypted copy touches disk. Provider-native continuous PITR is separately required.
 pg_dump --format=custom --no-owner --no-acl --dbname="$PGDATABASE" |
  age -r "$B23_BACKUP_RECIPIENT" -o "$temp"
 [[ $(head -c 21 "$temp") == "age-encryption.org/v1" ]] || die "encrypted archive header invalid"
 chmod 600 "$temp"
-mv -n "$temp" "$destination"
+ln "$temp" "$destination"  # atomic exclusive creation; prevents overwriting existing archives
+rm -rf "$tempdir"
 trap - EXIT
 echo "Encrypted backup archived. Perform a separate isolated restore drill before signoff."
