@@ -1,0 +1,37 @@
+{
+  "version": "B23",
+  "releaseSha": null,
+  "environment": "production",
+  "stagingFrontendUrl": null,
+  "stagingBackendUrl": null,
+  "verifiedAtUtc": null,
+  "reviewers": {
+    "security": null,
+    "legalAndTax": null,
+    "operations": null,
+    "databaseRecovery": null
+  },
+  "evidence": {
+    "stagingBrowserRun": null,
+    "stagingApiProbeRun": null,
+    "verifiedRenderDeploy": null,
+    "verifiedVercelDeploy": null,
+    "encryptedBackupArtifactId": null,
+    "restoreDrillEvidenceId": null,
+    "monitoringAlertTest": null,
+    "rollbackDrillEvidenceId": null,
+    "providerSandboxEvidenceId": null
+  },
+  "approvals": {
+    "security": false,
+    "legalAndTax": false,
+    "dataPrivacy": false,
+    "restoreDrill": false,
+    "stagingEndToEnd": false,
+    "monitoringAlerting": false,
+    "rollbackPlan": false,
+    "physicalDevicePilot": false,
+    "cashfreeLiveProcessing": false,
+    "payoutProvider": false
+  }
+}
